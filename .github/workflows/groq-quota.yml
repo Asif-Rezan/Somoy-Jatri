@@ -1,0 +1,23 @@
+name: Diagnose Groq quota without exposing credentials
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/check_groq_quota.py', '.github/workflows/groq-quota.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quota:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - run: python -u scripts/check_groq_quota.py
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
