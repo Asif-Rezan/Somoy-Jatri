@@ -11,6 +11,11 @@ on:
         type: choice
         options: [prepared, storyboard-replay]
         default: prepared
+      text_provider:
+        description: Text provider to exercise in the live storyboard test
+        type: choice
+        options: [auto, gemini]
+        default: auto
 permissions:
   contents: read
   actions: read
@@ -39,7 +44,9 @@ jobs:
     timeout-minutes: 90
     env:
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       STORY_PACE_SECONDS: '10'
+      STORY_PROVIDER: ${{ inputs.text_provider }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,6 +81,7 @@ jobs:
       HF_HUB_DISABLE_XET: '1'
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       COMPONENT: ${{ matrix.component }}
     steps:
       - uses: actions/checkout@v4

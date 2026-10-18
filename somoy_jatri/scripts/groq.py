@@ -27,11 +27,19 @@ class Groq:
     unavailable_until = {}
 
     def json(self, prompt, schema=None, temperature=.75, reasoning_effort='low'):
+        if os.getenv('STORY_PROVIDER')=='gemini' or (not os.getenv('GROQ_API_KEY') and os.getenv('GEMINI_API_KEY')):
+            from somoy_jatri.scripts.gemini import Gemini
+            return Gemini().json(prompt,schema=schema,temperature=temperature,reasoning_effort=reasoning_effort)
         key = os.environ['GROQ_API_KEY']
         primary = os.getenv('STORY_MODEL', 'openai/gpt-oss-120b')
         models = list(dict.fromkeys([primary] + [m.strip() for m in
             os.getenv('STORY_FALLBACK_MODELS', 'openai/gpt-oss-20b,qwen/qwen3.8-27b').split(',') if m.strip()]))
-        selected = next((m for m in models if self.unavailable_until.get(m, 0) <= time.monotonic()), primary)
+        selected = next((m for m in models if self.unavailable_until.get(m, 0) <= time.monotonic()), None)
+        if selected is None and os.getenv('GEMINI_API_KEY'):
+            from somoy_jatri.scripts.gemini import Gemini
+            print(json.dumps({'groq_stage':'provider_fallback','to_provider':'gemini'}),flush=True)
+            return Gemini().json(prompt,schema=schema,temperature=temperature,reasoning_effort=reasoning_effort)
+        selected = selected or primary
         json_failures = {}
         for attempt in range(16):
             options = ({'reasoning_effort': reasoning_effort}
@@ -71,12 +79,20 @@ class Groq:
                                           'from_model': selected, 'to_model': alternative}), flush=True)
                         selected = alternative
                         continue
+                if (response.status_code==429 and os.getenv('GEMINI_API_KEY')
+                        and (delay>=60 or attempt>=2)):
+                    from somoy_jatri.scripts.gemini import Gemini
+                    print(json.dumps({'groq_stage':'provider_fallback','to_provider':'gemini'}),flush=True)
+                    return Gemini().json(prompt,schema=schema,temperature=temperature,reasoning_effort=reasoning_effort)
                 print(json.dumps({'groq_stage': 'retry', 'status': response.status_code,
                                   'error_code': error_code[:80], 'attempt': attempt + 1,
                                   'wait_seconds': round(delay, 1)}), flush=True)
                 time.sleep(delay)
                 continue
             if not response.ok:
+                if response.status_code==429 and os.getenv('GEMINI_API_KEY'):
+                    from somoy_jatri.scripts.gemini import Gemini
+                    return Gemini().json(prompt,schema=schema,temperature=temperature,reasoning_effort=reasoning_effort)
                 print(json.dumps({'groq_stage': 'failed', 'status': response.status_code,
                                   'error_code': error_code[:80]}), flush=True)
                 raise RuntimeError('Groq request failed, HTTP '+str(response.status_code))

@@ -60,6 +60,7 @@ jobs:
           VOICE_WORKERS: ${{ inputs.voice_workers }}
           IMAGE_WORKERS: ${{ inputs.image_workers }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python -u -m somoy_jatri.narration.worker
       - uses: actions/upload-artifact@v4
         if: always()
@@ -94,6 +95,7 @@ jobs:
           VOICE_WORKERS: ${{ inputs.voice_workers }}
           SHARD: ${{ matrix.shard }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python -u -m somoy_jatri.narration.worker
       - uses: actions/upload-artifact@v4
@@ -130,6 +132,7 @@ jobs:
       - name: Assemble verified narration and timing
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           RESEARCH_DOSSIER: auto
           DRIVE_TOKEN_JSON: ${{ secrets.DRIVE_TOKEN_JSON }}
