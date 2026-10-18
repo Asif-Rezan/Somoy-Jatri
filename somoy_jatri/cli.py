@@ -36,14 +36,20 @@ def main():
     elif args.command=='finish':finish(config)
     elif args.command=='tts-test':
         from somoy_jatri.narration.providers import provider
+        from somoy_jatri.alignment.timing import BengaliASR
         from somoy_jatri.audio import concatenate
         from somoy_jatri.narration.text import normalize
         root.mkdir(parents=True,exist_ok=True);tts=provider(args.mode);parts=[]
+        aligner=BengaliASR() if args.mode=='production' else None
         for i,(text,emotion) in enumerate([
             ('বন্ধুরা, আমরা কি সত্যিই প্রাচীন মিশরে এসে পড়েছি?', 'curious'),
             ('ওই দেখো! সামনে গিজার বিশাল পিরামিড!', 'amazed'),
             ('ভাবতেই অবাক লাগছে, খ্রিস্টপূর্ব ২৫০০ সালে জীবন কত আলাদা ছিল।','reflective')]):
-            path=root/f'voice-{i}.wav';tts.synthesize(normalize(text),emotion,.6,path);parts.append((path,500))
+            path=root/f'voice-{i}.wav';tts.synthesize(normalize(text),emotion,.6,path)
+            if aligner:
+                print(json.dumps({'voice_stage':'sample_synthesized','index':i}),flush=True)
+                aligner.align(path,normalize(text))
+            parts.append((path,500))
         concatenate(parts,root/'voice-test.wav')
     elif args.command=='image-test':
         from somoy_jatri.images.providers import SSDImages,MockImages

@@ -1,6 +1,7 @@
 from difflib import SequenceMatcher
 import re
 from somoy_jatri.utils import duration
+import json
 
 def canonical(text):
     return re.sub(r'[^\w]', '', text)
@@ -21,6 +22,8 @@ class BengaliASR:
         similarity = SequenceMatcher(None, canonical(text), canonical(recognized)).ratio()
         words = [{'word': w.word, 'start': w.start, 'end': w.end}
                  for s in segments for w in s.words or [] if w.end > w.start]
+        print(json.dumps({'alignment_stage': 'recognized', 'similarity': round(similarity, 3),
+                          'word_count': len(words)}), flush=True)
         if similarity < .65 or not words:
             raise ValueError('Bengali ASR/script mismatch; review pronunciation before continuing')
         total = duration(path)
