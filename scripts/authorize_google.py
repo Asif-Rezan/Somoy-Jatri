@@ -15,8 +15,12 @@ def main():
     target=Path(kind+'_token.json')
     if target.exists():raise ValueError('Token already exists; refusing overwrite')
     flow=InstalledAppFlow.from_client_secrets_file('client_secrets.json',SCOPES[kind])
-    credentials=flow.run_local_server(host='127.0.0.1',port=0,open_browser=True,prompt='consent',access_type='offline')
+    credentials=flow.run_local_server(host='127.0.0.1',port=0,open_browser=False,prompt='consent',access_type='offline')
     if not credentials.refresh_token:raise ValueError('Missing refresh token')
+    if kind=='drive' and os.getenv('EXPECTED_DRIVE_EMAIL'):
+        client=build('drive','v3',credentials=credentials)
+        email=client.about().get(fields='user(emailAddress)').execute()['user']['emailAddress']
+        if email.casefold()!=os.environ['EXPECTED_DRIVE_EMAIL'].casefold():raise ValueError('Wrong Drive account')
     if kind=='youtube':
         expected=os.environ['EXPECTED_CHANNEL_ID']
         client=build('youtube','v3',credentials=credentials)

@@ -107,6 +107,13 @@ python scripts/authorize_google.py drive
 python scripts/authorize_google.py youtube
 ```
 
+Open the helper's printed authorization URL in your chosen browser. Set `EXPECTED_DRIVE_EMAIL`
+to verify the Drive account before its token is saved. Use the verified YouTube channel even
+when Google's brand-account picker shows an older brand name; the helper checks the channel ID.
+After configuring repository secrets, set the `EXPECTED_DRIVE_EMAIL` repository variable and run
+**Verify Google and Groq connections**. It checks Groq model availability, the Drive account and
+private checkpoint read/write, and the exact YouTube channel without uploading a video.
+
 The YouTube helper requires `EXPECTED_CHANNEL_ID` and confirms the selected channel. It requests upload and read-only YouTube scopes for uploads, thumbnails and channel/processing verification. Drive uses `drive.file`, restricted to app-created or explicitly app-authorized files. Tokens are saved with owner-only access and never printed. Copy their JSON contents into GitHub Actions secrets yourself. Run `python -m somoy_jatri.cli drive-init` with `DRIVE_TOKEN_JSON` exported to create a new Somoy Jatri folder, then configure its printed ID. A folder created manually in Drive is not sufficient: the application must be authorized to access it and its dedicated-root marker must be present. Do not relabel or reuse the reference project's folder.
 
 | GitHub Actions secret | Purpose |
