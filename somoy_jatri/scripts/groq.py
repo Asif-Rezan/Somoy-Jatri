@@ -1,19 +1,43 @@
 import json
 import os
 import time
+import re
 import requests
+
+
+def _retry_delay(response, attempt):
+    """Honor Groq's rate-limit delay without printing its response body."""
+    if response.status_code == 429:
+        header = response.headers.get('Retry-After', '')
+        try:
+            return max(1., min(180., float(header)))
+        except ValueError:
+            pass
+        try:
+            message = response.json().get('error', {}).get('message', '')
+        except (ValueError, AttributeError):
+            message = ''
+        match = re.search(r'try again in\s*(?:(\d+)m)?\s*(\d+(?:\.\d+)?)s', message, re.I)
+        if match:
+            return max(1., min(180., 60 * int(match.group(1) or 0) + float(match.group(2)) + 2))
+        return 65.
+    return min(2 ** attempt, 30)
 
 class Groq:
     def json(self, prompt):
         key = os.environ['GROQ_API_KEY']
-        for attempt in range(4):
+        for attempt in range(8):
             response = requests.post('https://api.groq.com/openai/v1/chat/completions',
                 headers={'Authorization': 'Bearer '+key}, timeout=180,
                 json={'model': os.getenv('STORY_MODEL', 'openai/gpt-oss-120b'),
                       'messages': [{'role': 'user', 'content': prompt}],
                       'response_format': {'type': 'json_object'}, 'temperature': .75})
-            if response.status_code in (429, 500, 502, 503, 504) and attempt < 3:
-                time.sleep(min(2**attempt, 8)); continue
+            if response.status_code in (429, 500, 502, 503, 504) and attempt < 7:
+                delay = _retry_delay(response, attempt)
+                print(json.dumps({'groq_stage': 'retry', 'status': response.status_code,
+                                  'attempt': attempt + 1, 'wait_seconds': round(delay, 1)}), flush=True)
+                time.sleep(delay)
+                continue
             if not response.ok:
                 raise RuntimeError('Groq request failed, HTTP '+str(response.status_code))
             return json.loads(response.json()['choices'][0]['message']['content'])
