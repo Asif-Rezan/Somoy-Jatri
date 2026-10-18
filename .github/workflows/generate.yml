@@ -9,7 +9,7 @@ on:
         description: Historical period (must match dossier)
         type: string
       dossier:
-        description: auto selects a new curated topic; or supply a reviewed dossier path
+        description: auto, reviewed dossier path, or verified:RUN_NUMBER from full verification
         type: string
         default: auto
       mode:
@@ -40,6 +40,7 @@ on:
         default: false
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: somoy-jatri-production
   cancel-in-progress: false
@@ -86,6 +87,28 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write('matrix='+json.dumps({'shard':list(range(n))})+'\n')
           PYCODE
+      - name: Require successful verification before using a tested storyboard
+        if: startsWith(inputs.dossier, 'verified:')
+        id: verified
+        env:
+          RESEARCH_DOSSIER: ${{ inputs.dossier }}
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_OPERATION: check
+        run: python scripts/stage_verified_story.py
+      - uses: actions/download-artifact@v4
+        if: startsWith(inputs.dossier, 'verified:')
+        with:
+          name: storyboard-replay
+          run-id: ${{ steps.verified.outputs.source_run }}
+          github-token: ${{ github.token }}
+          path: output/verified-input
+      - name: Stage only the tested script and matching research receipt
+        if: startsWith(inputs.dossier, 'verified:')
+        env:
+          RESEARCH_DOSSIER: ${{ inputs.dossier }}
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_OPERATION: stage
+        run: python scripts/stage_verified_story.py
       - name: Prepare final Bangla voice and dynamic timeline
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
