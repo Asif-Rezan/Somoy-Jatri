@@ -1,5 +1,6 @@
 from difflib import SequenceMatcher
 import re
+import math
 from somoy_jatri.utils import duration
 import json
 import time
@@ -7,6 +8,29 @@ import requests
 
 def canonical(text):
     return re.sub(r'[^\w]', '', text)
+
+def bounded_words(words, total):
+    """ASR can timestamp decoder padding; caption cues must fit decoded audio."""
+    if not math.isfinite(total) or total <= 0:
+        raise ValueError('Audio duration must be positive')
+    bounded = []
+    adjusted = 0
+    for word in words:
+        start, end = float(word['start']), float(word['end'])
+        if not math.isfinite(start) or not math.isfinite(end):
+            raise ValueError('ASR returned non-finite word timing')
+        clipped_start = max(0.0, min(total, start))
+        clipped_end = max(0.0, min(total, end))
+        adjusted += (clipped_start != start or clipped_end != end)
+        if clipped_end > clipped_start:
+            bounded.append({**word, 'start': clipped_start, 'end': clipped_end})
+    if adjusted:
+        print(json.dumps({'alignment_stage': 'bounded_caption_timing',
+                          'adjusted_words': adjusted, 'audio_seconds': round(total, 3)}), flush=True)
+    if words and not bounded:
+        raise ValueError('ASR returned no word timing within audio')
+    return bounded
+
 
 class BengaliASR:
     def __init__(self):
@@ -29,8 +53,7 @@ class BengaliASR:
         if strict and (similarity < .65 or not words):
             raise ValueError('Bengali ASR/script mismatch; review pronunciation before continuing')
         total = duration(path)
-        if any(w['start'] < 0 or w['end'] > total+.1 for w in words):
-            raise ValueError('ASR timestamp outside audio')
+        words = bounded_words(words, total)
         # Segment-level TTS timing is authoritative; ASR timestamps refine captions only.
         return {'words': words, 'similarity': similarity, 'recognized': recognized}
 
@@ -70,8 +93,7 @@ class GroqASR:
         if strict and (similarity < .65 or not words):
             raise ValueError('Bengali ASR/script mismatch; review pronunciation before continuing')
         total = duration(path)
-        if any(w['start'] < 0 or w['end'] > total + .1 for w in words):
-            raise ValueError('ASR timestamp outside audio')
+        words = bounded_words(words, total)
         return {'words': words, 'similarity': similarity, 'recognized': recognized}
 
 

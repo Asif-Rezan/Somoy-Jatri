@@ -36,6 +36,7 @@ jobs:
         run: pip install -e '.[images]'
       - run: python -m somoy_jatri.cli "$COMPONENT" --mode "$MODE" --run-id component
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: model-component-test
           path: output/component/*

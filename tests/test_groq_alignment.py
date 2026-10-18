@@ -29,3 +29,21 @@ def test_groq_alignment_uses_bengali_word_timestamps(monkeypatch, tmp_path):
     assert len(result['words']) == 3
     assert captured['data']['language'] == 'bn'
     assert captured['data']['timestamp_granularities[]'] == 'word'
+
+
+def test_decoder_padding_is_clipped_to_audio():
+    from somoy_jatri.alignment.timing import bounded_words
+    words = [{'word': 'আমি', 'start': -.02, 'end': .3},
+             {'word': 'আছি', 'start': .3, 'end': 1.32}]
+    result = bounded_words(words, 1)
+    assert result == [{'word': 'আমি', 'start': 0, 'end': .3},
+                      {'word': 'আছি', 'start': .3, 'end': 1}]
+
+
+def test_invalid_timing_is_not_silently_accepted():
+    import pytest
+    from somoy_jatri.alignment.timing import bounded_words
+    with pytest.raises(ValueError, match='non-finite'):
+        bounded_words([{'word': 'আমি', 'start': 0, 'end': float('nan')}], 1)
+    with pytest.raises(ValueError, match='no word timing'):
+        bounded_words([{'word': 'আমি', 'start': 2, 'end': 3}], 1)
