@@ -39,7 +39,20 @@ class Gemini:
                     print(json.dumps({'gemini_stage':'retry','status':response.status_code,
                                       'wait_seconds':delay}),flush=True)
                     time.sleep(delay);continue
-                print(json.dumps({'gemini_stage':'failed','status':response.status_code}),flush=True)
+                try:error=response.json().get('error',{})
+                except ValueError:error={}
+                message=str(error.get('message','')).lower()
+                category=next((label for marker,label in (
+                    ('api key not valid','invalid_api_key'),
+                    ('api key expired','expired_api_key'),
+                    ('api key was reported as leaked','leaked_api_key'),
+                    ('responseformat','response_format'),
+                    ('schema','schema'),
+                    ('not supported','unsupported'),
+                    ('permission','permission'),
+                    ('billing','billing')) if marker in message),'unclassified')
+                print(json.dumps({'gemini_stage':'failed','status':response.status_code,
+                                  'category':category}),flush=True)
                 raise RuntimeError('Gemini request failed, HTTP '+str(response.status_code))
             payload=response.json()
             candidates=payload.get('candidates',[])

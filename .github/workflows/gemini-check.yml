@@ -1,0 +1,31 @@
+name: Verify Gemini connection
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/gemini-check.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gemini:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -e .
+      - name: Check authenticated structured response without exposing credentials
+        run: |
+          python - <<'PY'
+          from somoy_jatri.scripts.gemini import Gemini
+          schema={'type':'object','properties':{'passed':{'type':'boolean'}},'required':['passed'],'additionalProperties':False}
+          result=Gemini().json('Return passed true.',schema=schema)
+          assert result['passed'] is True
+          print('Gemini structured response verified')
+          PY

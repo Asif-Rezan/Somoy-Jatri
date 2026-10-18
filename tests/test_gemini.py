@@ -114,3 +114,14 @@ def test_gemini_quota_can_use_available_flash_lite_without_waiting(monkeypatch):
     assert len(calls)==2
     assert 'gemini-3.5-flash-lite:' in calls[-1][0]
     assert calls[-1][1]['json']['generationConfig']['responseFormat']['text']['schema']==SCHEMA
+
+
+def test_gemini_reports_safe_error_category_without_raw_message(monkeypatch,capsys):
+    monkeypatch.setenv('GEMINI_API_KEY','test')
+    response=Response(400)
+    response.json=lambda: {'error':{'message':'API key not valid. credential-private'}}
+    monkeypatch.setattr('somoy_jatri.scripts.gemini.requests.post',lambda *a,**kw:response)
+    with pytest.raises(RuntimeError,match='HTTP 400'):Gemini().json('Review')
+    output=capsys.readouterr().out
+    assert 'invalid_api_key' in output
+    assert 'credential-private' not in output
