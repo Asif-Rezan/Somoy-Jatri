@@ -81,7 +81,7 @@ Topic history prevents close title/location-period repeats. GitHub production pr
 
 ## First real voice and image tests
 
-Accept the model's current access conditions on Hugging Face and configure `HF_TOKEN` if required. Install voice dependencies in a separate environment from image dependencies to avoid Transformers version conflicts.
+The default Bengali voice model is the public `Tanmoyshome/bn-parler-tts`, which does not need a Hugging Face token. It supports a female voice description but not named speakers or fine-grained emotion. To use the original named-voice model, set `TTS_MODEL=ai4bharat/indic-parler-tts`, accept its Hugging Face access conditions, and configure `HF_TOKEN`. Install voice dependencies in a separate environment from image dependencies to avoid Transformers version conflicts.
 
 ```bash
 pip install -e .
@@ -119,7 +119,7 @@ The YouTube helper requires `EXPECTED_CHANNEL_ID` and confirms the selected chan
 | GitHub Actions secret | Purpose |
 |---|---|
 | `GROQ_API_KEY` | Natural Bangla script generation and semantic review |
-| `HF_TOKEN` | Gated model downloads if required by upstream |
+| `HF_TOKEN` | Optional for the public default voice; required if selecting a gated model |
 | `YOUTUBE_TOKEN_JSON` | Separate OAuth authorized-user JSON for this channel |
 | `DRIVE_TOKEN_JSON` | OAuth authorized-user JSON with `drive.file` scope |
 | `DRIVE_FOLDER_ID` | Newly created private Somoy Jatri folder |
