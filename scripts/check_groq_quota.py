@@ -10,8 +10,14 @@ def full_request():
     from somoy_jatri.scripts.groq import Groq
     from somoy_jatri.storyboard.timeline import evaluate_semantics
     captured={}
+    count=0
+    os.environ['STORY_PACE_SECONDS']='0'
     class Captured(Exception): pass
     def capture(self,prompt,**kwargs):
+        nonlocal count
+        count+=1
+        if count<int(os.getenv('PROBE_BATCH','4')):
+            return {'passed':True,'issues':[]}
         captured.update(prompt=prompt,**kwargs)
         raise Captured()
     Groq.json=capture
@@ -36,7 +42,7 @@ for model in ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b']:
     payload=response.json()
     error=payload.get('error',{})
     message=error.get('message','')
-    report={'probe':'storyboard' if probe else 'minimal','model':model,'status':response.status_code,'error_code':error.get('code')}
+    report={'probe':'storyboard-batch-'+os.getenv('PROBE_BATCH','4') if probe else 'minimal','model':model,'status':response.status_code,'error_code':error.get('code')}
     scope=re.search(r'(tokens|requests) per (minute|day)',message,re.I)
     if scope:report['quota_scope']=scope.group(0)
     delay=re.search(r'try again in\s*((?:\d+(?:\.\d+)?[hms]\s*)+)',message,re.I)
