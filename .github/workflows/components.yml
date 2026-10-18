@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
+      CPU_THREADS: '4'
+      HF_HUB_DISABLE_XET: '1'
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       COMPONENT: ${{ inputs.component }}

@@ -23,7 +23,7 @@ on:
       workers:
         description: Independent image jobs (1–16)
         type: number
-        default: 4
+        default: 16
       visibility:
         type: choice
         options: [private, unlisted, public]
@@ -45,7 +45,7 @@ concurrency:
   cancel-in-progress: false
 env:
   RUN: episode-${{ github.run_id }}
-  CPU_THREADS: '2'
+  CPU_THREADS: '4'
   HF_HUB_DISABLE_XET: '1'
   RUN_SCOPED_CLEANUP: 'true'
 jobs:
@@ -161,7 +161,7 @@ jobs:
     needs: prepare
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 16
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     runs-on: ubuntu-latest
     timeout-minutes: 360

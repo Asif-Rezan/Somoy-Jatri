@@ -18,7 +18,7 @@ jobs:
           python - <<'PYCODE'
           import os,json,urllib.request
           body={'ref':'main','inputs':{'mode':'production','dossier':'auto',
-            'workers':'4','target':'720','visibility':'private','captions':'true','music':'true','preview_only':'false'}}
+            'workers':'16','target':'720','visibility':'private','captions':'true','music':'true','preview_only':'false'}}
           req=urllib.request.Request('https://api.github.com/repos/'+os.environ['REPO']+'/actions/workflows/generate.yml/dispatches',
             data=json.dumps(body).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
             'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
