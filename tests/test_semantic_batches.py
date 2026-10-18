@@ -49,6 +49,9 @@ def test_empty_citation_fix_requires_content_repair():
         called=False
         def json(self,prompt,**kwargs):
             self.called=True
+            assert '"patches"' not in prompt
+            assert 'segment_0' in prompt
+            assert '"additionalProperties": false' in prompt
             return {'segment_0':{'text':'আমি এখানে দাঁড়িয়ে আছি।','subject':'ancient site',
                 'visual':'An artistic reconstruction of the ancient site','fact_ids':[]}}
     model=Model()

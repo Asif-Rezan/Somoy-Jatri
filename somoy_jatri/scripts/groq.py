@@ -32,7 +32,8 @@ class Groq:
         models = list(dict.fromkeys([primary] + [m.strip() for m in
             os.getenv('STORY_FALLBACK_MODELS', 'openai/gpt-oss-20b,qwen/qwen3.8-27b').split(',') if m.strip()]))
         selected = next((m for m in models if self.unavailable_until.get(m, 0) <= time.monotonic()), primary)
-        for attempt in range(8):
+        json_failures = {}
+        for attempt in range(16):
             options = ({'reasoning_effort': reasoning_effort}
                        if selected.startswith('openai/gpt-oss-') or selected=='qwen/qwen3.8-27b' else {})
             response = requests.post('https://api.groq.com/openai/v1/chat/completions',
@@ -48,7 +49,18 @@ class Groq:
                 error_code = ''
             retryable_json = response.status_code == 400 and error_code in {
                 'json_validate_failed', 'json_parse_failed', 'json_error'}
-            if (response.status_code in (429, 500, 502, 503, 504) or retryable_json) and attempt < 7:
+            if (response.status_code in (429, 500, 502, 503, 504) or retryable_json) and attempt < 15:
+                if retryable_json:
+                    json_failures[selected] = json_failures.get(selected, 0) + 1
+                    if json_failures[selected] >= 2:
+                        alternative = next((m for m in models if m != selected and
+                            json_failures.get(m, 0) < 2 and
+                            self.unavailable_until.get(m, 0) <= time.monotonic()), None)
+                        if alternative:
+                            print(json.dumps({'groq_stage': 'json_fallback',
+                                              'from_model': selected, 'to_model': alternative}), flush=True)
+                            selected = alternative
+                            continue
                 delay = _retry_delay(response, attempt)
                 if response.status_code == 429 and delay >= 180:
                     self.unavailable_until[selected] = time.monotonic() + delay

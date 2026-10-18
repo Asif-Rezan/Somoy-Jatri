@@ -81,3 +81,23 @@ def test_every_json_request_explicitly_instructs_json(monkeypatch):
         lambda *a,**kw:calls.append(kw['json']) or Response())
     assert Groq().json('Review this scene')['passed']
     assert 'JSON' in calls[0]['messages'][0]['content']
+
+
+def test_repeated_invalid_json_switches_model_and_preserves_schema(monkeypatch):
+    calls=[]
+    class Response:
+        headers={}
+        def __init__(self,status):self.status_code=status;self.ok=status==200
+        def json(self):
+            return ({'error':{'code':'json_validate_failed'}} if not self.ok else
+                    {'choices':[{'message':{'content':'{"ok":true}'}}]})
+    responses=iter([Response(400),Response(429),Response(400),Response(200)])
+    monkeypatch.setenv('GROQ_API_KEY','test-key')
+    monkeypatch.setattr(Groq,'unavailable_until',{})
+    monkeypatch.setattr('somoy_jatri.scripts.groq.requests.post',
+        lambda *a,**kw:calls.append(kw['json']) or next(responses))
+    monkeypatch.setattr('somoy_jatri.scripts.groq.time.sleep',lambda _:None)
+    schema={'type':'object','properties':{'ok':{'type':'boolean'}},'required':['ok'],'additionalProperties':False}
+    assert Groq().json('test',schema=schema)=={'ok':True}
+    assert [c['model'] for c in calls]==['openai/gpt-oss-120b']*3+['openai/gpt-oss-20b']
+    assert all(c['response_format']['json_schema']['schema']==schema for c in calls)

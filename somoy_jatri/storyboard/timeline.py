@@ -69,11 +69,12 @@ def repair_batch(model, batch, dossier, issues):
         'these historical vlog segments. Preserve Bangla text exactly when a citation or English visual '
         'correction is sufficient. Change narration only if it asserts an unsupported fact or is unnatural. '
         'Do not introduce new facts. Explicitly label uncertain artistic reconstruction. Keep narration '
-        'length similar. Return {"patches":[{"index":0,"fact_ids":[0],"subject":"English subject",'
-        '"visual":"English matching scene","text":"Bangla only if a rewrite is necessary"}]}. '
-        'Indices are zero-based within this batch. Omit unchanged fields. '
+        'length similar. Indices are zero-based within this batch. '
         +json.dumps({'issues':issues,'dossier':dossier,'segments':batch},ensure_ascii=False))
-    if indices:prompt+=' Return every required key '+str([f'segment_{i}' for i in indices])+'. Copy unchanged text exactly.'
+    if indices:
+        prompt+=' Return ONLY a JSON object matching this schema: '+json.dumps(schema)+'. Copy unchanged text exactly.'
+    else:
+        prompt+=' Return {"patches":[{"index":0,"fact_ids":[0],"subject":"English subject","visual":"English matching scene"}]}. Omit unchanged fields.'
     result=(model.json(prompt,schema=schema,temperature=.2,reasoning_effort='medium')
             if schema else model.json(prompt))
     patches=([dict(index=i,**result[f'segment_{i}']) for i in indices] if schema else result.get('patches',[]))
