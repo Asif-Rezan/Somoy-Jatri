@@ -36,8 +36,8 @@ def test_all_citation_only_corrections_are_applied_without_rewriting_audio():
         def json(self,*args,**kwargs):raise AssertionError('Unnecessary rewriting request')
     batch=[{'text':'আমি এখানে আছি।','fact_ids':[0]},{'text':'সামনে একটি পিরামিড।','fact_ids':[0]}]
     original=[s['text'] for s in batch]
-    issues=[{'index':0,'kind':'citation','correct_fact_ids':[1]},
-            {'index':1,'kind':'citation','correct_fact_ids':[2]}]
+    issues=[{'index':0,'kind':'citation','correct_fact_ids':[1],'requires_rewrite':False},
+            {'index':1,'kind':'citation','correct_fact_ids':[2],'requires_rewrite':False}]
     assert repair_batch(NoModel(),batch,{'facts':[{}, {}, {}]},issues)==2
     assert [s['text'] for s in batch]==original
     assert [s['fact_ids'] for s in batch]==[[1],[2]]
@@ -61,3 +61,59 @@ def test_empty_citation_fix_requires_content_repair():
         [{'index':0,'kind':'citation','correct_fact_ids':[],'problem':'Unsupported construction claim'}])
     assert model.called
     assert batch[0]['subject']=='ancient site'
+
+
+def test_wrong_direction_is_rewritten_even_with_correct_citation():
+    from somoy_jatri.storyboard.timeline import repair_batch
+    class Model:
+        def json(self,prompt,**kwargs):
+            assert 'REMOVE that claim from BOTH' in prompt
+            return {'segment_0':{'text':'গিজার পিরামিডের পূর্বদিকে স্ফিংক্স রয়েছে।',
+                'subject':'Great Sphinx','visual':'Sphinx east of the Giza pyramids','fact_ids':[0]}}
+    batch=[{'text':'উত্তরদিকে স্ফিংক্স দেখা যাচ্ছে।','subject':'Sphinx north of pyramids',
+        'visual':'Sphinx north of pyramids','fact_ids':[0],'emotion':'neutral','intensity':.5}]
+    repair_batch(Model(),batch,{'facts':[{'claim':'Sphinx is east of the pyramids'}]},
+        [{'index':0,'kind':'citation','problem':'Wrong compass direction','correct_fact_ids':[0],
+          'requires_rewrite':True}])
+    assert 'পূর্বদিকে' in batch[0]['text']
+    assert batch[0]['visual']=='Sphinx east of the Giza pyramids'
+
+
+def test_legacy_citation_verdict_does_not_preserve_unsupported_narration():
+    from somoy_jatri.storyboard.timeline import repair_batch
+    class Model:
+        def json(self,*a,**kw):
+            return {'segment_0':{'text':'মেমফিস প্রাচীন মিশরের রাজধানী ছিল।',
+                'subject':'Memphis','visual':'Reconstruction of Memphis','fact_ids':[0]}}
+    batch=[{'text':'গিজার উত্তরে প্রশাসনিক ভবন রয়েছে।','subject':'buildings','visual':'Buildings',
+        'fact_ids':[0],'emotion':'neutral','intensity':.5}]
+    repair_batch(Model(),batch,{'facts':[{'claim':'Memphis was a capital'}]},
+        [{'index':0,'kind':'citation','correct_fact_ids':[0],'problem':'Unsupported buildings'}])
+    assert batch[0]['text']=='মেমফিস প্রাচীন মিশরের রাজধানী ছিল।'
+
+
+def test_passed_with_outstanding_issues_is_never_accepted(monkeypatch):
+    import pytest
+    monkeypatch.setattr('somoy_jatri.scripts.groq.Groq.json',lambda *a,**k:
+        {'passed':True,'issues':[{'index':0,'kind':'narration','problem':'Invented statue'}]})
+    with pytest.raises(ValueError,match='semantic review failed'):
+        evaluate_semantics({'segments':[{'text':'বাংলা'}]}, {'facts':[]})
+
+
+def test_repeated_repairs_escalate_then_fail_closed(monkeypatch):
+    import pytest
+    prompts=[]
+    def model(self,prompt,**kwargs):
+        prompts.append(prompt)
+        if prompt.startswith('Review'):
+            return {'passed':False,'issues':[{'index':0,'kind':'narration',
+                'problem':'Unsupported statue beside houses','requires_rewrite':True,'correct_fact_ids':[]}]}
+        return {'segment_0':{'text':'আমি সামনে একটি মূর্তি দেখছি।',
+            'subject':'statue','visual':'Statue beside houses','fact_ids':[]}}
+    monkeypatch.setattr('somoy_jatri.scripts.groq.Groq.json',model)
+    story={'segments':[{'text':'আমি সামনে একটি মূর্তি দেখছি।','subject':'statue',
+        'visual':'Statue beside houses','fact_ids':[],'emotion':'neutral','intensity':.5}]}
+    with pytest.raises(ValueError,match='semantic review failed'):
+        evaluate_semantics(story,{'facts':[]},repair=True)
+    assert any('Replace the entire flagged segment' in p for p in prompts)
+    assert len(prompts)==17

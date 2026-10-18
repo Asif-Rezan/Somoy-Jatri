@@ -42,12 +42,13 @@ def validate(shots, total):
     if abs(cursor-total) > .002: raise ValueError('Timeline duration mismatch')
 
 
-def repair_batch(model, batch, dossier, issues):
+def repair_batch(model, batch, dossier, issues, attempt=0):
     import json
     from somoy_jatri.narration.text import normalize,validate_segment
     direct=[];remaining=[]
     for issue in issues:
-        if isinstance(issue,dict) and issue.get('kind')=='citation':
+        if (isinstance(issue,dict) and issue.get('kind')=='citation'
+                and issue.get('requires_rewrite') is False):
             index=issue.get('index');ids=issue.get('correct_fact_ids')
             if (type(index)==int and 0<=index<len(batch) and isinstance(ids,list) and ids
                     and all(type(i)==int and 0<=i<len(dossier['facts']) for i in ids)):
@@ -66,11 +67,21 @@ def repair_batch(model, batch, dossier, issues):
         schema={'type':'object','additionalProperties':False,'properties':{
             f'segment_{i}':item for i in indices},'required':[f'segment_{i}' for i in indices]}
     prompt=('Correct ONLY actual factual, citation, or Bangla/English scene mismatches in '
-        'these historical vlog segments. Preserve Bangla text exactly when a citation or English visual '
-        'correction is sufficient. Change narration only if it asserts an unsupported fact or is unnatural. '
-        'Do not introduce new facts. Explicitly label uncertain artistic reconstruction. Keep narration '
+        'these historical vlog segments. Treat every listed issue as a required correction. '
+        'When no fact supports a claim, REMOVE that claim from BOTH Bangla narration and English '
+        'subject/visual. A new citation or changing a compass direction cannot fix unsupported narration. '
+        'Do not preserve an incorrect assertion merely to preserve the original wording. '
+        'Rewrite it as a simple paraphrase of ONE supplied fact, or a subjective reaction with an '
+        'explicitly labelled reconstruction in BOTH languages. Do not add buildings, statues, workers, '
+        'spatial relationships, materials or activities not established by the cited fact. '
+        'Preserve Bangla exactly only when it is already supported and only its citation needs changing. '
+        'Do not introduce new facts. Keep narration '
         'length similar. Indices are zero-based within this batch. '
         +json.dumps({'issues':issues,'dossier':dossier,'segments':batch},ensure_ascii=False))
+    if attempt:
+        prompt+=(' Previous repair did not resolve every error. Replace the entire flagged segment '
+            'with a fresh, simpler, evidence-grounded utterance; do not make another superficial edit. '
+            'Check every assertion in text AND visual against the cited fact before responding.')
     if indices:
         prompt+=' Return ONLY a JSON object matching this schema: '+json.dumps(schema)+'. Copy unchanged text exactly.'
     else:
@@ -106,13 +117,14 @@ def evaluate_semantics(story, dossier, report_path=None, repair=False):
     segments=story['segments'];model=Groq()
     for offset in range(0,len(segments),10):
         batch=segments[offset:offset+10]
-        for attempt in range(5 if repair else 1):
+        for attempt in range(9 if repair else 1):
             issue_schema={'type':'object','additionalProperties':False,'properties':{
                 'index':{'type':'integer','minimum':0,'maximum':len(batch)-1},
                 'kind':{'type':'string','enum':['citation','visual','narration','event']},
-                'problem':{'type':'string'},'correct_fact_ids':{'type':'array','items':{
+                'problem':{'type':'string'},'requires_rewrite':{'type':'boolean'},
+                'correct_fact_ids':{'type':'array','items':{
                     'type':'integer','minimum':0,'maximum':max(0,len(dossier['facts'])-1)}}},
-                'required':['index','kind','problem','correct_fact_ids']}
+                'required':['index','kind','problem','requires_rewrite','correct_fact_ids']}
             schema={'type':'object','additionalProperties':False,'properties':{
                 'passed':{'type':'boolean'},'issues':{'type':'array','items':issue_schema}},
                 'required':['passed','issues']}
@@ -120,21 +132,26 @@ def evaluate_semantics(story, dossier, report_path=None, repair=False):
                 'fact_ids. Reject invented historical claims, anachronisms, mismatched subjects, and '
                 'multiple visual events or incoherent Bangla. Allow explicitly labelled artistic reconstruction, fictional '
                 'time travel and subjective reactions; these do not require invented factual citations. '
-                'List only actual errors, not acceptable segments. Return a JSON object '
-                '{"passed":bool,"issues":[{"index":0,"kind":"citation","problem":"...","correct_fact_ids":[0]}]}. '
-                'Indices are ZERO-BASED within this batch. For citation-only errors provide all correct '
-                'fact IDs, or [] when no citation is needed. For other error kinds use correct_fact_ids: []. '
+                'Review EVERY segment and list ALL actual errors in one response, not just the first. '
+                'Use only the supplied evidence; do not reject it based on outside knowledge. '
+                'Do not treat an explicitly subjective observation, lighting, shadow or reconstruction as '
+                'a documented historical assertion unless it also asserts unsupported historical detail. '
+                'Return a JSON object with passed and issues. passed must be false whenever issues is nonempty. '
+                'Indices are ZERO-BASED within this batch. requires_rewrite=false is allowed ONLY when '
+                'the existing narration and visual are fully supported and changing fact_ids alone fixes it. '
+                'A wrong direction, unsupported building/activity, or contradiction requires_rewrite=true '
+                'even if a relevant fact ID exists. Provide correct_fact_ids when supported, otherwise []. '
                 'Dossier: '+json.dumps(dossier,ensure_ascii=False)
                 +' Segments: '+json.dumps(batch,ensure_ascii=False),schema=schema,
                 temperature=0,reasoning_effort='medium')
-            if result.get('passed') is True:break
+            if result.get('passed') is True and result.get('issues') == []:break
             print(json.dumps({'semantic_stage':'rejected','batch':offset//10+1,
                               'issues':result.get('issues',[])[:5]}),flush=True)
             if report_path is not None:
                 save(report_path,{'passed':False,'batch':offset//10+1,'issues':result.get('issues',[])})
-            if not repair or attempt==4:
+            if not repair or attempt==8:
                 raise ValueError(f'Storyboard semantic review failed in batch {offset//10+1}')
-            count=repair_batch(model,batch,dossier,result.get('issues',[]))
+            count=repair_batch(model,batch,dossier,result.get('issues',[]),attempt=attempt)
             if report_path is not None:save(report_path.parent/'story.json',story)
             print(json.dumps({'semantic_stage':'repaired','batch':offset//10+1,'corrections':count}),flush=True)
         if offset+10<len(segments):time.sleep(float(os.getenv('STORY_PACE_SECONDS','10')))
@@ -150,13 +167,13 @@ def reviewed_story(story, dossier, path):
     """Cache review only for the exact normalized story and source packet."""
     import hashlib, json
     from somoy_jatri.utils import load, save
-    fingerprint=hashlib.sha256(json.dumps([story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+    fingerprint=hashlib.sha256(json.dumps([2,story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
     if path.exists():
         review=load(path)
         if review.get('passed') is True and review.get('fingerprint')==fingerprint:
             return review
     review=evaluate_semantics(story,dossier,report_path=path,repair=True)
-    fingerprint=hashlib.sha256(json.dumps([story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+    fingerprint=hashlib.sha256(json.dumps([2,story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
     save(path.parent/'story.json',story)
     review['fingerprint']=fingerprint
     save(path,review)
