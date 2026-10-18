@@ -56,6 +56,8 @@ def evaluate_semantics(story, dossier, report_path=None):
             'Return {"passed": bool, "issues": [strings]}. Dossier: '+json.dumps(dossier, ensure_ascii=False)
             +' Segments: '+json.dumps(batch, ensure_ascii=False))
         if result.get('passed') is not True:
+            print(json.dumps({'semantic_stage':'rejected','batch':offset//10+1,
+                              'issues':result.get('issues',[])[:5]}),flush=True)
             if report_path is not None:
                 from somoy_jatri.utils import save
                 save(report_path, {'passed':False,'batch':offset//10+1,'issues':result.get('issues',[])})

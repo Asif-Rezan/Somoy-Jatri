@@ -68,3 +68,16 @@ def test_long_quota_wait_uses_available_model_without_bypassing_validation(monke
     assert [c['model'] for c in calls] == ['openai/gpt-oss-120b', 'openai/gpt-oss-20b']
     assert calls[1]['reasoning_effort'] == 'low'
     assert calls[1]['max_completion_tokens'] == 4096
+
+
+def test_every_json_request_explicitly_instructs_json(monkeypatch):
+    calls=[]
+    class Response:
+        status_code=200
+        ok=True
+        def json(self):return {'choices':[{'message':{'content':'{"passed":true}'}}]}
+    monkeypatch.setenv('GROQ_API_KEY','test-key')
+    monkeypatch.setattr('somoy_jatri.scripts.groq.requests.post',
+        lambda *a,**kw:calls.append(kw['json']) or Response())
+    assert Groq().json('Review this scene')['passed']
+    assert 'JSON' in calls[0]['messages'][0]['content']

@@ -37,7 +37,7 @@ class Groq:
             response = requests.post('https://api.groq.com/openai/v1/chat/completions',
                 headers={'Authorization': 'Bearer '+key}, timeout=180,
                 json={'model': selected, **options, 'max_completion_tokens': 4096,
-                      'messages': [{'role': 'user', 'content': prompt}],
+                      'messages': [{'role': 'user', 'content': 'Return only a valid JSON object.\n'+prompt}],
                       'response_format': {'type': 'json_object'}, 'temperature': .75})
             try:
                 error_code = str(response.json().get('error', {}).get('code') or '') if not response.ok else ''

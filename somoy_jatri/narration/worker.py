@@ -26,6 +26,16 @@ def partial_checkpoint(root, image_workers):
         if any(not isinstance(i,int) or not 0<=i<len(facts) for i in segment.get('fact_ids',[])):
             raise ValueError('Invalid saved fact citation')
     save(root/'story.json',story)
+    import wave
+    cached_count=0;cached_seconds=0.0
+    for i,segment in enumerate(story['segments']):
+        path=root/'utterances'/f'{i:04}.wav';stamp=path.with_suffix('.json')
+        if path.exists() and stamp.exists() and load(stamp).get('fingerprint')==take_fingerprint(segment,'production'):
+            with wave.open(str(path),'rb') as wav:
+                cached_seconds+=wav.getnframes()/wav.getframerate()
+            cached_count+=1
+    print(json.dumps({'voice_stage':'checkpoint_summary','planned_takes':len(story['segments']),
+                      'saved_takes':cached_count,'saved_audio_seconds':round(cached_seconds,2)}),flush=True)
     from somoy_jatri.storyboard.timeline import reviewed_story
     reviewed_story(story,load(root/'research.json'),root/'semantic-review.json')
     config.workers=image_workers
