@@ -4,7 +4,7 @@ from somoy_jatri.utils import load, save, digest
 
 
 def disposable(name):
-    return name in {'mix.wav','music.wav','ambient.wav','narration.wav'} or bool(
+    return name in {'mix.wav','music.wav','ambient.wav','narration.wav','video.mp4','thumbnail.jpg'} or bool(
         re.fullmatch(r'(?:images/shot_\d+\.png|clips/shot_\d+\.mp4|utterances/\d+\.wav)', name))
 
 

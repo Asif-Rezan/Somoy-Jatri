@@ -35,6 +35,7 @@ jobs:
       YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
       EXPECTED_CHANNEL_ID: ${{ vars.EXPECTED_CHANNEL_ID }}
       UPLOAD_ENABLED: 'true'
+      RUN_SCOPED_CLEANUP: 'true'
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
     steps:
       - uses: actions/checkout@v4
