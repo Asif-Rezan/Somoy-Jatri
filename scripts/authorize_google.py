@@ -7,7 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 SCOPES={'drive':['https://www.googleapis.com/auth/drive.file'],
-        'youtube':['https://www.googleapis.com/auth/youtube.upload','https://www.googleapis.com/auth/youtube.force-ssl']}
+        'youtube':['https://www.googleapis.com/auth/youtube.upload','https://www.googleapis.com/auth/youtube.readonly']}
 
 def main():
     kind=sys.argv[1]

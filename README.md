@@ -107,7 +107,7 @@ python scripts/authorize_google.py drive
 python scripts/authorize_google.py youtube
 ```
 
-The YouTube helper requires `EXPECTED_CHANNEL_ID` and confirms the selected channel. Tokens are saved with owner-only access and never printed. Copy their JSON contents into GitHub Actions secrets yourself. Run `python -m somoy_jatri.cli drive-init` with `DRIVE_TOKEN_JSON` exported to create a new Somoy Jatri folder, then configure its printed ID. Do not relabel or reuse the reference project's folder.
+The YouTube helper requires `EXPECTED_CHANNEL_ID` and confirms the selected channel. It requests upload and read-only YouTube scopes for uploads, thumbnails and channel/processing verification. Drive uses `drive.file`, restricted to app-created or explicitly app-authorized files. Tokens are saved with owner-only access and never printed. Copy their JSON contents into GitHub Actions secrets yourself. Run `python -m somoy_jatri.cli drive-init` with `DRIVE_TOKEN_JSON` exported to create a new Somoy Jatri folder, then configure its printed ID. A folder created manually in Drive is not sufficient: the application must be authorized to access it and its dedicated-root marker must be present. Do not relabel or reuse the reference project's folder.
 
 | GitHub Actions secret | Purpose |
 |---|---|
