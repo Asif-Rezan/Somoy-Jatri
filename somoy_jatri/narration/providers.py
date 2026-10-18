@@ -16,14 +16,15 @@ class MockTTS:
         write_wav(path, .12*np.sin(2*np.pi*220*t)*envelope)
 
 class IndicParlerTTS:
-    """Documented Bengali named female voice; emotion prompts are best effort."""
+    """Bengali female voice; the public model has no named speaker control."""
     def __init__(self):
         import torch
         from parler_tts import ParlerTTSForConditionalGeneration
         from transformers import AutoTokenizer
         self.torch = torch
         torch.set_num_threads(int(os.getenv('CPU_THREADS', '2')))
-        model = os.getenv('TTS_MODEL', 'ai4bharat/indic-parler-tts')
+        model = os.getenv('TTS_MODEL', 'Tanmoyshome/bn-parler-tts')
+        self.named_voice = model == 'ai4bharat/indic-parler-tts'
         self.model = ParlerTTSForConditionalGeneration.from_pretrained(model).to('cpu').eval()
         self.tokenizer = AutoTokenizer.from_pretrained(model)
         self.description = AutoTokenizer.from_pretrained(self.model.config.text_encoder._name_or_path)
@@ -32,13 +33,16 @@ class IndicParlerTTS:
         styles = {'curious': 'conversational', 'excited': 'happy', 'amazed': 'surprised',
                   'concerned': 'slightly fearful', 'reflective': 'calm narration',
                   'soft': 'soft narration', 'dramatic': 'expressive narration'}
-        voice = os.getenv('TTS_VOICE', 'Aditi')
-        if voice not in {'Aditi', 'Rashmi', 'Riya'}:
-            raise ValueError('Select a documented Bengali female speaker')
-        style = styles.get(emotion, emotion)
-        if os.getenv('TTS_EMOTION_ENABLED', 'true') != 'true': style = 'neutral'
-        caption = (f'{voice}, a Bengali female speaker, delivers {style} speech at a moderate pace, '
-                   'with natural pauses and very clear audio, close recording without background noise.')
+        if self.named_voice:
+            voice = os.getenv('TTS_VOICE', 'Aditi')
+            if voice not in {'Aditi', 'Rashmi', 'Riya'}:
+                raise ValueError('Select a documented Bengali female speaker')
+            style = styles.get(emotion, emotion)
+            if os.getenv('TTS_EMOTION_ENABLED', 'true') != 'true': style = 'neutral'
+            caption = (f'{voice}, a Bengali female speaker, delivers {style} speech at a moderate pace, '
+                       'with natural pauses and very clear audio, close recording without background noise.')
+        else:
+            caption = 'A Bengali female speaker speaks at a moderate pace in a very clear recording.'
         d = self.description(caption, return_tensors='pt')
         p = self.tokenizer(text, return_tensors='pt')
         with self.torch.inference_mode():
