@@ -17,7 +17,7 @@ def checkpoint(root):
     for p in root.rglob('*'):
         name=p.relative_to(root).as_posix()
         if p.is_file() and (name in names or disposable(name) or
-              re.fullmatch(r'images/shot_\d+\.json',name)):
+              re.fullmatch(r'(?:images/shot_\d+|utterances/\d+)\.json',name)):
             if p.is_symlink(): raise ValueError('Checkpoint symlink forbidden')
             files.append({'name':name,'sha256':digest(p)})
     save(root/'checkpoint.json',{'project':'somoy-jatri','run':root.name,'files':files})

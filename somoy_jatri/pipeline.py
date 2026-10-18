@@ -89,17 +89,19 @@ def prepare(config,topic='',period=''):
             from hashlib import sha256
             fingerprint=sha256((s['text']+s['emotion']+str(s['intensity'])+os.getenv('TTS_MODEL','indic-parler')+os.getenv('TTS_VOICE','Aditi')+config.mode).encode()).hexdigest()
             stamp=path.with_suffix('.json')
-            if not (path.exists() and stamp.exists() and load(stamp).get('fingerprint')==fingerprint):
-                if config.mode=='production':
-                    print(json.dumps({'prepare_stage':'voice_start','index':i}),flush=True)
-                tts=tts or provider(config.mode)
-                tts.synthesize(s['text'],s['emotion'],s['intensity'],path)
-                if config.mode=='production':
-                    print(json.dumps({'prepare_stage':'voice_synthesized','index':i}),flush=True)
-                save(stamp,{'fingerprint':fingerprint})
+            cached = path.exists() and stamp.exists() and load(stamp).get('fingerprint')==fingerprint
             asr={}
             if config.mode=='production':
-                aligner=aligner or make_aligner();asr=aligner.align(path,s['text'])
+                from somoy_jatri.narration.providers import synthesize_verified
+                print(json.dumps({'prepare_stage':'voice_start','index':i}),flush=True)
+                tts=tts or provider(config.mode)
+                aligner=aligner or make_aligner()
+                asr=synthesize_verified(tts,aligner,s,path,reuse=cached)
+                print(json.dumps({'prepare_stage':'voice_verified','index':i}),flush=True)
+            elif not cached:
+                tts=tts or provider(config.mode)
+                tts.synthesize(s['text'],s['emotion'],s['intensity'],path)
+            save(stamp,{'fingerprint':fingerprint})
             parts.append((path,s['pause_after_ms']));records.append({'text':s['text'],'asr':asr})
         bounds=concatenate(parts,root/'narration.wav')
         total=bounds[-1]['end']

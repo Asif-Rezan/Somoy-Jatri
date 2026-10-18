@@ -53,3 +53,17 @@ class IndicParlerTTS:
 
 def provider(mode):
     return MockTTS() if mode == 'mock' else IndicParlerTTS()
+
+
+def synthesize_verified(tts, aligner, segment, path, reuse=False, attempts=3):
+    """Retry a bad voice take without relaxing the transcription quality gate."""
+    import json
+    for attempt in range(attempts):
+        if not reuse or attempt:
+            tts.synthesize(segment['text'], segment['emotion'], segment['intensity'], path)
+        result = aligner.align(path, segment['text'], strict=False)
+        if result['similarity'] >= .65 and result['words']:
+            return result
+        print(json.dumps({'voice_stage': 'take_rejected', 'attempt': attempt + 1,
+                          'similarity': round(result['similarity'], 3)}), flush=True)
+    raise ValueError('Bengali narration did not match after three voice takes')
