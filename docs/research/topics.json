@@ -1,0 +1,6 @@
+[
+  {"id":"giza","location":"Giza, Egypt","period":"Old Kingdom, c. 2600–2500 BCE","sources":["https://whc.unesco.org/en/list/86/"]},
+  {"id":"mohenjo-daro","location":"Mohenjo-daro, Pakistan","period":"Indus civilization, c. 2500 BCE","sources":["https://whc.unesco.org/en/list/138/"]},
+  {"id":"petra","location":"Petra, Jordan","period":"Nabataean era, c. 1st century CE","sources":["https://whc.unesco.org/en/list/326/"]},
+  {"id":"goreme","location":"Göreme, Türkiye","period":"Byzantine era, c. 10th century CE","sources":["https://whc.unesco.org/en/list/357/"]}
+]

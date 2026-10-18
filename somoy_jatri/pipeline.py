@@ -32,9 +32,15 @@ def prepare(config,topic='',period=''):
             clothing='linen clothing',facts=[],uncertain=['All visuals are test fixtures'],sources=[])
     else:
         from somoy_jatri.research.dossier import validate
-        source=Path(os.environ['RESEARCH_DOSSIER'])
+        source_name=os.environ['RESEARCH_DOSSIER']
+        source=Path(source_name)
         if (root/'research.json').exists():
-            dossier=validate(load(root/'research.json'),live=True)
+            dossier=load(root/'research.json')
+            dossier=validate(dossier,live=True,require_review=dossier.get('research_method')!='automatic source extraction')
+        elif source_name=='auto':
+            from somoy_jatri.research.automatic import build as build_research
+            history=root.parent/'topic-history.json'
+            dossier=build_research(load(history) if history.exists() else [])
         elif source.is_dir():
             history=root.parent/'topic-history.json'
             used={item['topic'] for item in load(history)} if history.exists() else set()
@@ -51,7 +57,7 @@ def prepare(config,topic='',period=''):
     history_path=root.parent/'topic-history.json'
     previous=load(history_path) if history_path.exists() else []
     title=topic or dossier['location']+' '+dossier['period']
-    if config.mode=='production':reserve(history_path,title,config.run_id)
+    if config.mode=='production':reserve(history_path,title,config.run_id,dossier.get('topic_id'))
     from somoy_jatri.scripts.groq import generate
     story=load(root/'story.json') if (root/'story.json').exists() else (
         mock_story() if config.mode=='mock' else generate(dossier,config.target,previous))

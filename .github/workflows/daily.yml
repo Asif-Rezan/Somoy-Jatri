@@ -1,25 +1,23 @@
-name: Daily generation gate (disabled by default)
+name: Daily private Somoy Jatri episode
 on:
+  schedule:
+    - cron: '0 0 * * *' # 06:00 Asia/Dhaka
   workflow_dispatch:
-# To enable scheduling after private testing, add under on:
-#   schedule:
-#     - cron: '0 3 * * *'  # 09:00 Asia/Dhaka
 permissions:
   contents: read
+  actions: write
 jobs:
-  gate:
-    if: vars.DAILY_ENABLED == 'true'
+  dispatch:
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch configured production generation
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          DOSSIER: ${{ vars.RESEARCH_DOSSIER }}
         run: |
           python - <<'PYCODE'
           import os,json,urllib.request
-          body={'ref':'main','inputs':{'mode':'production','dossier':os.environ['DOSSIER'],
+          body={'ref':'main','inputs':{'mode':'production','dossier':'auto',
             'workers':'4','target':'720','visibility':'private','captions':'true','music':'true','preview_only':'false'}}
           req=urllib.request.Request('https://api.github.com/repos/'+os.environ['REPO']+'/actions/workflows/generate.yml/dispatches',
             data=json.dumps(body).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],

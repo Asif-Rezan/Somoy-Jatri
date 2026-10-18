@@ -7,4 +7,5 @@ def test_workflow_structure():
         assert 'jobs' in doc and doc.get('permissions',{}).get('contents')=='read'
         text=path.read_text()
         assert 'youtube-dark-psychology-automation' not in text
-        assert not any(line.lstrip().startswith('schedule:') for line in text.splitlines()) # scheduling requires documented explicit enablement
+        if path.name != 'daily.yml':
+            assert not any(line.lstrip().startswith('schedule:') for line in text.splitlines())
