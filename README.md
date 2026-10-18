@@ -73,9 +73,9 @@ Synthetic wind/water textures are supplied without third-party samples. Crowds, 
 
 ## Research and topic selection
 
-Create dossiers using `docs/research/example.json`. Supply exact source URLs, page titles, short evidence excerpts, fact-to-source IDs, uncertainties and a human `reviewed_by` field. The example is deliberately incomplete and cannot pass production validation. `requests` verifies source reachability and that excerpts occur on the current HTML page. JS-only pages and PDFs need an adapter or another accessible source. This check does not establish publisher credibility or whether every claim follows from evidence; the reviewer does that.
+Automatic private runs select the next unused topic from `docs/research/topics.json`, fetch its curated UNESCO page, and ask Groq to build a cautious research packet from that page. Exact source excerpts and source IDs are checked against the fetched page before generation. The episode stays private: automated extraction does not establish historical accuracy, and a person should review the research, narration, imagery, and voice before any wider release. Add new curated topics before the list is exhausted. The daily workflow runs at 06:00 Asia/Dhaka and dispatches generation with private visibility.
 
-Use a single dossier path or a directory of reviewed dossiers with `RESEARCH_DOSSIER`. Directory mode chooses the next location/period not already reserved in topic history. Dossiers are not generated from unsupported model claims. New history source gathering/review is currently a required editorial input, not a fully autonomous research agent. When all reviewed topics are exhausted, production stops safely.
+For editorially reviewed runs, create a dossier using `docs/research/example.json` and supply exact source URLs, titles, excerpts, fact-to-source IDs, uncertainties, and a human `reviewed_by` field. Use its path or a directory of reviewed dossiers with `RESEARCH_DOSSIER`. The example is incomplete and cannot pass production validation. Source checks establish page reachability and matching excerpts, not the truth of every claim. JS-only pages and PDFs need a separate adapter. Set `RESEARCH_DOSSIER=auto` for the curated automatic path; production stops when all curated topics have been used.
 
 Topic history prevents close title/location-period repeats. GitHub production preparation restores/saves it in the dedicated Drive folder. Enable Drive for persistent history across hosted runs. No previous channel ID or Drive folder is hardcoded.
 
@@ -123,9 +123,8 @@ The YouTube helper requires `EXPECTED_CHANNEL_ID` and confirms the selected chan
 | `YOUTUBE_TOKEN_JSON` | Separate OAuth authorized-user JSON for this channel |
 | `DRIVE_TOKEN_JSON` | OAuth authorized-user JSON with `drive.file` scope |
 | `DRIVE_FOLDER_ID` | Newly created private Somoy Jatri folder |
-| `WORKFLOW_DISPATCH_TOKEN` | Optional fine-grained token with Actions write for daily dispatcher |
 
-Repository variables: `EXPECTED_CHANNEL_ID` (mandatory for upload); `ALLOW_PUBLIC_UPLOAD` (default false); `DAILY_ENABLED` (default false); `RESEARCH_DOSSIER` (reviewed path or directory for scheduled dispatch).
+Repository variables: `EXPECTED_CHANNEL_ID` (mandatory for upload); `ALLOW_PUBLIC_UPLOAD` (default false). The daily workflow uses its scoped GitHub token and always requests private upload. An automatically researched episode is blocked from unlisted or public upload even if `ALLOW_PUBLIC_UPLOAD` is enabled.
 
 Tokens must include refresh credentials and appropriate scopes. Google OAuth testing-mode expiry, YouTube API quota/audit restrictions, model access, and runner limits still apply. Public repositories are not a promise of unlimited/free compute. No paid inference API is added; Groq availability/quota is your configured account's responsibility.
 
@@ -133,9 +132,9 @@ Tokens must include refresh credentials and appropriate scopes. Google OAuth tes
 
 1. Run **Offline tests and short preview** in Actions and inspect the resulting MP4 and Bangla captions.
 2. Run **Model component test → tts-test → production**. Listen to the uploaded voice test. Run `image-test` and `music-test` and review them.
-3. Add the secrets and `EXPECTED_CHANNEL_ID` above. Commit a complete reviewed dossier in `docs/research/`.
-4. Run **Generate episode and optional private upload** with `mode=production`, your reviewed `dossier`, `target=720`, `workers=4`, `visibility=private`, captions/music enabled, and `preview_only=true`. Inspect the complete final artifact before enabling upload.
-5. Run generation with the reviewed settings and `preview_only=false`, `visibility=private`. Full test duration is 600–900 seconds. Mock or failed-QC outputs cannot upload.
+3. Add the secrets and `EXPECTED_CHANNEL_ID` above. The automatic run uses the curated topic catalog, or you can supply a reviewed dossier.
+4. Run **Generate episode and optional private upload** with `mode=production`, `dossier=auto`, `target=720`, `workers=4`, `visibility=private`, captions/music enabled, and `preview_only=true` for the first full render. Inspect its artifact.
+5. Run the same workflow with `preview_only=false` for a private upload. The workflow's one-click defaults also choose this path. Full test duration is 600–900 seconds. Mock or failed-QC outputs cannot upload.
 6. Wait for YouTube processing. Run **Recover, verify upload or clean a saved episode → upload** for the original run to verify the existing video ID. It will not insert a second video. Confirm privacy and thumbnail in YouTube Studio. Only then use cleanup.
 
 For a local prepared production run, use `prepare`, each `images --shard N`, `finish`, then `upload --privacy private`. A voice environment is needed only for prepare; images and finish can run in different environments.
@@ -161,7 +160,7 @@ Automatic cross-process resumable YouTube session continuation is not implemente
 
 Cleanup requires successful final QC and, when an upload was attempted, a verified processed video. It retains scripts, research, timings, prompts, final video/thumbnail, captions and upload state. Only allowlisted temporary media is removed. Remote media is moved to trash after folder/key verification, not permanently deleted. Production credentials and arbitrary source files are never cleanup targets.
 
-To schedule, first complete private testing, configure a directory of reviewed dossiers and Drive history, add the commented `schedule` trigger to `daily.yml`, set `DAILY_ENABLED=true`, and configure `WORKFLOW_DISPATCH_TOKEN`. The example cron is 03:00 UTC / 09:00 Dhaka; change the cron for cadence. Public visibility additionally requires explicit `ALLOW_PUBLIC_UPLOAD=true`; the daily dispatcher remains private.
+The daily workflow is scheduled for 00:00 UTC / 06:00 Dhaka. It selects the next unused curated topic through the generation workflow and keeps upload private. Drive topic history prevents repeats across runs; when the catalog is exhausted, the run fails closed. Verify the first private video and runner capacity before relying on the schedule. Public visibility for manually reviewed dossiers additionally requires `ALLOW_PUBLIC_UPLOAD=true`.
 
 ## Troubleshooting and remaining integration work
 
