@@ -16,8 +16,8 @@ class Gemini:
             os.getenv('GEMINI_FALLBACK_MODELS','gemini-3.5-flash-lite').split(',') if m.strip()]))
         model=next((m for m in models if self.unavailable_until.get(m,0)<=time.monotonic()),primary)
         config={'temperature':temperature,'maxOutputTokens':8192,
-                'responseFormat':{'text':{'mimeType':'application/json'}}}
-        if schema:config['responseFormat']['text']['schema']=schema
+                'responseMimeType':'application/json'}
+        if schema:config['responseJsonSchema']=schema
         body={'contents':[{'role':'user','parts':[{'text':'Return only a valid JSON object.\n'+prompt}]}],
               'generationConfig':config}
         for attempt in range(6):

@@ -33,7 +33,7 @@ def test_gemini_uses_header_auth_and_preserves_schema(monkeypatch,capsys):
     url,call=calls[0]
     assert 'secret-api-key' not in url
     assert call['headers']['x-goog-api-key']=='secret-api-key'
-    assert call['json']['generationConfig']['responseFormat']['text']['schema']==SCHEMA
+    assert call['json']['generationConfig']['responseJsonSchema']==SCHEMA
     assert 'secret-api-key' not in capsys.readouterr().out
 
 
@@ -79,7 +79,7 @@ def test_all_groq_daily_quotas_fall_back_to_gemini_with_same_validation(monkeypa
     assert Groq().json('Review',schema=SCHEMA)=={'passed':True}
     assert len(calls)==4
     assert 'generativelanguage.googleapis.com' in calls[-1][0]
-    assert calls[-1][1]['json']['generationConfig']['responseFormat']['text']['schema']==SCHEMA
+    assert calls[-1][1]['json']['generationConfig']['responseJsonSchema']==SCHEMA
 
 
 def test_groq_auth_error_is_not_hidden_by_gemini(monkeypatch):
@@ -113,7 +113,7 @@ def test_gemini_quota_can_use_available_flash_lite_without_waiting(monkeypatch):
     assert Gemini().json('Review',schema=SCHEMA)=={'passed':True}
     assert len(calls)==2
     assert 'gemini-3.5-flash-lite:' in calls[-1][0]
-    assert calls[-1][1]['json']['generationConfig']['responseFormat']['text']['schema']==SCHEMA
+    assert calls[-1][1]['json']['generationConfig']['responseJsonSchema']==SCHEMA
 
 
 def test_gemini_reports_safe_error_category_without_raw_message(monkeypatch,capsys):

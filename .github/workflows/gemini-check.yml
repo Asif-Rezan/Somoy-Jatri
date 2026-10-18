@@ -1,4 +1,5 @@
 name: Verify Gemini connection
+# Exercise the widely supported v1beta JSON-schema fields.
 on:
   push:
     branches: [main]
