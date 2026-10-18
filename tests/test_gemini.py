@@ -5,6 +5,11 @@ import pytest
 from somoy_jatri.scripts.gemini import Gemini
 from somoy_jatri.scripts.groq import Groq
 
+@pytest.fixture(autouse=True)
+def reset_gemini_models(monkeypatch):
+    monkeypatch.setattr(Gemini,'unavailable_until',{})
+
+
 SCHEMA={'type':'object','properties':{'passed':{'type':'boolean'}},
         'required':['passed'],'additionalProperties':False}
 
@@ -39,7 +44,7 @@ def test_gemini_rejects_invalid_schema_output(monkeypatch):
         lambda *a,**kw:calls.append(kw) or Response(text='{"passed":"yes"}'))
     with pytest.raises(ValueError,match='invalid structured output'):
         Gemini().json('Review',schema=SCHEMA)
-    assert len(calls)==4
+    assert len(calls)==6
 
 
 @pytest.mark.parametrize('finish',['MAX_TOKENS','SAFETY'])
@@ -52,6 +57,7 @@ def test_gemini_never_accepts_partial_or_blocked_output(monkeypatch,finish):
 
 def test_gemini_honors_retry_after_without_logging_error_body(monkeypatch,capsys):
     delays=[];responses=iter([Response(429,headers={'Retry-After':'12'}),Response()])
+    monkeypatch.setenv('GEMINI_FALLBACK_MODELS','')
     monkeypatch.setenv('GEMINI_API_KEY','test')
     monkeypatch.setattr('somoy_jatri.scripts.gemini.requests.post',lambda *a,**kw:next(responses))
     monkeypatch.setattr('somoy_jatri.scripts.gemini.time.sleep',delays.append)
@@ -94,3 +100,17 @@ def test_explicit_gemini_provider_can_be_verified_without_groq(monkeypatch):
     monkeypatch.setattr('somoy_jatri.scripts.gemini.requests.post',lambda url,**kw:
         Response() if 'generativelanguage.googleapis.com' in url else pytest.fail('Unexpected Groq request'))
     assert Groq().json('Review',schema=SCHEMA)=={'passed':True}
+
+
+def test_gemini_quota_can_use_available_flash_lite_without_waiting(monkeypatch):
+    calls=[]
+    monkeypatch.setenv('GEMINI_API_KEY','test')
+    def post(url,**kw):
+        calls.append((url,kw))
+        return Response(429) if 'gemini-3.8-flash:' in url else Response()
+    monkeypatch.setattr('somoy_jatri.scripts.gemini.requests.post',post)
+    monkeypatch.setattr('somoy_jatri.scripts.gemini.time.sleep',lambda _:pytest.fail('Unexpected wait'))
+    assert Gemini().json('Review',schema=SCHEMA)=={'passed':True}
+    assert len(calls)==2
+    assert 'gemini-3.5-flash-lite:' in calls[-1][0]
+    assert calls[-1][1]['json']['generationConfig']['responseFormat']['text']['schema']==SCHEMA
