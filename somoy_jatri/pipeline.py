@@ -20,6 +20,7 @@ def mock_story():
 
 
 def prepare(config,topic='',period=''):
+    import json
     from dataclasses import asdict
     root=config.root;root.mkdir(parents=True,exist_ok=True)
     config.preflight()
@@ -57,17 +58,28 @@ def prepare(config,topic='',period=''):
     history_path=root.parent/'topic-history.json'
     previous=load(history_path) if history_path.exists() else []
     title=topic or dossier['location']+' '+dossier['period']
-    if config.mode=='production':reserve(history_path,title,config.run_id,dossier.get('topic_id'))
+    if config.mode=='production':
+        reserve(history_path,title,config.run_id,dossier.get('topic_id'))
+        print(json.dumps({'prepare_stage':'topic_reserved','topic_id':dossier.get('topic_id')}),flush=True)
     from somoy_jatri.scripts.groq import generate
     story=load(root/'story.json') if (root/'story.json').exists() else (
         mock_story() if config.mode=='mock' else generate(dossier,config.target,previous))
+    if config.mode=='production':
+        print(json.dumps({'prepare_stage':'story_received','segments':len(story.get('segments',[]))}),flush=True)
     tts=None;aligner=None
     for revision in range(3):
         if not story.get('title') or not story.get('segments'):raise ValueError('Empty story')
-        for s in story['segments']:
-            s['text']=normalize(s['text']);validate_segment(s)
+        for i,s in enumerate(story['segments']):
+            s['text']=normalize(s['text'])
+            try:
+                validate_segment(s)
+            except ValueError:
+                print(json.dumps({'prepare_stage':'segment_invalid','index':i}),flush=True)
+                raise
             if any(not isinstance(i,int) or not 0<=i<len(dossier['facts']) for i in s.get('fact_ids',[])):
                 raise ValueError('Invalid fact reference')
+        if config.mode=='production':
+            print(json.dumps({'prepare_stage':'segments_validated','revision':revision}),flush=True)
         save(root/'story.json',story)
         utterances=root/'utterances';utterances.mkdir(exist_ok=True)
         parts=[];records=[]
