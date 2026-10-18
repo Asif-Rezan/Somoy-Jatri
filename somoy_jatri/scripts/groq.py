@@ -21,21 +21,80 @@ class Groq:
 
 
 def generate(dossier, target, previous, feedback=''):
-    schema = {'title': 'Bangla title', 'tags': ['Bangla history', 'Time travel vlog'],
-        'segments': [{'text': 'Short natural Bangla utterance, one visual event',
-            'emotion': 'curious', 'intensity': .5, 'pause_after_ms': 300,
-            'chapter': 'arrival', 'scene': 'market', 'subject': 'pottery merchant',
-            'visual': 'English description of this exact narrated action',
-            'anchors': ['pottery', 'merchant'], 'motion': 'stable',
-            'mood': 'curious', 'ambient': 'market', 'fact_ids': []}]}
-    return Groq().json('Generate an ORIGINAL first-person Bangladeshi female time-travel vlog, directly '
-        'in conversational Bangla, no textbook phrasing. Fictional time travel only, no horror. '
-        'Hook, arrival, exploration, daily activities, monument, reflection, return, like/comment/subscribe. '
-        'One utterance per distinct visual event, <=260 characters each. Expand or split complex sentences. '
-        'Each visual and English subject MUST express exactly its Bangla utterance. '
-        'Only dossier facts may be asserted; every factual segment must cite fact_ids (zero-based fact indexes). '
-        'Uncertain details must be identified as reconstructions in narration. '
-        f'Target spoken duration {target} seconds, roughly {target*2} Bangla words. '
-        f'Previous titles to avoid: {previous}. Revision feedback: {feedback}. '
-        f'Dossier: {json.dumps(dossier, ensure_ascii=False)}. '
-        'Return ONLY JSON in schema '+json.dumps(schema, ensure_ascii=False))
+    import re
+    from somoy_jatri.narration.text import EMOTIONS, emotion
+    from somoy_jatri.storyboard.timeline import MOTIONS
+
+    ratio = re.search(r'Adjust total words by ratio ([0-9.]+)', feedback)
+    scale = max(.6, min(1.6, float(ratio.group(1)))) if ratio else 1.0
+    per_chapter = max(9, min(22, round(14 * scale)))
+    chapters = [
+        ('hook', 'A concrete mystery or observation grounded in the dossier'),
+        ('arrival', 'Arrival in the documented place and period'),
+        ('landscape', 'Geography, routes and visible setting supported by evidence'),
+        ('architecture', 'Documented buildings and their spatial details'),
+        ('people', 'Daily activities supported by evidence; mark unknown details as reconstruction'),
+        ('tools', 'Objects, tools and work supported by evidence'),
+        ('movement', 'Transport and movement through the setting'),
+        ('exchange', 'Food, trade or social life where sources support them'),
+        ('reflection', 'What the surviving evidence establishes and leaves uncertain'),
+        ('return', 'Return to the present and a brief like/comment/subscribe invitation'),
+    ]
+    template = {'segments': [{'text': 'One short natural Bangla utterance',
+        'subject': 'English name of exactly one visual subject',
+        'visual': 'English description matching the spoken utterance',
+        'fact_ids': [0], 'emotion': 'curious', 'intensity': .5,
+        'pause_after_ms': 300, 'motion': 'stable', 'ambient': 'wind'}]}
+    segments = []
+    model = Groq()
+    prior = ''
+    for index, (chapter, purpose) in enumerate(chapters):
+        prompt = ('Write one chapter of an ORIGINAL first-person Bangladeshi female time-travel vlog '
+            'in natural conversational Bangla. Fictional time travel only, no horror. '
+            f'Chapter {index+1}/10: {chapter}. Purpose: {purpose}. '
+            f'Return about {per_chapter} distinct visual utterances, each 10–20 Bangla words '
+            'and at most 220 characters. One visual event per utterance. '
+            'Every factual statement must cite zero-based fact_ids from the dossier; '
+            'never invent history, dialogue, dates, motives or unsupported activities. '
+            'Clearly call uncertain visual details reconstruction. English visual and subject must '
+            'match the Bangla utterance. Use only listed emotion and motion values. '
+            f'Allowed emotions: {sorted(EMOTIONS)}. Allowed motions: {sorted(MOTIONS)}. '
+            f'Previous ending for continuity: {prior}. Previous titles: {previous}. '
+            f'Revision feedback: {feedback}. Dossier: {json.dumps(dossier, ensure_ascii=False)}. '
+            'Return ONLY a JSON object matching this shape: '+json.dumps(template, ensure_ascii=False))
+        result = model.json(prompt)
+        part = result.get('segments')
+        if not isinstance(part, list) or len(part) < max(7, per_chapter // 2):
+            raise ValueError(f'Chapter {chapter} returned too few visual utterances')
+        for raw in part:
+            if not isinstance(raw, dict) or not isinstance(raw.get('text'), str):
+                raise ValueError(f'Chapter {chapter} returned an invalid utterance')
+            subject = str(raw.get('subject') or raw.get('visual') or '').strip()
+            visual = str(raw.get('visual') or subject).strip()
+            if not subject or not visual:
+                raise ValueError(f'Chapter {chapter} lacks a visual subject')
+            raw_emotion = str(raw.get('emotion', '')).lower()
+            try: intensity = float(raw.get('intensity', .5))
+            except (TypeError, ValueError): intensity = .5
+            try: pause = int(raw.get('pause_after_ms', 300))
+            except (TypeError, ValueError): pause = 300
+            ids = raw.get('fact_ids', [])
+            if not isinstance(ids, list) or any(not isinstance(i, int) or i < 0 or i >= len(dossier['facts']) for i in ids):
+                raise ValueError(f'Chapter {chapter} has an invalid fact citation')
+            segments.append({'text': raw['text'].strip(), 'subject': subject, 'visual': visual,
+                'fact_ids': ids, 'emotion': raw_emotion if raw_emotion in EMOTIONS else emotion(raw['text']),
+                'intensity': max(0., min(1., intensity)), 'pause_after_ms': max(0, min(1500, pause)),
+                'chapter': chapter, 'scene': chapter, 'anchors': [subject],
+                'motion': raw.get('motion') if raw.get('motion') in MOTIONS else 'stable',
+                'mood': raw_emotion if raw_emotion in EMOTIONS else 'neutral',
+                'ambient': raw.get('ambient') or 'wind'})
+        prior = part[-1]['text'][-160:]
+        print(json.dumps({'story_stage': 'chapter_complete', 'chapter': chapter,
+                          'segments': len(part)}), flush=True)
+        if index < len(chapters) - 1:
+            time.sleep(float(os.getenv('STORY_PACE_SECONDS', '10')))
+    if len(segments) < 80:
+        raise ValueError('Long-form story has too few visual utterances')
+    return {'title': f'{dossier["location"]} ভ্রমণ | সময় যাত্রী',
+            'tags': ['Bangla history', 'Somoy Jatri', 'Time travel vlog'],
+            'segments': segments}

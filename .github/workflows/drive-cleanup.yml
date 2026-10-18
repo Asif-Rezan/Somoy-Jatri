@@ -1,0 +1,34 @@
+name: Resume verified private Drive cleanup
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: Original episode run ID; verifies the existing private upload only
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: somoy-jatri-production
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      RUN: ${{ inputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -e '.[google]'
+      - name: Verify existing private HD upload and resume tagged cleanup
+        env:
+          DRIVE_TOKEN_JSON: ${{ secrets.DRIVE_TOKEN_JSON }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          EXPECTED_CHANNEL_ID: ${{ vars.EXPECTED_CHANNEL_ID }}
+        run: python -u -m somoy_jatri.storage.verified_cleanup
