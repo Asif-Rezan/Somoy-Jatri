@@ -48,7 +48,11 @@ def main():
             path=root/f'voice-{i}.wav';tts.synthesize(normalize(text),emotion,.6,path)
             if aligner:
                 print(json.dumps({'voice_stage':'sample_synthesized','index':i}),flush=True)
-                aligner.align(path,normalize(text))
+                result=aligner.align(path,normalize(text),strict=False)
+                print(json.dumps({'voice_stage':'sample_recognized','index':i,
+                    'recognized':result['recognized']},ensure_ascii=False),flush=True)
+                if result['similarity']<.65 or not result['words']:
+                    raise ValueError('Bengali voice sample did not match its script')
             parts.append((path,500))
         concatenate(parts,root/'voice-test.wav')
     elif args.command=='image-test':

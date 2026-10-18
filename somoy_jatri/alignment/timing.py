@@ -14,7 +14,7 @@ class BengaliASR:
         if model.endswith('.en'): raise ValueError('English-only aligner forbidden')
         self.model = WhisperModel(model, device='cpu', compute_type='int8')
 
-    def align(self, path, text):
+    def align(self, path, text, strict=True):
         segments, info = self.model.transcribe(str(path), language='bn', word_timestamps=True,
                                                beam_size=5, vad_filter=False)
         segments = list(segments)
@@ -24,7 +24,7 @@ class BengaliASR:
                  for s in segments for w in s.words or [] if w.end > w.start]
         print(json.dumps({'alignment_stage': 'recognized', 'similarity': round(similarity, 3),
                           'word_count': len(words)}), flush=True)
-        if similarity < .65 or not words:
+        if strict and (similarity < .65 or not words):
             raise ValueError('Bengali ASR/script mismatch; review pronunciation before continuing')
         total = duration(path)
         if any(w['start'] < 0 or w['end'] > total+.1 for w in words):
