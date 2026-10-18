@@ -90,8 +90,12 @@ def prepare(config,topic='',period=''):
             fingerprint=sha256((s['text']+s['emotion']+str(s['intensity'])+os.getenv('TTS_MODEL','indic-parler')+os.getenv('TTS_VOICE','Aditi')+config.mode).encode()).hexdigest()
             stamp=path.with_suffix('.json')
             if not (path.exists() and stamp.exists() and load(stamp).get('fingerprint')==fingerprint):
+                if config.mode=='production':
+                    print(json.dumps({'prepare_stage':'voice_start','index':i}),flush=True)
                 tts=tts or provider(config.mode)
                 tts.synthesize(s['text'],s['emotion'],s['intensity'],path)
+                if config.mode=='production':
+                    print(json.dumps({'prepare_stage':'voice_synthesized','index':i}),flush=True)
                 save(stamp,{'fingerprint':fingerprint})
             asr={}
             if config.mode=='production':
