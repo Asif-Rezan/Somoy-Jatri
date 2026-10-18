@@ -11,6 +11,7 @@ def main():
     p=argparse.ArgumentParser(description='Somoy Jatri — historical reconstruction pipeline')
     p.add_argument('command',choices=['prepare','images','finish','preview','tts-test','image-test',
         'music-test','upload','backup','restore','cleanup','drive-init','reconcile'])
+    p.add_argument('--resume',action='store_true',help='Reuse saved configuration for preparation')
     p.add_argument('--mode',choices=['mock','production'],default='mock')
     p.add_argument('--run-id',default='preview');p.add_argument('--workers',type=int,default=4)
     p.add_argument('--shard',type=int,default=0);p.add_argument('--target',type=int,default=720)
@@ -20,8 +21,9 @@ def main():
     args=p.parse_args();start=time.monotonic()
     config=Config(args.mode,args.run_id,args.workers,not args.no_captions,not args.no_music,args.target)
     root=config.root
-    if args.command not in {'prepare','preview','drive-init'} and (root/'config.json').exists():
+    if (args.command not in {'prepare','preview','drive-init'} or (args.command=='prepare' and args.resume)) and (root/'config.json').exists():
         config=Config(**load(root/'config.json'))
+        if config.run_id!=args.run_id:raise ValueError('Saved run identity mismatch')
     from somoy_jatri.pipeline import prepare,finish
     if args.command=='prepare': prepare(config,args.topic,args.period)
     elif args.command=='preview':

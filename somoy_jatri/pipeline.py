@@ -5,7 +5,7 @@ from somoy_jatri.narration.text import normalize,validate_segment
 from somoy_jatri.narration.providers import provider
 from somoy_jatri.audio import concatenate,read_wav
 from somoy_jatri.alignment.timing import aligner as make_aligner
-from somoy_jatri.storyboard.timeline import build,evaluate_semantics
+from somoy_jatri.storyboard.timeline import build,evaluate_semantics,reviewed_story
 
 
 def mock_story():
@@ -81,27 +81,32 @@ def prepare(config,topic='',period=''):
         if config.mode=='production':
             print(json.dumps({'prepare_stage':'segments_validated','revision':revision}),flush=True)
         save(root/'story.json',story)
+        if config.mode=='production':
+            reviewed_story(story,dossier,root/'semantic-review.json')
         utterances=root/'utterances';utterances.mkdir(exist_ok=True)
         parts=[];records=[]
         for i,s in enumerate(story['segments']):
             path=utterances/f'{i:04}.wav'
             # Manifest fingerprint prevents using stale speech after script revisions.
-            from hashlib import sha256
-            fingerprint=sha256((s['text']+s['emotion']+str(s['intensity'])+os.getenv('TTS_MODEL','indic-parler')+os.getenv('TTS_VOICE','Aditi')+config.mode).encode()).hexdigest()
+            from somoy_jatri.narration.providers import take_fingerprint,verified_take,save_verified_take
+            fingerprint=take_fingerprint(s,config.mode)
             stamp=path.with_suffix('.json')
             cached = path.exists() and stamp.exists() and load(stamp).get('fingerprint')==fingerprint
             asr={}
             if config.mode=='production':
                 from somoy_jatri.narration.providers import synthesize_verified
                 print(json.dumps({'prepare_stage':'voice_start','index':i}),flush=True)
-                tts=tts or provider(config.mode)
-                aligner=aligner or make_aligner()
-                asr=synthesize_verified(tts,aligner,s,path,reuse=cached)
+                asr=verified_take(path,fingerprint)
+                if asr is None:
+                    tts=tts or provider(config.mode)
+                    aligner=aligner or make_aligner()
+                    asr=synthesize_verified(tts,aligner,s,path,reuse=cached)
+                    save_verified_take(path,fingerprint,asr)
                 print(json.dumps({'prepare_stage':'voice_verified','index':i}),flush=True)
             elif not cached:
                 tts=tts or provider(config.mode)
                 tts.synthesize(s['text'],s['emotion'],s['intensity'],path)
-            save(stamp,{'fingerprint':fingerprint})
+            if config.mode=='mock': save(stamp,{'fingerprint':fingerprint})
             parts.append((path,s['pause_after_ms']));records.append({'text':s['text'],'asr':asr})
         bounds=concatenate(parts,root/'narration.wav')
         total=bounds[-1]['end']
@@ -115,7 +120,7 @@ def prepare(config,topic='',period=''):
     for shot,record in zip(shots,records):
         shot['words']=[dict(w,start=w['start']+shot['start'],end=w['end']+shot['start'])
                        for w in record.get('asr',{}).get('words',[])]
-    review={'passed':True,'method':'mock-only, no semantic quality claim'} if config.mode=='mock' else evaluate_semantics(story,dossier)
+    review={'passed':True,'method':'mock-only, no semantic quality claim'} if config.mode=='mock' else reviewed_story(story,dossier,root/'semantic-review.json')
     save(root/'semantic-review.json',review);save(root/'timeline.json',shots)
     return shots
 

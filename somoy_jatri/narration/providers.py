@@ -67,3 +67,29 @@ def synthesize_verified(tts, aligner, segment, path, reuse=False, attempts=3):
         print(json.dumps({'voice_stage': 'take_rejected', 'attempt': attempt + 1,
                           'similarity': round(result['similarity'], 3)}), flush=True)
     raise ValueError('Bengali narration did not match after three voice takes')
+
+
+def take_fingerprint(segment, mode):
+    import hashlib
+    # Keep compatibility with fingerprints already saved by the production workflow.
+    return hashlib.sha256((segment['text']+segment['emotion']+str(segment['intensity'])+
+        os.getenv('TTS_MODEL','indic-parler')+os.getenv('TTS_VOICE','Aditi')+mode).encode()).hexdigest()
+
+
+def verified_take(path, fingerprint):
+    from somoy_jatri.utils import load, digest
+    stamp = path.with_suffix('.json')
+    if not path.exists() or not stamp.exists(): return None
+    receipt = load(stamp)
+    asr = receipt.get('asr', {})
+    if (receipt.get('fingerprint') == fingerprint and receipt.get('sha256') == digest(path)
+            and asr.get('similarity', 0) >= .65 and asr.get('words')):
+        return asr
+    return None
+
+
+def save_verified_take(path, fingerprint, asr):
+    from somoy_jatri.utils import save, digest
+    if asr.get('similarity', 0) < .65 or not asr.get('words'):
+        raise ValueError('Cannot cache rejected speech')
+    save(path.with_suffix('.json'), {'fingerprint':fingerprint,'sha256':digest(path),'asr':asr})

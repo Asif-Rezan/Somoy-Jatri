@@ -42,7 +42,7 @@ def validate(shots, total):
     if abs(cursor-total) > .002: raise ValueError('Timeline duration mismatch')
 
 
-def evaluate_semantics(story, dossier):
+def evaluate_semantics(story, dossier, report_path=None):
     # Deterministic anchors alone cannot verify cross-language meaning.
     from somoy_jatri.scripts.groq import Groq
     import json
@@ -56,6 +56,9 @@ def evaluate_semantics(story, dossier):
             'Return {"passed": bool, "issues": [strings]}. Dossier: '+json.dumps(dossier, ensure_ascii=False)
             +' Segments: '+json.dumps(batch, ensure_ascii=False))
         if result.get('passed') is not True:
+            if report_path is not None:
+                from somoy_jatri.utils import save
+                save(report_path, {'passed':False,'batch':offset//10+1,'issues':result.get('issues',[])})
             raise ValueError(f'Storyboard semantic review failed in batch {offset // 10 + 1}')
         if offset + 10 < len(segments):
             time.sleep(float(os.getenv('STORY_PACE_SECONDS', '10')))
@@ -65,3 +68,18 @@ def evaluate_semantics(story, dossier):
 def shard(shots, index, count):
     if not 1 <= count <= 16 or not 0 <= index < count: raise ValueError('Invalid shard')
     return [s for i,s in enumerate(shots) if i % count == index]
+
+
+def reviewed_story(story, dossier, path):
+    """Cache review only for the exact normalized story and source packet."""
+    import hashlib, json
+    from somoy_jatri.utils import load, save
+    fingerprint=hashlib.sha256(json.dumps([story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+    if path.exists():
+        review=load(path)
+        if review.get('passed') is True and review.get('fingerprint')==fingerprint:
+            return review
+    review=evaluate_semantics(story,dossier,report_path=path)
+    review['fingerprint']=fingerprint
+    save(path,review)
+    return review
