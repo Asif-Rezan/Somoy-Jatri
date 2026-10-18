@@ -42,29 +42,65 @@ def validate(shots, total):
     if abs(cursor-total) > .002: raise ValueError('Timeline duration mismatch')
 
 
-def evaluate_semantics(story, dossier, report_path=None):
-    # Deterministic anchors alone cannot verify cross-language meaning.
-    from somoy_jatri.scripts.groq import Groq
+def repair_batch(model, batch, dossier, issues):
     import json
-    import os
-    import time
-    segments = story['segments']
-    for offset in range(0, len(segments), 10):
-        batch = segments[offset:offset + 10]
-        result = Groq().json('Review each Bangla utterance against its English visual/subject and fact_ids. '
-            'Reject invented facts, anachronisms, mismatched subjects, and multiple visual events in one segment. '
-            'Return {"passed": bool, "issues": [strings]}. Dossier: '+json.dumps(dossier, ensure_ascii=False)
-            +' Segments: '+json.dumps(batch, ensure_ascii=False))
-        if result.get('passed') is not True:
+    from somoy_jatri.narration.text import normalize,validate_segment
+    result=model.json('Correct ONLY actual factual, citation, or Bangla/English scene mismatches in '
+        'these historical vlog segments. Preserve Bangla text exactly when a citation or English visual '
+        'correction is sufficient. Change narration only if it asserts an unsupported fact or is unnatural. '
+        'Do not introduce new facts. Explicitly label uncertain artistic reconstruction. Keep narration '
+        'length similar. Return {"patches":[{"index":0,"fact_ids":[0],"subject":"English subject",'
+        '"visual":"English matching scene","text":"Bangla only if a rewrite is necessary"}]}. '
+        'Indices are zero-based within this batch. Omit unchanged fields. '
+        +json.dumps({'issues':issues,'dossier':dossier,'segments':batch},ensure_ascii=False))
+    patches=result.get('patches',[])
+    if not patches:raise ValueError('Semantic repair returned no corrections')
+    seen=set()
+    for patch in patches:
+        index=patch.get('index')
+        if type(index)!=int or not 0<=index<len(batch) or index in seen:
+            raise ValueError('Invalid semantic correction index')
+        seen.add(index);segment=dict(batch[index])
+        for key in ('text','subject','visual','fact_ids'):
+            if key in patch:segment[key]=patch[key]
+        segment['text']=normalize(segment['text']);validate_segment(segment)
+        if not isinstance(segment.get('subject'),str) or not segment['subject'].strip() or not isinstance(segment.get('visual'),str) or not segment['visual'].strip():
+            raise ValueError('Semantic correction lacks a visual')
+        ids=segment.get('fact_ids',[])
+        if not isinstance(ids,list) or any(type(i)!=int or not 0<=i<len(dossier['facts']) for i in ids):
+            raise ValueError('Semantic correction has invalid fact references')
+        segment['anchors']=[segment['subject']]
+        batch[index].clear();batch[index].update(segment)
+    return len(patches)
+
+
+def evaluate_semantics(story, dossier, report_path=None, repair=False):
+    from somoy_jatri.scripts.groq import Groq
+    import json,os,time
+    from somoy_jatri.utils import save
+    segments=story['segments'];model=Groq()
+    for offset in range(0,len(segments),10):
+        batch=segments[offset:offset+10]
+        for attempt in range(3 if repair else 1):
+            result=model.json('Review each Bangla utterance against its English visual/subject and '
+                'fact_ids. Reject invented historical claims, anachronisms, mismatched subjects, and '
+                'multiple visual events or incoherent Bangla. Allow explicitly labelled artistic reconstruction, fictional '
+                'time travel and subjective reactions; these do not require invented factual citations. '
+                'List only actual errors, not acceptable segments. Return a JSON object '
+                '{"passed":bool,"issues":[strings]}. Dossier: '+json.dumps(dossier,ensure_ascii=False)
+                +' Segments: '+json.dumps(batch,ensure_ascii=False))
+            if result.get('passed') is True:break
             print(json.dumps({'semantic_stage':'rejected','batch':offset//10+1,
                               'issues':result.get('issues',[])[:5]}),flush=True)
             if report_path is not None:
-                from somoy_jatri.utils import save
-                save(report_path, {'passed':False,'batch':offset//10+1,'issues':result.get('issues',[])})
-            raise ValueError(f'Storyboard semantic review failed in batch {offset // 10 + 1}')
-        if offset + 10 < len(segments):
-            time.sleep(float(os.getenv('STORY_PACE_SECONDS', '10')))
-    return {'passed': True, 'method': 'batched model review', 'segments': len(segments)}
+                save(report_path,{'passed':False,'batch':offset//10+1,'issues':result.get('issues',[])})
+            if not repair or attempt==2:
+                raise ValueError(f'Storyboard semantic review failed in batch {offset//10+1}')
+            count=repair_batch(model,batch,dossier,result.get('issues',[]))
+            if report_path is not None:save(report_path.parent/'story.json',story)
+            print(json.dumps({'semantic_stage':'repaired','batch':offset//10+1,'corrections':count}),flush=True)
+        if offset+10<len(segments):time.sleep(float(os.getenv('STORY_PACE_SECONDS','10')))
+    return {'passed':True,'method':'batched model review','segments':len(segments)}
 
 
 def shard(shots, index, count):
@@ -81,7 +117,9 @@ def reviewed_story(story, dossier, path):
         review=load(path)
         if review.get('passed') is True and review.get('fingerprint')==fingerprint:
             return review
-    review=evaluate_semantics(story,dossier,report_path=path)
+    review=evaluate_semantics(story,dossier,report_path=path,repair=True)
+    fingerprint=hashlib.sha256(json.dumps([story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+    save(path.parent/'story.json',story)
     review['fingerprint']=fingerprint
     save(path,review)
     return review

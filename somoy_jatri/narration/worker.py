@@ -18,7 +18,11 @@ def partial_checkpoint(root, image_workers):
         raise ValueError('Matching production checkpoint required')
     if not 1<=image_workers<=16: raise ValueError('Use 1–16 image workers')
     story = load(root/'story.json')
-    facts = load(root/'research.json')['facts']
+    dossier=load(root/'research.json')
+    if dossier.get('research_method')=='automatic source extraction' and len(dossier['facts'])<8:
+        from somoy_jatri.research.automatic import enrich
+        dossier=enrich(dossier);save(root/'research.json',dossier)
+    facts=dossier['facts']
     if not story.get('segments'): raise ValueError('Saved story required')
     for segment in story['segments']:
         segment['text'] = normalize(segment['text'])

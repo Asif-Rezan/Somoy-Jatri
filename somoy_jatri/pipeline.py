@@ -53,6 +53,9 @@ def prepare(config,topic='',period=''):
         else:
             dossier=validate(load(source),live=True)
         if period and period!=dossier['period']:raise ValueError('Period input differs from reviewed dossier')
+    if config.mode=='production' and dossier.get('research_method')=='automatic source extraction' and len(dossier['facts'])<8:
+        from somoy_jatri.research.automatic import enrich
+        dossier=enrich(dossier)
     save(root/'research.json',dossier)
     from somoy_jatri.topics.history import reserve
     history_path=root.parent/'topic-history.json'

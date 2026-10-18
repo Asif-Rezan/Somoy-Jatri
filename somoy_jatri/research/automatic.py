@@ -77,3 +77,35 @@ def build(history):
     result = validate(packet, live=True, require_review=False)
     print(json.dumps({'research_stage': 'packet_validated', 'facts': len(result['facts'])}), flush=True)
     return result
+
+
+def enrich(dossier):
+    """Append source-quoted facts without renumbering existing citations."""
+    if len(dossier.get('facts',[]))>=8:return dossier
+    pages=[]
+    for source in dossier['sources']:
+        response=requests.get(source['url'],timeout=30,headers={'User-Agent':'SomoyJatri/0.1'})
+        response.raise_for_status()
+        text=plain_text(response.text)
+        start=text.find('Brief synthesis')
+        if start>=0:text=text[start:]
+        pages.append({'id':source['id'],'text':text[:18000]})
+    result=Groq().json('Extract 12 distinct, atomic historical facts relevant to the supplied location '
+        'and period. Use only the source text, excluding modern visitor information. Each claim must '
+        'include a source_id and an exact source_quote of at least 20 characters copied from that source. '
+        'Do not invent clothing, activities or dates absent from the source. Return {"facts": '
+        '[{"claim":"...","source_id":"s1","source_quote":"exact quotation"}]}. '
+        +json.dumps({'location':dossier['location'],'period':dossier['period'],'sources':pages},ensure_ascii=False))
+    normalize=lambda text:re.sub(r'\s+',' ',text).strip().casefold()
+    source_text={p['id']:normalize(p['text']) for p in pages}
+    known={normalize(f['claim']) for f in dossier['facts']}
+    added=0
+    for fact in result.get('facts',[])[:16]:
+        quote=fact.get('source_quote','');claim=fact.get('claim','');sid=fact.get('source_id')
+        if (sid in source_text and len(quote)>=20 and normalize(quote) in source_text[sid]
+                and claim.strip() and normalize(claim) not in known):
+            dossier['facts'].append(fact);known.add(normalize(claim));added+=1
+    print(json.dumps({'research_stage':'source_facts_enriched','added_facts':added,
+                      'total_facts':len(dossier['facts'])}),flush=True)
+    if len(dossier['facts'])<6:raise ValueError('Insufficient source-quoted research for the story')
+    return dossier
