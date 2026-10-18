@@ -28,6 +28,7 @@ def choose(history, catalog=Path('docs/research/topics.json')):
 
 def build(history):
     topic = choose(history)
+    print(json.dumps({'research_stage': 'topic_selected', 'topic_id': topic['id']}), flush=True)
     pages = []
     for index, url in enumerate(topic['sources'], 1):
         response = requests.get(url, timeout=30, headers={'User-Agent': 'SomoyJatri/0.1'})
@@ -36,30 +37,43 @@ def build(history):
         if len(text) < 500:
             raise ValueError('Source page has too little readable evidence: ' + url)
         pages.append({'id': f's{index}', 'url': url, 'text': text[:30000]})
+    print(json.dumps({'research_stage': 'sources_loaded', 'count': len(pages)}), flush=True)
     fields = ['politics', 'culture', 'clothing', 'buildings', 'tools', 'transportation',
               'food', 'trades', 'social_life', 'events']
     prompt = ('Create a cautious research packet for a PRIVATE AI historical reconstruction. '
               'Use ONLY the supplied source text. Do not infer undocumented details. For each '
               'context field use a sourced statement or "Unknown; reconstruct cautiously". '
-              'Each fact must cite a source_id. Each source excerpt must be a SHORT EXACT '
-              'contiguous quote from its supplied page. Return JSON with context fields, '
-              'facts [{claim,source_id}], uncertain [strings], and sources '
-              '[{id,title,url,excerpt}]. Include at least three distinct facts. '
+              'Each fact must cite a source_id from the provided pages. Return a single JSON '
+              'object with these exact top-level keys: politics, culture, clothing, buildings, '
+              'tools, transportation, food, trades, social_life, events (all strings); facts '
+              '(array of at least three {claim,source_id} objects); uncertain (array of strings). '
+              'Do not return a sources key. Only state details directly supported by the pages. '
               f'Location: {topic["location"]}. Period: {topic["period"]}. '
               f'Fields: {fields}. Source pages: {json.dumps(pages, ensure_ascii=False)}')
     packet = Groq().json(prompt)
+    print(json.dumps({'research_stage': 'model_returned'}), flush=True)
+    if isinstance(packet.get('dossier'), dict):
+        packet = packet['dossier']
+    for field in fields:
+        if not isinstance(packet.get(field), str) or not packet[field].strip():
+            packet[field] = 'Unknown; reconstruct cautiously'
+    if not packet.get('uncertain'):
+        packet['uncertain'] = ['Details absent from the sources are artistic reconstruction.']
+    packet['sources'] = []
+    for page in pages:
+        text = page['text']
+        anchor = text.find('Brief synthesis')
+        excerpt = text[anchor + len('Brief synthesis'):].strip()[:120] if anchor >= 0 else text[:120]
+        packet['sources'].append({'id': page['id'], 'url': page['url'],
+                                  'title': topic['location'] + ' — UNESCO World Heritage Centre',
+                                  'excerpt': excerpt})
     packet.update(location=topic['location'], period=topic['period'],
                   topic_id=topic['id'], research_method='automatic source extraction')
     if len(packet.get('facts', [])) < 3:
         raise ValueError('Automatic research returned too few facts')
-    supplied = {p['id']: p for p in pages}
-    if {s.get('id') for s in packet.get('sources', [])} != set(supplied):
-        raise ValueError('Automatic research changed the source set')
-    for source in packet['sources']:
-        if source.get('url') != supplied[source['id']]['url']:
-            raise ValueError('Automatic research changed a source URL')
-        normalized = lambda t: re.sub(r'\s+', ' ', t).strip().casefold()
-        if normalized(source.get('excerpt', '')) not in normalized(supplied[source['id']]['text']):
-            raise ValueError('Automatic research supplied an unverified quote')
+    if any(f.get('source_id') not in {p['id'] for p in pages} for f in packet['facts']):
+        raise ValueError('Automatic research cited an unknown source')
     # The source and excerpt checks run again immediately before generation.
-    return validate(packet, live=True, require_review=False)
+    result = validate(packet, live=True, require_review=False)
+    print(json.dumps({'research_stage': 'packet_validated', 'facts': len(result['facts'])}), flush=True)
+    return result

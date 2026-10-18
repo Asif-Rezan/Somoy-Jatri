@@ -14,7 +14,7 @@ def test_auto_topic_uses_each_curated_topic_once(tmp_path):
         choose([{'topic_id': 'a'}, {'topic_id': 'b'}], catalog)
 
 
-def test_auto_research_rejects_invented_quote(monkeypatch):
+def test_auto_research_rejects_unknown_citation(monkeypatch):
     monkeypatch.setattr('somoy_jatri.research.automatic.choose', lambda history: {
         'id': 'a', 'location': 'Site', 'period': 'Period', 'sources': ['https://example.org/a']})
     class Response:
@@ -22,8 +22,6 @@ def test_auto_research_rejects_invented_quote(monkeypatch):
         def raise_for_status(self): pass
     monkeypatch.setattr('somoy_jatri.research.automatic.requests.get', lambda *a, **k: Response())
     monkeypatch.setattr('somoy_jatri.research.automatic.Groq.json', lambda *a: {
-        'facts': [{'claim': 'Claim', 'source_id': 's1'}] * 3,
-        'sources': [{'id': 's1', 'title': 'Page', 'url': 'https://example.org/a',
-                     'excerpt': 'Invented quote'}]})
-    with pytest.raises(ValueError, match='unverified quote'):
+        'facts': [{'claim': 'Claim', 'source_id': 'unknown'}] * 3})
+    with pytest.raises(ValueError, match='unknown source'):
         build([])
