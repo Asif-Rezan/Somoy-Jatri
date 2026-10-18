@@ -27,3 +27,21 @@ def test_rate_limit_waits_for_server_reset(monkeypatch):
     assert Groq().json('test') == {'ok': True}
     assert len(calls) == 2
     assert delays == [61.0]
+
+
+def test_long_rate_limit_reset_is_not_shortened_to_three_minutes():
+    from somoy_jatri.scripts.groq import _retry_delay
+    class Response:
+        status_code = 429
+        headers = {'Retry-After': '940'}
+    assert _retry_delay(Response(), 0) == 940
+
+
+def test_reset_message_with_hours_is_understood():
+    from somoy_jatri.scripts.groq import _retry_delay
+    class Response:
+        status_code = 429
+        headers = {}
+        def json(self):
+            return {'error': {'message': 'Please try again in 0h15m20.5s.'}}
+    assert _retry_delay(Response(), 0) == 922.5

@@ -10,16 +10,16 @@ def _retry_delay(response, attempt):
     if response.status_code == 429:
         header = response.headers.get('Retry-After', '')
         try:
-            return max(1., min(180., float(header)))
+            return max(1., min(3600., float(header)))
         except ValueError:
             pass
         try:
             message = response.json().get('error', {}).get('message', '')
         except (ValueError, AttributeError):
             message = ''
-        match = re.search(r'try again in\s*(?:(\d+)m)?\s*(\d+(?:\.\d+)?)s', message, re.I)
+        match = re.search(r'try again in\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(\d+(?:\.\d+)?)s', message, re.I)
         if match:
-            return max(1., min(180., 60 * int(match.group(1) or 0) + float(match.group(2)) + 2))
+            return max(1., min(3600., 3600 * int(match.group(1) or 0) + 60 * int(match.group(2) or 0) + float(match.group(3)) + 2))
         return 65.
     return min(2 ** attempt, 30)
 
@@ -49,7 +49,12 @@ class Groq:
                 print(json.dumps({'groq_stage': 'failed', 'status': response.status_code,
                                   'error_code': error_code[:80]}), flush=True)
                 raise RuntimeError('Groq request failed, HTTP '+str(response.status_code))
-            return json.loads(response.json()['choices'][0]['message']['content'])
+            payload = response.json()
+            usage = payload.get('usage', {})
+            print(json.dumps({'groq_stage': 'completed', **{
+                k: usage[k] for k in ('prompt_tokens', 'completion_tokens', 'total_tokens')
+                if isinstance(usage.get(k), int)}}), flush=True)
+            return json.loads(payload['choices'][0]['message']['content'])
         raise RuntimeError('Groq retries exhausted')
 
 
