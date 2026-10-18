@@ -24,12 +24,19 @@ def _retry_delay(response, attempt):
     return min(2 ** attempt, 30)
 
 class Groq:
+    unavailable_until = {}
+
     def json(self, prompt):
         key = os.environ['GROQ_API_KEY']
+        primary = os.getenv('STORY_MODEL', 'openai/gpt-oss-120b')
+        models = list(dict.fromkeys([primary] + [m.strip() for m in
+            os.getenv('STORY_FALLBACK_MODELS', 'openai/gpt-oss-20b').split(',') if m.strip()]))
+        selected = next((m for m in models if self.unavailable_until.get(m, 0) <= time.monotonic()), primary)
         for attempt in range(8):
+            options = {'reasoning_effort': 'low'} if selected.startswith('openai/gpt-oss-') else {}
             response = requests.post('https://api.groq.com/openai/v1/chat/completions',
                 headers={'Authorization': 'Bearer '+key}, timeout=180,
-                json={'model': os.getenv('STORY_MODEL', 'openai/gpt-oss-120b'),
+                json={'model': selected, **options, 'max_completion_tokens': 4096,
                       'messages': [{'role': 'user', 'content': prompt}],
                       'response_format': {'type': 'json_object'}, 'temperature': .75})
             try:
@@ -40,6 +47,15 @@ class Groq:
                 'json_validate_failed', 'json_parse_failed', 'json_error'}
             if (response.status_code in (429, 500, 502, 503, 504) or retryable_json) and attempt < 7:
                 delay = _retry_delay(response, attempt)
+                if response.status_code == 429 and delay >= 180:
+                    self.unavailable_until[selected] = time.monotonic() + delay
+                    alternative = next((m for m in models if m != selected and
+                        self.unavailable_until.get(m, 0) <= time.monotonic()), None)
+                    if alternative:
+                        print(json.dumps({'groq_stage': 'quota_fallback',
+                                          'from_model': selected, 'to_model': alternative}), flush=True)
+                        selected = alternative
+                        continue
                 print(json.dumps({'groq_stage': 'retry', 'status': response.status_code,
                                   'error_code': error_code[:80], 'attempt': attempt + 1,
                                   'wait_seconds': round(delay, 1)}), flush=True)
@@ -51,7 +67,7 @@ class Groq:
                 raise RuntimeError('Groq request failed, HTTP '+str(response.status_code))
             payload = response.json()
             usage = payload.get('usage', {})
-            print(json.dumps({'groq_stage': 'completed', **{
+            print(json.dumps({'groq_stage': 'completed', 'model': selected, **{
                 k: usage[k] for k in ('prompt_tokens', 'completion_tokens', 'total_tokens')
                 if isinstance(usage.get(k), int)}}), flush=True)
             return json.loads(payload['choices'][0]['message']['content'])

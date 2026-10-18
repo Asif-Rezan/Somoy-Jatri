@@ -45,3 +45,26 @@ def test_reset_message_with_hours_is_understood():
         def json(self):
             return {'error': {'message': 'Please try again in 0h15m20.5s.'}}
     assert _retry_delay(Response(), 0) == 922.5
+
+
+def test_long_quota_wait_uses_available_model_without_bypassing_validation(monkeypatch):
+    calls = []
+    class Response:
+        def __init__(self, status):
+            self.status_code = status
+            self.ok = status == 200
+            self.headers = {'Retry-After': '900'}
+        def json(self):
+            return ({'error': {'code': 'rate_limit_exceeded'}} if not self.ok else
+                    {'choices': [{'message': {'content': '{"ok": true}'}}]})
+    responses = [Response(429), Response(200)]
+    monkeypatch.setenv('GROQ_API_KEY', 'test-key')
+    monkeypatch.setattr(Groq, 'unavailable_until', {})
+    monkeypatch.setattr('somoy_jatri.scripts.groq.requests.post',
+        lambda *a, **kw: calls.append(kw['json']) or responses.pop(0))
+    monkeypatch.setattr('somoy_jatri.scripts.groq.time.sleep',
+        lambda delay: (_ for _ in ()).throw(AssertionError('Unexpected wait')))
+    assert Groq().json('test') == {'ok': True}
+    assert [c['model'] for c in calls] == ['openai/gpt-oss-120b', 'openai/gpt-oss-20b']
+    assert calls[1]['reasoning_effort'] == 'low'
+    assert calls[1]['max_completion_tokens'] == 4096
