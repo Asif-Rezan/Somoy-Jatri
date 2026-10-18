@@ -32,13 +32,22 @@ class Groq:
                 json={'model': os.getenv('STORY_MODEL', 'openai/gpt-oss-120b'),
                       'messages': [{'role': 'user', 'content': prompt}],
                       'response_format': {'type': 'json_object'}, 'temperature': .75})
-            if response.status_code in (429, 500, 502, 503, 504) and attempt < 7:
+            try:
+                error_code = str(response.json().get('error', {}).get('code') or '') if not response.ok else ''
+            except (ValueError, AttributeError):
+                error_code = ''
+            retryable_json = response.status_code == 400 and error_code in {
+                'json_validate_failed', 'json_parse_failed', 'json_error'}
+            if (response.status_code in (429, 500, 502, 503, 504) or retryable_json) and attempt < 7:
                 delay = _retry_delay(response, attempt)
                 print(json.dumps({'groq_stage': 'retry', 'status': response.status_code,
-                                  'attempt': attempt + 1, 'wait_seconds': round(delay, 1)}), flush=True)
+                                  'error_code': error_code[:80], 'attempt': attempt + 1,
+                                  'wait_seconds': round(delay, 1)}), flush=True)
                 time.sleep(delay)
                 continue
             if not response.ok:
+                print(json.dumps({'groq_stage': 'failed', 'status': response.status_code,
+                                  'error_code': error_code[:80]}), flush=True)
                 raise RuntimeError('Groq request failed, HTTP '+str(response.status_code))
             return json.loads(response.json()['choices'][0]['message']['content'])
         raise RuntimeError('Groq retries exhausted')
