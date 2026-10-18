@@ -1,0 +1,12 @@
+from difflib import SequenceMatcher
+from somoy_jatri.utils import load, save
+
+
+def reserve(path, topic, run):
+    history = load(path) if path.exists() else []
+    for item in history:
+        if item['run'] == run: return
+        if SequenceMatcher(None, topic.casefold(), item['topic'].casefold()).ratio() > .82:
+            raise ValueError('Similar topic already reserved; select another research dossier')
+    history.append({'topic': topic, 'run': run})
+    save(path, history)

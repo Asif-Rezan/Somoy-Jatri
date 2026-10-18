@@ -1,0 +1,54 @@
+name: Recover, verify upload or clean a saved episode
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: Original episode run ID
+        required: true
+        type: string
+      operation:
+        type: choice
+        options: [restore, images, finish, upload, cleanup]
+        default: restore
+      snapshot:
+        type: string
+        default: checkpoint
+      shard:
+        type: number
+        default: 0
+permissions:
+  contents: read
+concurrency:
+  group: somoy-jatri-production
+  cancel-in-progress: false
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      RUN: ${{ inputs.run }}
+      OPERATION: ${{ inputs.operation }}
+      SNAPSHOT: ${{ inputs.snapshot }}
+      SHARD: ${{ inputs.shard }}
+      DRIVE_TOKEN_JSON: ${{ secrets.DRIVE_TOKEN_JSON }}
+      DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+      YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+      EXPECTED_CHANNEL_ID: ${{ vars.EXPECTED_CHANNEL_ID }}
+      UPLOAD_ENABLED: 'true'
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg fontconfig
+      - run: pip install -e '.[google]'
+      - run: python -m somoy_jatri.cli restore --run-id "$RUN" --snapshot "$SNAPSHOT"
+      - if: inputs.operation == 'images'
+        run: pip install -e '.[images]'
+      - if: inputs.operation != 'restore'
+        run: python -m somoy_jatri.cli "$OPERATION" --run-id "$RUN" --shard "$SHARD"
+      - if: inputs.operation != 'cleanup'
+        run: python -m somoy_jatri.cli backup --run-id "$RUN" --snapshot "$SNAPSHOT"

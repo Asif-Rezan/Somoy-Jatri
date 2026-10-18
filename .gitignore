@@ -1,0 +1,10 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+.env
+*token*.json
+client_secrets.json
+output/
+*.wav
+*.mp4

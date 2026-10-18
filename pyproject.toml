@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "somoy-jatri"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26,<3", "Pillow>=10,<13", "requests>=2.32,<3", "num2words>=0.5.14,<0.6"]
+[project.optional-dependencies]
+test = ["pytest>=8,<10", "PyYAML>=6,<7"]
+google = ["google-api-python-client>=2.170,<3", "google-auth-oauthlib>=1.2,<2"]
+images = ["torch>=2.5,<3", "diffusers>=0.35,<0.37", "transformers>=4.44,<5", "accelerate>=1,<2", "safetensors>=0.4,<1"]
+alignment = ["faster-whisper==1.2.1"]
+[project.scripts]
+somoy-jatri = "somoy_jatri.cli:main"
+[tool.setuptools.packages.find]
+include = ["somoy_jatri*"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]

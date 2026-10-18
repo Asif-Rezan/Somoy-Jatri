@@ -1,0 +1,41 @@
+name: Model component test
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        type: choice
+        options: [tts-test, image-test, music-test]
+        default: tts-test
+      mode:
+        type: choice
+        options: [mock, production]
+        default: mock
+permissions:
+  contents: read
+jobs:
+  component:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      COMPONENT: ${{ inputs.component }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg fontconfig
+      - run: pip install -e .
+      - if: inputs.mode == 'production' && inputs.component == 'tts-test'
+        run: pip install -r requirements-tts.txt
+      - if: inputs.mode == 'production' && inputs.component == 'image-test'
+        run: pip install -e '.[images]'
+      - run: python -m somoy_jatri.cli "$COMPONENT" --mode "$MODE" --run-id component
+      - uses: actions/upload-artifact@v4
+        with:
+          name: model-component-test
+          path: output/component/*
+          retention-days: 7

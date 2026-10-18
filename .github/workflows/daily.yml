@@ -1,0 +1,29 @@
+name: Daily generation gate (disabled by default)
+on:
+  workflow_dispatch:
+# To enable scheduling after private testing, add under on:
+#   schedule:
+#     - cron: '0 3 * * *'  # 09:00 Asia/Dhaka
+permissions:
+  contents: read
+jobs:
+  gate:
+    if: vars.DAILY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch configured production generation
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+          REPO: ${{ github.repository }}
+          DOSSIER: ${{ vars.RESEARCH_DOSSIER }}
+        run: |
+          python - <<'PYCODE'
+          import os,json,urllib.request
+          body={'ref':'main','inputs':{'mode':'production','dossier':os.environ['DOSSIER'],
+            'workers':'4','target':'720','visibility':'private','captions':'true','music':'true','preview_only':'false'}}
+          req=urllib.request.Request('https://api.github.com/repos/'+os.environ['REPO']+'/actions/workflows/generate.yml/dispatches',
+            data=json.dumps(body).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+            'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+          with urllib.request.urlopen(req,timeout=30) as response:
+              assert response.status==204
+          PYCODE
