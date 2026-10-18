@@ -4,7 +4,7 @@ from somoy_jatri.utils import save,load,duration
 from somoy_jatri.narration.text import normalize,validate_segment
 from somoy_jatri.narration.providers import provider
 from somoy_jatri.audio import concatenate,read_wav
-from somoy_jatri.alignment.timing import BengaliASR
+from somoy_jatri.alignment.timing import aligner as make_aligner
 from somoy_jatri.storyboard.timeline import build,evaluate_semantics
 
 
@@ -99,7 +99,7 @@ def prepare(config,topic='',period=''):
                 save(stamp,{'fingerprint':fingerprint})
             asr={}
             if config.mode=='production':
-                aligner=aligner or BengaliASR();asr=aligner.align(path,s['text'])
+                aligner=aligner or make_aligner();asr=aligner.align(path,s['text'])
             parts.append((path,s['pause_after_ms']));records.append({'text':s['text'],'asr':asr})
         bounds=concatenate(parts,root/'narration.wav')
         total=bounds[-1]['end']

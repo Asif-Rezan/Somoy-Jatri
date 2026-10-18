@@ -36,11 +36,11 @@ def main():
     elif args.command=='finish':finish(config)
     elif args.command=='tts-test':
         from somoy_jatri.narration.providers import provider
-        from somoy_jatri.alignment.timing import BengaliASR
+        from somoy_jatri.alignment.timing import aligner as make_aligner
         from somoy_jatri.audio import concatenate
         from somoy_jatri.narration.text import normalize
         root.mkdir(parents=True,exist_ok=True);tts=provider(args.mode);parts=[]
-        aligner=BengaliASR() if args.mode=='production' else None
+        aligner=make_aligner() if args.mode=='production' else None
         for i,(text,emotion) in enumerate([
             ('বন্ধুরা, আমরা কি সত্যিই প্রাচীন মিশরে এসে পড়েছি?', 'curious'),
             ('ওই দেখো! সামনে গিজার বিশাল পিরামিড!', 'amazed'),
