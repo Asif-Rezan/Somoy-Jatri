@@ -63,7 +63,8 @@ def repair_batch(model, batch, dossier, issues):
         seen.add(index);segment=dict(batch[index])
         for key in ('text','subject','visual','fact_ids'):
             if key in patch:segment[key]=patch[key]
-        segment['text']=normalize(segment['text']);validate_segment(segment)
+        if 'text' in patch:segment['text']=normalize(segment['text'])
+        validate_segment(segment)
         if not isinstance(segment.get('subject'),str) or not segment['subject'].strip() or not isinstance(segment.get('visual'),str) or not segment['visual'].strip():
             raise ValueError('Semantic correction lacks a visual')
         ids=segment.get('fact_ids',[])
