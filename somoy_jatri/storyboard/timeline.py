@@ -49,7 +49,7 @@ def repair_batch(model, batch, dossier, issues):
     for issue in issues:
         if isinstance(issue,dict) and issue.get('kind')=='citation':
             index=issue.get('index');ids=issue.get('correct_fact_ids')
-            if (type(index)==int and 0<=index<len(batch) and isinstance(ids,list)
+            if (type(index)==int and 0<=index<len(batch) and isinstance(ids,list) and ids
                     and all(type(i)==int and 0<=i<len(dossier['facts']) for i in ids)):
                 batch[index]['fact_ids']=ids;direct.append(index);continue
         remaining.append(issue)
@@ -74,7 +74,8 @@ def repair_batch(model, batch, dossier, issues):
         'Indices are zero-based within this batch. Omit unchanged fields. '
         +json.dumps({'issues':issues,'dossier':dossier,'segments':batch},ensure_ascii=False))
     if indices:prompt+=' Return every required key '+str([f'segment_{i}' for i in indices])+'. Copy unchanged text exactly.'
-    result=model.json(prompt,schema=schema) if schema else model.json(prompt)
+    result=(model.json(prompt,schema=schema,temperature=.2,reasoning_effort='medium')
+            if schema else model.json(prompt))
     patches=([dict(index=i,**result[f'segment_{i}']) for i in indices] if schema else result.get('patches',[]))
     if not patches:raise ValueError('Semantic repair returned no corrections')
     seen=set()
@@ -104,7 +105,7 @@ def evaluate_semantics(story, dossier, report_path=None, repair=False):
     segments=story['segments'];model=Groq()
     for offset in range(0,len(segments),10):
         batch=segments[offset:offset+10]
-        for attempt in range(3 if repair else 1):
+        for attempt in range(5 if repair else 1):
             issue_schema={'type':'object','additionalProperties':False,'properties':{
                 'index':{'type':'integer','minimum':0,'maximum':len(batch)-1},
                 'kind':{'type':'string','enum':['citation','visual','narration','event']},
@@ -123,13 +124,14 @@ def evaluate_semantics(story, dossier, report_path=None, repair=False):
                 'Indices are ZERO-BASED within this batch. For citation-only errors provide all correct '
                 'fact IDs, or [] when no citation is needed. For other error kinds use correct_fact_ids: []. '
                 'Dossier: '+json.dumps(dossier,ensure_ascii=False)
-                +' Segments: '+json.dumps(batch,ensure_ascii=False),schema=schema)
+                +' Segments: '+json.dumps(batch,ensure_ascii=False),schema=schema,
+                temperature=0,reasoning_effort='medium')
             if result.get('passed') is True:break
             print(json.dumps({'semantic_stage':'rejected','batch':offset//10+1,
                               'issues':result.get('issues',[])[:5]}),flush=True)
             if report_path is not None:
                 save(report_path,{'passed':False,'batch':offset//10+1,'issues':result.get('issues',[])})
-            if not repair or attempt==2:
+            if not repair or attempt==4:
                 raise ValueError(f'Storyboard semantic review failed in batch {offset//10+1}')
             count=repair_batch(model,batch,dossier,result.get('issues',[]))
             if report_path is not None:save(report_path.parent/'story.json',story)

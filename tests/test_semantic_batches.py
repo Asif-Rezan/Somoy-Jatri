@@ -41,3 +41,20 @@ def test_all_citation_only_corrections_are_applied_without_rewriting_audio():
     assert repair_batch(NoModel(),batch,{'facts':[{}, {}, {}]},issues)==2
     assert [s['text'] for s in batch]==original
     assert [s['fact_ids'] for s in batch]==[[1],[2]]
+
+
+def test_empty_citation_fix_requires_content_repair():
+    from somoy_jatri.storyboard.timeline import repair_batch
+    class Model:
+        called=False
+        def json(self,prompt,**kwargs):
+            self.called=True
+            return {'segment_0':{'text':'আমি এখানে দাঁড়িয়ে আছি।','subject':'ancient site',
+                'visual':'An artistic reconstruction of the ancient site','fact_ids':[]}}
+    model=Model()
+    batch=[{'text':'আমি এখানে দাঁড়িয়ে আছি।','subject':'workers','visual':'Workers',
+        'fact_ids':[0],'emotion':'neutral','intensity':.5,'pause_after_ms':300}]
+    repair_batch(model,batch,{'facts':[{}]},
+        [{'index':0,'kind':'citation','correct_fact_ids':[],'problem':'Unsupported construction claim'}])
+    assert model.called
+    assert batch[0]['subject']=='ancient site'

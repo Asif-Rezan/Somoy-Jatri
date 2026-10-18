@@ -6,6 +6,15 @@ on:
         description: Original run number containing the prepared or partial prepared artifact
         required: true
         type: number
+      episode_run:
+        description: Original episode run number (0 uses source run)
+        type: number
+        default: 0
+      source_artifact:
+        description: Checkpoint artifact to recover
+        type: choice
+        options: [prepared, voice-checkpoint]
+        default: prepared
       voice_workers:
         description: Parallel CPU voice workers (1–16)
         type: number
@@ -21,7 +30,7 @@ concurrency:
   group: somoy-jatri-production
   cancel-in-progress: false
 env:
-  RUN: episode-${{ inputs.source_run }}
+  RUN: episode-${{ inputs.episode_run || inputs.source_run }}
   CPU_THREADS: '4'
   HF_HUB_DISABLE_XET: '1'
 jobs:
@@ -40,7 +49,7 @@ jobs:
       - run: pip install -e '.[google]'
       - uses: actions/download-artifact@v4
         with:
-          name: prepared
+          name: ${{ inputs.source_artifact }}
           run-id: ${{ inputs.source_run }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: output/${{ env.RUN }}
