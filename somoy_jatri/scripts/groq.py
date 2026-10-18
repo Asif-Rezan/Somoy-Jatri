@@ -26,11 +26,11 @@ def _retry_delay(response, attempt):
 class Groq:
     unavailable_until = {}
 
-    def json(self, prompt):
+    def json(self, prompt, schema=None):
         key = os.environ['GROQ_API_KEY']
         primary = os.getenv('STORY_MODEL', 'openai/gpt-oss-120b')
         models = list(dict.fromkeys([primary] + [m.strip() for m in
-            os.getenv('STORY_FALLBACK_MODELS', 'openai/gpt-oss-20b').split(',') if m.strip()]))
+            os.getenv('STORY_FALLBACK_MODELS', 'openai/gpt-oss-20b,qwen/qwen3.8-27b').split(',') if m.strip()]))
         selected = next((m for m in models if self.unavailable_until.get(m, 0) <= time.monotonic()), primary)
         for attempt in range(8):
             options = {'reasoning_effort': 'low'} if selected.startswith('openai/gpt-oss-') else {}
@@ -38,7 +38,9 @@ class Groq:
                 headers={'Authorization': 'Bearer '+key}, timeout=180,
                 json={'model': selected, **options, 'max_completion_tokens': 4096,
                       'messages': [{'role': 'user', 'content': 'Return only a valid JSON object.\n'+prompt}],
-                      'response_format': {'type': 'json_object'}, 'temperature': .75})
+                      'response_format': ({'type': 'json_schema', 'json_schema': {
+                          'name': 'somoy_response', 'strict': True, 'schema': schema}}
+                          if schema else {'type': 'json_object'}), 'temperature': .75})
             try:
                 error_code = str(response.json().get('error', {}).get('code') or '') if not response.ok else ''
             except (ValueError, AttributeError):

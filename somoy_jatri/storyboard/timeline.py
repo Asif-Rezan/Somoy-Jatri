@@ -45,7 +45,27 @@ def validate(shots, total):
 def repair_batch(model, batch, dossier, issues):
     import json
     from somoy_jatri.narration.text import normalize,validate_segment
-    result=model.json('Correct ONLY actual factual, citation, or Bangla/English scene mismatches in '
+    direct=[];remaining=[]
+    for issue in issues:
+        if isinstance(issue,dict) and issue.get('kind')=='citation':
+            index=issue.get('index');ids=issue.get('correct_fact_ids')
+            if (type(index)==int and 0<=index<len(batch) and isinstance(ids,list)
+                    and all(type(i)==int and 0<=i<len(dossier['facts']) for i in ids)):
+                batch[index]['fact_ids']=ids;direct.append(index);continue
+        remaining.append(issue)
+    if not remaining:return len(direct)
+    issues=remaining
+    indices=sorted({i['index'] for i in issues if isinstance(i,dict) and type(i.get('index'))==int})
+    schema=None
+    if indices:
+        item={'type':'object','additionalProperties':False,'properties':{
+            'text':{'type':'string'},'subject':{'type':'string'},'visual':{'type':'string'},
+            'fact_ids':{'type':'array','items':{'type':'integer','minimum':0,
+                'maximum':max(0,len(dossier['facts'])-1)}}},
+            'required':['text','subject','visual','fact_ids']}
+        schema={'type':'object','additionalProperties':False,'properties':{
+            f'segment_{i}':item for i in indices},'required':[f'segment_{i}' for i in indices]}
+    prompt=('Correct ONLY actual factual, citation, or Bangla/English scene mismatches in '
         'these historical vlog segments. Preserve Bangla text exactly when a citation or English visual '
         'correction is sufficient. Change narration only if it asserts an unsupported fact or is unnatural. '
         'Do not introduce new facts. Explicitly label uncertain artistic reconstruction. Keep narration '
@@ -53,7 +73,9 @@ def repair_batch(model, batch, dossier, issues):
         '"visual":"English matching scene","text":"Bangla only if a rewrite is necessary"}]}. '
         'Indices are zero-based within this batch. Omit unchanged fields. '
         +json.dumps({'issues':issues,'dossier':dossier,'segments':batch},ensure_ascii=False))
-    patches=result.get('patches',[])
+    if indices:prompt+=' Return every required key '+str([f'segment_{i}' for i in indices])+'. Copy unchanged text exactly.'
+    result=model.json(prompt,schema=schema) if schema else model.json(prompt)
+    patches=([dict(index=i,**result[f'segment_{i}']) for i in indices] if schema else result.get('patches',[]))
     if not patches:raise ValueError('Semantic repair returned no corrections')
     seen=set()
     for patch in patches:
@@ -72,7 +94,7 @@ def repair_batch(model, batch, dossier, issues):
             raise ValueError('Semantic correction has invalid fact references')
         segment['anchors']=[segment['subject']]
         batch[index].clear();batch[index].update(segment)
-    return len(patches)
+    return len(patches)+len(direct)
 
 
 def evaluate_semantics(story, dossier, report_path=None, repair=False):
@@ -83,13 +105,25 @@ def evaluate_semantics(story, dossier, report_path=None, repair=False):
     for offset in range(0,len(segments),10):
         batch=segments[offset:offset+10]
         for attempt in range(3 if repair else 1):
+            issue_schema={'type':'object','additionalProperties':False,'properties':{
+                'index':{'type':'integer','minimum':0,'maximum':len(batch)-1},
+                'kind':{'type':'string','enum':['citation','visual','narration','event']},
+                'problem':{'type':'string'},'correct_fact_ids':{'type':'array','items':{
+                    'type':'integer','minimum':0,'maximum':max(0,len(dossier['facts'])-1)}}},
+                'required':['index','kind','problem','correct_fact_ids']}
+            schema={'type':'object','additionalProperties':False,'properties':{
+                'passed':{'type':'boolean'},'issues':{'type':'array','items':issue_schema}},
+                'required':['passed','issues']}
             result=model.json('Review each Bangla utterance against its English visual/subject and '
                 'fact_ids. Reject invented historical claims, anachronisms, mismatched subjects, and '
                 'multiple visual events or incoherent Bangla. Allow explicitly labelled artistic reconstruction, fictional '
                 'time travel and subjective reactions; these do not require invented factual citations. '
                 'List only actual errors, not acceptable segments. Return a JSON object '
-                '{"passed":bool,"issues":[strings]}. Dossier: '+json.dumps(dossier,ensure_ascii=False)
-                +' Segments: '+json.dumps(batch,ensure_ascii=False))
+                '{"passed":bool,"issues":[{"index":0,"kind":"citation","problem":"...","correct_fact_ids":[0]}]}. '
+                'Indices are ZERO-BASED within this batch. For citation-only errors provide all correct '
+                'fact IDs, or [] when no citation is needed. For other error kinds use correct_fact_ids: []. '
+                'Dossier: '+json.dumps(dossier,ensure_ascii=False)
+                +' Segments: '+json.dumps(batch,ensure_ascii=False),schema=schema)
             if result.get('passed') is True:break
             print(json.dumps({'semantic_stage':'rejected','batch':offset//10+1,
                               'issues':result.get('issues',[])[:5]}),flush=True)
