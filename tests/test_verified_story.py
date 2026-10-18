@@ -28,7 +28,7 @@ def test_changed_pipeline_cannot_reuse_live_verification():
 def test_stage_requires_matching_receipt_and_copies_no_old_run_identity(tmp_path):
     source=tmp_path/'source';destination=tmp_path/'new-episode'
     story={'segments':[{'text':'আমি এখানে আছি।'}]};dossier={'facts':[]}
-    fingerprint=hashlib.sha256(json.dumps([2,story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+    fingerprint=hashlib.sha256(json.dumps([3,story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
     save(source/'story.json',story);save(source/'research.json',dossier)
     save(source/'config.json',{'run_id':'old-episode'})
     save(source/'verification-review.json',{'passed':True,'segments':1,'fingerprint':fingerprint})

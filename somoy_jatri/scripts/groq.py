@@ -93,6 +93,7 @@ def generate(dossier, target, previous, feedback=''):
     import re
     from somoy_jatri.narration.text import EMOTIONS, emotion
     from somoy_jatri.storyboard.timeline import MOTIONS
+    from somoy_jatri.research.evidence import indexed_dossier
 
     ratio = re.search(r'Adjust total words by ratio ([0-9.]+)', feedback)
     scale = max(.6, min(1.6, float(ratio.group(1)))) if ratio else 1.0
@@ -127,7 +128,8 @@ def generate(dossier, target, previous, feedback=''):
                 f'Chapter {index+1}/10: {chapter}. Purpose: {purpose}. '
                 f'Return exactly {ask} distinct visual utterances, each 10–20 Bangla words '
                 'and at most 220 characters. One visual event per utterance. '
-                'Every factual statement must cite zero-based fact_ids from the dossier; '
+                'Every factual statement must cite the integer N from explicit fact_N keys in the dossier; '
+                'never count positions or use source IDs as fact_ids; '
                 'never invent history, dialogue, dates, motives or unsupported activities. '
                 'The chapter purpose is optional when evidence is absent: discuss what is unknown instead '
                 'of inventing people, tools, markets, transport or buildings. Never invent relationships '
@@ -138,7 +140,7 @@ def generate(dossier, target, previous, feedback=''):
                 'BOTH Bangla narration and English visual. English visual and subject must '
                 'match the Bangla utterance. '
                 f'Previous ending for continuity: {prior}. Previous titles: {previous}. '
-                f'Revision feedback: {feedback}. Dossier: {json.dumps(dossier, ensure_ascii=False)}. '
+                f'Revision feedback: {feedback}. Dossier: {json.dumps(indexed_dossier(dossier), ensure_ascii=False)}. '
                 'Return ONLY a JSON object matching this shape: '+json.dumps(template, ensure_ascii=False))
             result = model.json(prompt)
             part = result.get('segments')

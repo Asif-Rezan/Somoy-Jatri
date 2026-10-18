@@ -117,3 +117,47 @@ def test_repeated_repairs_escalate_then_fail_closed(monkeypatch):
         evaluate_semantics(story,{'facts':[]},repair=True)
     assert any('Replace the entire flagged segment' in p for p in prompts)
     assert len(prompts)==17
+
+
+def test_review_uses_explicit_fact_and_segment_ids(monkeypatch):
+    prompts=[]
+    monkeypatch.setenv('STORY_PACE_SECONDS','0')
+    monkeypatch.setattr('somoy_jatri.scripts.groq.Groq.json',lambda self,prompt,**kw:
+        prompts.append(prompt) or {'passed':True,'issues':[]})
+    facts=[{'claim':f'Fact {i}'} for i in range(6)]
+    facts[5]={'claim':'Sphinx east of Giza pyramids'}
+    evaluate_semantics({'segments':[{'text':'স্ফিংক্স','fact_ids':[5]}]}, {'facts':facts})
+    assert '"fact_5": {"claim": "Sphinx east of Giza pyramids"}' in prompts[0]
+    assert '"segment_0":' in prompts[0]
+    assert 'Do not count entries' in prompts[0]
+
+
+def test_repair_uses_same_explicit_ids_as_review():
+    from somoy_jatri.storyboard.timeline import repair_batch
+    class Model:
+        def json(self,prompt,**kw):
+            assert '"fact_0": {"claim": "Memphis was a capital"}' in prompt
+            assert '"segment_0":' in prompt
+            return {'segment_0':{'text':'মেমফিস প্রাচীন মিশরের রাজধানী ছিল।',
+                'subject':'Memphis','visual':'Reconstruction of Memphis','fact_ids':[0]}}
+    batch=[{'text':'আমি এখানে আছি।','subject':'Memphis','visual':'Memphis',
+        'fact_ids':[0],'emotion':'neutral','intensity':.5}]
+    repair_batch(Model(),batch,{'facts':[{'claim':'Memphis was a capital'}]},
+        [{'index':0,'kind':'narration','requires_rewrite':True,'correct_fact_ids':[]}])
+
+
+def test_repeated_failure_rebuilds_from_one_fact_without_rejected_wording():
+    from somoy_jatri.storyboard.timeline import repair_batch
+    class Model:
+        def json(self,prompt,**kw):
+            assert 'statue beside stone houses' not in prompt
+            assert 'ONLY its ONE assigned fact' in prompt
+            assert '"fact_id": 0' in prompt
+            return {'segment_0':{'text':'মেমফিস প্রাচীন মিশরের রাজধানী ছিল।',
+                'subject':'Memphis','visual':'Reconstruction of Memphis','fact_ids':[0]}}
+    batch=[{'text':'মূর্তির পাশে পাথরের ঘর রয়েছে।','subject':'statue beside stone houses',
+        'visual':'statue beside stone houses','fact_ids':[0],'emotion':'neutral','intensity':.5}]
+    repair_batch(Model(),batch,{'facts':[{'claim':'Memphis was a capital'}]},
+        [{'index':0,'kind':'narration','requires_rewrite':True,'correct_fact_ids':[],
+          'problem':'Unsupported statue beside stone houses'}],attempt=1)
+    assert batch[0]['text']=='মেমফিস প্রাচীন মিশরের রাজধানী ছিল।'

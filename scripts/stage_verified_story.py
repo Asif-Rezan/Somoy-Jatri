@@ -28,7 +28,7 @@ def stage(source, destination):
     story = load(source / 'story.json')
     dossier = load(source / 'research.json')
     review = load(source / 'verification-review.json')
-    fingerprint = hashlib.sha256(json.dumps([2, story, dossier], ensure_ascii=False,
+    fingerprint = hashlib.sha256(json.dumps([3, story, dossier], ensure_ascii=False,
                                             sort_keys=True).encode()).hexdigest()
     if (review.get('passed') is not True or review.get('fingerprint') != fingerprint
             or review.get('segments') != len(story.get('segments', [])) or not story.get('segments')):

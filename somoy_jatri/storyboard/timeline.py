@@ -1,4 +1,5 @@
 import math
+from somoy_jatri.research.evidence import indexed_dossier, indexed_segments
 
 NEGATIVE = 'anime, cartoon, illustration, CGI, smartphones, cars, electric lights, modern buildings, text, watermark, visible narrator'
 MOTIONS = {'stable', 'slow_forward', 'slow_backward', 'pan_left', 'pan_right', 'tilt_up', 'handheld', 'zoom'}
@@ -76,12 +77,32 @@ def repair_batch(model, batch, dossier, issues, attempt=0):
         'spatial relationships, materials or activities not established by the cited fact. '
         'Preserve Bangla exactly only when it is already supported and only its citation needs changing. '
         'Do not introduce new facts. Keep narration '
-        'length similar. Indices are zero-based within this batch. '
-        +json.dumps({'issues':issues,'dossier':dossier,'segments':batch},ensure_ascii=False))
+        'length similar. Use the explicit segment_N keys for indices and fact_N keys for fact_ids. '
+        'Return the integer N, never a source ID or a counted array position. '
+        +json.dumps({'issues':issues,'dossier':indexed_dossier(dossier),'segments':indexed_segments(batch)},ensure_ascii=False))
     if attempt:
         prompt+=(' Previous repair did not resolve every error. Replace the entire flagged segment '
             'with a fresh, simpler, evidence-grounded utterance; do not make another superficial edit. '
             'Check every assertion in text AND visual against the cited fact before responding.')
+        if indices and dossier['facts']:
+            assignments={}
+            for i in indices:
+                if not 0<=i<len(batch):raise ValueError('Invalid semantic correction index')
+                candidates=[f for issue in issues if isinstance(issue,dict) and issue.get('index')==i
+                            for f in issue.get('correct_fact_ids',[])] + batch[i].get('fact_ids',[])
+                fact_id=next((f for f in candidates if type(f)==int and 0<=f<len(dossier['facts'])),
+                             i%len(dossier['facts']))
+                assignments[f'segment_{i}']={'fact_id':fact_id,'fact':dossier['facts'][fact_id]}
+            # Exclude the rejected wording entirely: negating or lightly editing it can
+            # retain the unsupported relationship that caused the previous rejection.
+            prompt=('Replace the entire flagged segment with a fresh, simple Bangla utterance '
+                'of 10–20 words and at most 220 characters. For each segment use ONLY its ONE assigned '
+                'fact below. Paraphrase that fact accurately and cite its explicit fact_id. '
+                'The English subject/visual must illustrate only that same fact, with no invented '
+                'objects, actions, compass directions or spatial relationships. Label visual '
+                'reconstructions explicitly. Do not infer details or combine facts. '
+                'No original narration is supplied because it contained unsupported assertions. '
+                +json.dumps(assignments,ensure_ascii=False))
     if indices:
         prompt+=' Return ONLY a JSON object matching this schema: '+json.dumps(schema)+'. Copy unchanged text exactly.'
     else:
@@ -137,12 +158,14 @@ def evaluate_semantics(story, dossier, report_path=None, repair=False):
                 'Do not treat an explicitly subjective observation, lighting, shadow or reconstruction as '
                 'a documented historical assertion unless it also asserts unsupported historical detail. '
                 'Return a JSON object with passed and issues. passed must be false whenever issues is nonempty. '
-                'Indices are ZERO-BASED within this batch. requires_rewrite=false is allowed ONLY when '
+                'Each fact and segment has an EXPLICIT ID: fact_N and segment_N. Return integer N in '
+                'correct_fact_ids and index. Do not count entries or use source IDs as fact IDs. '
+                'requires_rewrite=false is allowed ONLY when '
                 'the existing narration and visual are fully supported and changing fact_ids alone fixes it. '
                 'A wrong direction, unsupported building/activity, or contradiction requires_rewrite=true '
                 'even if a relevant fact ID exists. Provide correct_fact_ids when supported, otherwise []. '
-                'Dossier: '+json.dumps(dossier,ensure_ascii=False)
-                +' Segments: '+json.dumps(batch,ensure_ascii=False),schema=schema,
+                'Dossier: '+json.dumps(indexed_dossier(dossier),ensure_ascii=False)
+                +' Segments: '+json.dumps(indexed_segments(batch),ensure_ascii=False),schema=schema,
                 temperature=0,reasoning_effort='medium')
             if result.get('passed') is True and result.get('issues') == []:break
             print(json.dumps({'semantic_stage':'rejected','batch':offset//10+1,
@@ -167,13 +190,13 @@ def reviewed_story(story, dossier, path):
     """Cache review only for the exact normalized story and source packet."""
     import hashlib, json
     from somoy_jatri.utils import load, save
-    fingerprint=hashlib.sha256(json.dumps([2,story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+    fingerprint=hashlib.sha256(json.dumps([3,story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
     if path.exists():
         review=load(path)
         if review.get('passed') is True and review.get('fingerprint')==fingerprint:
             return review
     review=evaluate_semantics(story,dossier,report_path=path,repair=True)
-    fingerprint=hashlib.sha256(json.dumps([2,story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+    fingerprint=hashlib.sha256(json.dumps([3,story,dossier],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
     save(path.parent/'story.json',story)
     review['fingerprint']=fingerprint
     save(path,review)

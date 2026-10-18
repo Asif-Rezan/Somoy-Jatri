@@ -6,6 +6,11 @@ on:
         description: Failed run containing the prepared storyboard to replay
         type: number
         default: 39146689771
+      source_artifact:
+        description: Artifact containing the saved storyboard
+        type: choice
+        options: [prepared, storyboard-replay]
+        default: prepared
 permissions:
   contents: read
   actions: read
@@ -45,7 +50,7 @@ jobs:
       - run: pip install -e .
       - uses: actions/download-artifact@v4
         with:
-          name: prepared
+          name: ${{ inputs.source_artifact }}
           run-id: ${{ inputs.source_run }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: output/storyboard-replay
