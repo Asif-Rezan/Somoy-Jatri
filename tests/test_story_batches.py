@@ -13,7 +13,7 @@ def test_long_story_is_batched_and_normalizes_directions(monkeypatch):
     monkeypatch.setattr('somoy_jatri.scripts.groq.Groq.json', fake_json)
     dossier = {'location': 'Giza', 'facts': [{'claim': 'A fact', 'source_id': 's1'}]}
     story = generate(dossier, 720, [])
-    assert len(calls) == 10
+    assert len(calls) == 20
     assert len(story['segments']) == 140
     assert story['segments'][0]['emotion'] == 'neutral'
     assert story['segments'][0]['intensity'] == 1

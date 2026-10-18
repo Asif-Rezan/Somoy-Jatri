@@ -46,12 +46,20 @@ def evaluate_semantics(story, dossier):
     # Deterministic anchors alone cannot verify cross-language meaning.
     from somoy_jatri.scripts.groq import Groq
     import json
-    result = Groq().json('Review each Bangla utterance against its English visual/subject and fact_ids. '
-        'Reject invented facts, anachronisms, mismatched subjects, and multiple visual events in one segment. '
-        'Return {"passed": bool, "issues": [strings]}. Dossier: '+json.dumps(dossier, ensure_ascii=False)
-        +' Story: '+json.dumps(story, ensure_ascii=False))
-    if result.get('passed') is not True: raise ValueError('Storyboard semantic review failed')
-    return result
+    import os
+    import time
+    segments = story['segments']
+    for offset in range(0, len(segments), 10):
+        batch = segments[offset:offset + 10]
+        result = Groq().json('Review each Bangla utterance against its English visual/subject and fact_ids. '
+            'Reject invented facts, anachronisms, mismatched subjects, and multiple visual events in one segment. '
+            'Return {"passed": bool, "issues": [strings]}. Dossier: '+json.dumps(dossier, ensure_ascii=False)
+            +' Segments: '+json.dumps(batch, ensure_ascii=False))
+        if result.get('passed') is not True:
+            raise ValueError(f'Storyboard semantic review failed in batch {offset // 10 + 1}')
+        if offset + 10 < len(segments):
+            time.sleep(float(os.getenv('STORY_PACE_SECONDS', '10')))
+    return {'passed': True, 'method': 'batched model review', 'segments': len(segments)}
 
 
 def shard(shots, index, count):

@@ -74,32 +74,44 @@ def generate(dossier, target, previous, feedback=''):
         ('return', 'Return to the present and a brief like/comment/subscribe invitation'),
     ]
     template = {'segments': [{'text': 'One short natural Bangla utterance',
-        'subject': 'English name of exactly one visual subject',
-        'visual': 'English description matching the spoken utterance',
-        'fact_ids': [0], 'emotion': 'curious', 'intensity': .5,
-        'pause_after_ms': 300, 'motion': 'stable', 'ambient': 'wind'}]}
+        'subject': 'One English visual subject', 'visual': 'Matching English visual',
+        'fact_ids': [0]}]}
     segments = []
     model = Groq()
     prior = ''
     for index, (chapter, purpose) in enumerate(chapters):
-        prompt = ('Write one chapter of an ORIGINAL first-person Bangladeshi female time-travel vlog '
-            'in natural conversational Bangla. Fictional time travel only, no horror. '
-            f'Chapter {index+1}/10: {chapter}. Purpose: {purpose}. '
-            f'Return about {per_chapter} distinct visual utterances, each 10–20 Bangla words '
-            'and at most 220 characters. One visual event per utterance. '
-            'Every factual statement must cite zero-based fact_ids from the dossier; '
-            'never invent history, dialogue, dates, motives or unsupported activities. '
-            'Clearly call uncertain visual details reconstruction. English visual and subject must '
-            'match the Bangla utterance. Use only listed emotion and motion values. '
-            f'Allowed emotions: {sorted(EMOTIONS)}. Allowed motions: {sorted(MOTIONS)}. '
-            f'Previous ending for continuity: {prior}. Previous titles: {previous}. '
-            f'Revision feedback: {feedback}. Dossier: {json.dumps(dossier, ensure_ascii=False)}. '
-            'Return ONLY a JSON object matching this shape: '+json.dumps(template, ensure_ascii=False))
-        result = model.json(prompt)
-        part = result.get('segments')
-        if not isinstance(part, list) or len(part) < max(7, per_chapter // 2):
-            raise ValueError(f'Chapter {chapter} returned too few visual utterances')
-        for raw in part:
+        chapter_segments = []
+        for batch in range(6):
+            needed = per_chapter - len(chapter_segments)
+            if needed <= 0:
+                break
+            ask = min(7, needed)
+            prompt = ('Write a short part of an ORIGINAL first-person Bangladeshi female time-travel vlog '
+                'in natural conversational Bangla. Fictional time travel only, no horror. '
+                f'Chapter {index+1}/10: {chapter}. Purpose: {purpose}. '
+                f'Return exactly {ask} distinct visual utterances, each 10–20 Bangla words '
+                'and at most 220 characters. One visual event per utterance. '
+                'Every factual statement must cite zero-based fact_ids from the dossier; '
+                'never invent history, dialogue, dates, motives or unsupported activities. '
+                'Clearly call uncertain visual details reconstruction. English visual and subject must '
+                'match the Bangla utterance. '
+                f'Previous ending for continuity: {prior}. Previous titles: {previous}. '
+                f'Revision feedback: {feedback}. Dossier: {json.dumps(dossier, ensure_ascii=False)}. '
+                'Return ONLY a JSON object matching this shape: '+json.dumps(template, ensure_ascii=False))
+            result = model.json(prompt)
+            part = result.get('segments')
+            if not isinstance(part, list) or not part:
+                raise ValueError(f'Chapter {chapter} returned no visual utterances')
+            part = part[:ask]
+            print(json.dumps({'story_stage': 'part_received', 'chapter': chapter,
+                              'batch': batch + 1, 'segments': len(part)}), flush=True)
+            chapter_segments.extend(part)
+            prior = str(part[-1].get('text', ''))[-160:]
+            if len(chapter_segments) < per_chapter:
+                time.sleep(float(os.getenv('STORY_PACE_SECONDS', '10')))
+        if len(chapter_segments) < per_chapter:
+            raise ValueError(f'Chapter {chapter} remained incomplete after six parts')
+        for raw in chapter_segments:
             if not isinstance(raw, dict) or not isinstance(raw.get('text'), str):
                 raise ValueError(f'Chapter {chapter} returned an invalid utterance')
             subject = str(raw.get('subject') or raw.get('visual') or '').strip()
@@ -121,9 +133,8 @@ def generate(dossier, target, previous, feedback=''):
                 'motion': raw.get('motion') if raw.get('motion') in MOTIONS else 'stable',
                 'mood': raw_emotion if raw_emotion in EMOTIONS else 'neutral',
                 'ambient': raw.get('ambient') or 'wind'})
-        prior = part[-1]['text'][-160:]
         print(json.dumps({'story_stage': 'chapter_complete', 'chapter': chapter,
-                          'segments': len(part)}), flush=True)
+                          'segments': len(chapter_segments)}), flush=True)
         if index < len(chapters) - 1:
             time.sleep(float(os.getenv('STORY_PACE_SECONDS', '10')))
     if len(segments) < 80:
