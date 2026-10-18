@@ -17,7 +17,9 @@ def validate(dossier, live=False, require_review=True):
             # A reachable page is not proof of a claim: human-reviewed evidence is also required.
             from html import unescape
             import re
-            page = re.sub(r'<[^>]+>', ' ', unescape(response.text))
+            html = unescape(response.text)
+            html = re.sub(r'<(script|style)\b[^>]*>.*?</\1>', ' ', html, flags=re.I | re.S)
+            page = re.sub(r'<[^>]+>', ' ', html)
             plain = lambda t: re.sub(r'\s+', ' ', t).strip().casefold()
             if plain(s['excerpt']) not in plain(page):
                 raise ValueError('Source evidence excerpt not found on current page')

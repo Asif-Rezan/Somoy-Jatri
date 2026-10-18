@@ -25,3 +25,19 @@ def test_auto_research_rejects_unknown_citation(monkeypatch):
         'facts': [{'claim': 'Claim', 'source_id': 'unknown'}] * 3})
     with pytest.raises(ValueError, match='unknown source'):
         build([])
+
+
+def test_source_excerpt_matches_after_script_removal(monkeypatch):
+    from somoy_jatri.research.dossier import validate
+    class Response:
+        text = '<title>Evidence</title><script>injected script words</script><p>Paragraph about the site</p>'
+        def raise_for_status(self): pass
+    monkeypatch.setattr('somoy_jatri.research.dossier.requests.get', lambda *a, **k: Response())
+    packet = {k: 'Unknown; reconstruct cautiously' for k in
+              ['politics', 'culture', 'clothing', 'buildings', 'tools', 'transportation',
+               'food', 'trades', 'social_life', 'events']}
+    packet.update(location='Site', period='Period', uncertain=['Uncertain'],
+                  facts=[{'claim': 'Fact', 'source_id': 's1'}],
+                  sources=[{'id': 's1', 'title': 'Page', 'url': 'https://example.org',
+                            'excerpt': 'Evidence Paragraph about the site'}])
+    assert validate(packet, live=True, require_review=False) is packet
