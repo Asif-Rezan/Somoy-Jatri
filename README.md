@@ -118,7 +118,7 @@ The YouTube helper requires `EXPECTED_CHANNEL_ID` and confirms the selected chan
 
 | GitHub Actions secret | Purpose |
 |---|---|
-| `GROQ_API_KEY` | Natural Bangla script generation and semantic review |
+| `GROQ_API_KEY` | Natural Bangla script generation, semantic review, and production Bengali speech alignment |
 | `HF_TOKEN` | Optional for the public default voice; required if selecting a gated model |
 | `YOUTUBE_TOKEN_JSON` | Separate OAuth authorized-user JSON for this channel |
 | `DRIVE_TOKEN_JSON` | OAuth authorized-user JSON with `drive.file` scope |
