@@ -1,0 +1,32 @@
+name: Start requested full verification
+on:
+  push:
+    branches: [main]
+    paths: [.github/verification-request.json]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Start the requested checkpoint verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request
+          from pathlib import Path
+          inputs=json.loads(Path('.github/verification-request.json').read_text())
+          if set(inputs)!={'source_run','source_artifact','text_provider'}:raise ValueError('Invalid verification request')
+          request=urllib.request.Request('https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/workflows/verify-production.yml/dispatches',
+              data=json.dumps({'ref':'main','inputs':inputs}).encode(),
+              headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+          with urllib.request.urlopen(request,timeout=30) as response:
+              assert response.status==204
+          print('Full checkpoint verification requested')
+          PY
