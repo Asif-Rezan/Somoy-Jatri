@@ -24,7 +24,7 @@ jobs:
           inputs=json.loads(Path('.github/verification-request.json').read_text())
           if set(inputs)!={'source_run','source_artifact','text_provider'}:raise ValueError('Invalid verification request')
           request=urllib.request.Request('https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/workflows/verify-production.yml/dispatches',
-              data=json.dumps({'ref':'main','inputs':inputs}).encode(),
+              data=json.dumps({'ref':'main','inputs':{k:str(v) for k,v in inputs.items()}}).encode(),
               headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
           with urllib.request.urlopen(request,timeout=30) as response:
               assert response.status==204
