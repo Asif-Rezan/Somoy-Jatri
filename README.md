@@ -185,3 +185,5 @@ For an interrupted narration stage, use **Resume voice in parallel and upload pr
 ### Optional Gemini text fallback
 
 Set the repository secret `GEMINI_API_KEY` to enable Gemini when Groq text-model quota is exhausted. The default model is `gemini-3.8-flash`, with `gemini-3.5-flash-lite` available when its quota is exhausted. `GEMINI_MODEL` and `GEMINI_FALLBACK_MODELS` can select compatible models. The same JSON schemas, citation validation, storyboard review, and audio checks remain required. `STORY_PROVIDER=gemini` exercises Gemini directly in the full verification workflow. Image timing does not require audio transcription. Keys are sent in request headers and never logged or committed.
+
+Background music uses an original historical documentary instrumental bed: low drones, slow modal string tones, sparse plucked notes and soft frame-drum pulses. Cues continue across seven-second image cuts and duck beneath Bangla narration.

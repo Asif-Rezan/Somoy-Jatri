@@ -110,7 +110,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERIFIED_OPERATION: stage
         run: python scripts/stage_verified_story.py
-      - name: Prepare final Bangla voice and dynamic timeline
+      - name: Prepare Bangla narration and seven-second image schedule
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -204,7 +204,7 @@ jobs:
         with:
           name: prepared
           path: output/episode-${{ github.run_id }}
-      - name: Generate assigned dynamic shots
+      - name: Generate assigned seven-second images
         env:
           SHARD: ${{ matrix.shard }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}

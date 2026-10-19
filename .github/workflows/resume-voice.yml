@@ -191,7 +191,7 @@ jobs:
         with:
           name: prepared
           path: output/${{ env.RUN }}
-      - name: Generate assigned dynamic shots
+      - name: Generate assigned seven-second images
         env:
           SHARD: ${{ matrix.shard }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}

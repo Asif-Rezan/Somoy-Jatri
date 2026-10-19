@@ -1,0 +1,13 @@
+{
+  "request": "2026-10-19-documentary-seven-second-images",
+  "inputs": {
+    "mode": "production",
+    "dossier": "auto",
+    "workers": "16",
+    "target": "720",
+    "visibility": "private",
+    "captions": "true",
+    "music": "true",
+    "preview_only": "true"
+  }
+}

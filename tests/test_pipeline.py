@@ -75,7 +75,7 @@ def test_shards_complete_and_disjoint(prepared):
 def test_music_moods_and_fades(prepared):
     from somoy_jatri.music.scoring import plan,score
     _,shots=prepared;cues=plan(shots);audio=score(cues,shots[-1]['end'])
-    assert len(cues)==len(shots)
+    assert len(cues)==1+sum(a['chapter']!=b['chapter'] for a,b in zip(shots,shots[1:]))
     assert len(audio)==round(shots[-1]['end']*24000)
     assert abs(audio[0])<.00001 and abs(audio[-1])<.00001
     for c in cues[:-1]:

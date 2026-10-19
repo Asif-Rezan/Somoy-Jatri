@@ -10,17 +10,26 @@ class ProceduralMusic:
     def generate(self, cue, seconds, seed):
         rng=np.random.default_rng(seed)
         n=round(seconds*RATE); audio=np.zeros(n,dtype=np.float32)
-        roots={'curious':146.83,'amazed':130.81,'reflective':110.,'happy':164.81,'neutral':123.47}
-        root=roots.get(cue['mood'],138.59)
-        step={'reflective':1.7,'curious':.85,'amazed':1.2}.get(cue['mood'],1.)
-        scale=[0,2,5,7,9] if cue['mood']!='reflective' else [0,3,5,7,10]
-        for j,start in enumerate(np.arange(0,seconds,step)):
-            length=min(step*1.8,seconds-start); t=np.arange(round(length*RATE))/RATE
-            freq=root*2**(int(rng.choice(scale))/12)
-            signal=(np.sin(2*np.pi*freq*t)+.22*np.sin(4*np.pi*freq*t))*np.minimum(t/.08,1)*np.exp(-t/1.2)
-            a=round(start*RATE); b=min(n,a+len(signal)); audio[a:b]+=.17*signal[:b-a]
+        # Restrained historical documentary bed: modal strings, drone,
+        # sparse plucked notes and soft frame-drum pulses beneath narration.
+        root=110.
         t=np.arange(n)/RATE
-        audio+=.035*np.sin(2*np.pi*root*.5*t)
+        for semitone,level in [(0,.022),(7,.012),(12,.008)]:
+            freq=root*2**(semitone/12)
+            swell=.7+.3*np.sin(2*np.pi*t/12+semitone)
+            audio+=level*swell*(np.sin(2*np.pi*freq*t)+.18*np.sin(4*np.pi*freq*t))
+        audio+=.018*np.sin(2*np.pi*(root/2)*t)
+        for start in np.arange(0,seconds,3.2):
+            length=min(4.,seconds-start);note_t=np.arange(round(length*RATE))/RATE
+            freq=root*2**(int(rng.choice([0,2,3,7,10]))/12)
+            attack=np.minimum(note_t/.035,1)
+            signal=.035*(np.sin(2*np.pi*freq*note_t)+.15*np.sin(4*np.pi*freq*note_t))*attack*np.exp(-note_t/1.1)
+            a=round(start*RATE);b=min(n,a+len(signal));audio[a:b]+=signal[:b-a]
+        for start in np.arange(0,seconds,2.4):
+            drum_t=np.arange(round(min(.45,seconds-start)*RATE))/RATE
+            phase=2*np.pi*(65*drum_t+30*.05*(1-np.exp(-drum_t/.05)))
+            drum=.022*np.sin(phase)*np.minimum(drum_t/.008,1)*np.exp(-drum_t/.09)
+            a=round(start*RATE);b=min(n,a+len(drum));audio[a:b]+=drum[:b-a]
         f=min(round(cue['fade']*RATE),n//2)
         audio[:f]*=np.linspace(0,1,f);audio[-f:]*=np.linspace(1,0,f)
         return audio
@@ -38,11 +47,11 @@ class LicensedMusic:
 def plan(shots):
     cues=[]
     for s in shots:
-        key=(s['chapter'],s['mood'])
-        if cues and (cues[-1]['chapter'],cues[-1]['mood'])==key:
+        key=s['chapter']
+        if cues and cues[-1]['chapter']==key:
             cues[-1]['end']=s['end'];continue
         cues.append({'start':s['start'],'end':s['end'],'chapter':s['chapter'],
-            'mood':s['mood'],'style':s['scene']+'_ambient','intensity':.35,'fade':1.5,'ducking':True})
+            'mood':'reflective','style':'historical_documentary','intensity':.35,'fade':1.5,'ducking':True})
     return cues
 
 
