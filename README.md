@@ -8,7 +8,7 @@ A modular Python pipeline for Bangla first-person historical reconstruction vide
 
 **Development implementation; not verified as production-ready.** Offline tests and a real short FFmpeg render pass. Mock narration is an audible tone, and mock images are labelled geometric fixtures. They demonstrate timing, captions, mixing, rendering and safety checks, not speech quality or photorealism. Mock outputs cannot upload.
 
-Real Indic Parler synthesis, Bengali ASR quality, SSD-1B CPU resource consumption, Groq story quality, Google Drive operations and YouTube uploads require integration tests. No live video has been uploaded by this implementation. Human historical and voice-quality review remains necessary.
+Real Indic Parler synthesis, measured audio quality, SSD-1B CPU resource consumption, Groq story quality, Google Drive operations and YouTube uploads require integration tests. No live video has been uploaded by this implementation. Human historical and voice-quality review remains necessary.
 
 ## Quick start (no secrets)
 
@@ -32,7 +32,7 @@ Inspect `output/preview/video.mp4`, `captions.srt`, `captions.ass`, `thumbnail.j
 | Source evidence | `research/dossier.py` |
 | Original Bangla scripts | `scripts/groq.py`, `topics/history.py` |
 | Voice and normalization | `narration/` |
-| Bengali speech verification | `alignment/timing.py` |
+| Audio checks and optional transcription utilities | `narration/providers.py`, `alignment/timing.py` |
 | Dynamic shots and continuity | `storyboard/timeline.py` |
 | Configurable CPU images | `images/providers.py` |
 | Motion rendering | `animation/motion.py`, `renderer/ffmpeg.py` |
@@ -179,7 +179,7 @@ Story requests prefer GPT-OSS 120B. On a long quota reset, an available GPT-OSS 
 
 Completed narration can be reused with **Resume prepared episode and upload privately**. Enter the original Actions run number containing a successful `prepared` artifact. The workflow checks production mode, 600–900-second narration, Bengali speech verification, timeline coverage and semantic review before repartitioning only the image worker count. Audio and scene content are retained. Upload remains private and uses the original episode ID to preserve duplicate-upload protection. New generation and the daily dispatcher now request up to 16 parallel standard CPU image jobs, subject to account capacity, with four CPU threads per worker.
 
-For an interrupted narration stage, use **Resume voice in parallel and upload privately** with the original run number. It reviews the saved story before more synthesis, reuses existing utterances, distributes remaining takes over eight CPU workers by default, and merges disjoint voice artifacts. Successful takes retain a fingerprint, audio checksum and measured-audio receipt, so assembly does not repeat synthesis or transcription. The resulting episode ID is unchanged, protecting against duplicate uploads. Automatically sourced research is eligible for private review uploads; it never receives a fabricated human reviewer and remains blocked from public/unlisted upload.
+For an interrupted narration stage, use **Resume voice in parallel and upload privately** with the original run number. It reviews the saved story before more synthesis, reuses existing utterances, distributes remaining takes over eight CPU workers by default, and merges disjoint voice artifacts. Successful takes retain a fingerprint, audio checksum and measured-audio receipt, so assembly does not repeat synthesis or transcription. The resulting episode ID is unchanged, protecting against duplicate uploads. The recovery workflow defaults to `preview_only=true`; it generates the video without uploading unless that option is explicitly disabled. Automatically sourced research is eligible for private review uploads; it never receives a fabricated human reviewer and remains blocked from public/unlisted upload.
 
 
 ### Optional Gemini text fallback

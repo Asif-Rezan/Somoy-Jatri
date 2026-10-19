@@ -1,0 +1,50 @@
+name: Start requested verified video recovery
+on:
+  push:
+    branches: [main]
+    paths: ['.github/verified-video-request.json']
+permissions:
+  contents: read
+  actions: write
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERIFIED_OPERATION: check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -e .
+      - name: Load the requested successful verification run
+        run: |
+          python - <<'PYCODE'
+          import json,os
+          from pathlib import Path
+          request=json.loads(Path('.github/verified-video-request.json').read_text())
+          source=request['verification_run']
+          if type(source) is not int or source<=0:
+              raise ValueError('Positive verification run number required')
+          with open(os.environ['GITHUB_ENV'],'a') as output:
+              output.write('RESEARCH_DOSSIER=verified:'+str(source)+'\n')
+          PYCODE
+      - name: Require the complete live verification to have passed
+        run: python scripts/stage_verified_story.py
+      - name: Resume the tested episode without YouTube upload
+        run: |
+          python - <<'PYCODE'
+          import json,os,urllib.request
+          body={'ref':'main','inputs':{'source_run':'39155565992','episode_run':'39155565992',
+            'source_artifact':'prepared','voice_workers':'8','image_workers':'16','preview_only':'true'}}
+          request=urllib.request.Request('https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/workflows/resume-voice.yml/dispatches',
+            data=json.dumps(body).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+            'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+          with urllib.request.urlopen(request,timeout=30) as response:
+              if response.status!=204: raise ValueError('Generation dispatch did not succeed')
+          print('Started voice recovery with seven-second visuals; YouTube upload disabled.')
+          PYCODE
