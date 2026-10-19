@@ -19,6 +19,16 @@ def main():
     for segment in story['segments']:
         segment['text'] = normalize(segment['text'])
         validate_segment(segment)
+    # A retained review is reusable only for the exact same normalized story and dossier.
+    # reviewed_story recomputes its fingerprint and reruns model review if either changed.
+    receipt=root/'verification-review.json'
+    if not receipt.exists() and (root/'semantic-review.json').exists():
+        from somoy_jatri.utils import save
+        save(receipt,load(root/'semantic-review.json'))
+    from somoy_jatri.narration.providers import measure_take
+    paths=sorted((root/'utterances').glob('*.wav'))
+    for path in paths:measure_take(path)
+    if paths:print(json.dumps({'verification_stage':'saved_audio_checked','takes':len(paths)}),flush=True)
     result = reviewed_story(story, dossier, root / 'verification-review.json')
     if result.get('passed') is not True:
         raise ValueError('Storyboard replay did not pass')

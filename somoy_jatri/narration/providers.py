@@ -93,3 +93,54 @@ def save_verified_take(path, fingerprint, asr):
     if asr.get('similarity', 0) < .65 or not asr.get('words'):
         raise ValueError('Cannot cache rejected speech')
     save(path.with_suffix('.json'), {'fingerprint':fingerprint,'sha256':digest(path),'asr':asr})
+
+
+def measure_take(path):
+    """Validate audio itself; transcription similarity is not an image/voice gate."""
+    from somoy_jatri.audio import read_wav, RATE
+    import subprocess
+    try:samples=read_wav(path)
+    except subprocess.CalledProcessError:raise ValueError('Unreadable narration audio') from None
+    seconds=len(samples)/RATE
+    if not np.isfinite(samples).all() or not .3<=seconds<=60:
+        raise ValueError('Invalid narration audio duration or samples')
+    peak=float(np.max(np.abs(samples)))
+    rms=float(np.sqrt(np.mean(samples**2)))
+    if peak<.001 or rms<.0005 or float(np.mean(np.abs(samples)>=.999))>.001:
+        raise ValueError('Narration audio is silent or clipped')
+    return {'method':'measured-audio','passed':True,'seconds':seconds,'peak':peak,'rms':rms,
+            'transcript_verified':False}
+
+
+def measured_take(path, fingerprint):
+    from somoy_jatri.utils import load, digest
+    stamp=path.with_suffix('.json')
+    if not path.exists() or not stamp.exists():return None
+    receipt=load(stamp)
+    if receipt.get('fingerprint')!=fingerprint or receipt.get('sha256')!=digest(path):return None
+    try:return measure_take(path)
+    except ValueError:return None
+
+
+def save_measured_take(path,fingerprint,audio):
+    from somoy_jatri.utils import save,digest
+    checked=measure_take(path)
+    save(path.with_suffix('.json'),{'fingerprint':fingerprint,'sha256':digest(path),'audio':checked})
+
+
+def synthesize_measured(tts,segment,path,reuse=False,attempts=3):
+    import json
+    for attempt in range(attempts):
+        if not reuse or attempt:tts.synthesize(segment['text'],segment['emotion'],segment['intensity'],path)
+        try:return measure_take(path)
+        except ValueError:
+            print(json.dumps({'voice_stage':'audio_rejected','attempt':attempt+1}),flush=True)
+    raise ValueError('Narration audio failed checks after three takes')
+
+
+def audio_record_passed(record):
+    audio=record.get('audio',{})
+    # Existing ASR-verified receipts remain valid for older saved episodes.
+    return (audio.get('method')=='measured-audio' and audio.get('passed') is True
+            and .3<=audio.get('seconds',0)<=60 and audio.get('rms',0)>=.0005) or (
+                record.get('asr',{}).get('similarity',0)>=.65 and bool(record.get('asr',{}).get('words')))

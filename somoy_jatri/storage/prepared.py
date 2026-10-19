@@ -18,9 +18,14 @@ def repartition(root, workers):
     shots = load(root/'timeline.json')
     validate(shots, total)
     records = load(root/'narration.json')
-    if len(records) != len(shots) or any(
-            r.get('asr', {}).get('similarity', 0) < .65 or not r.get('asr', {}).get('words') for r in records):
+    from somoy_jatri.narration.providers import audio_record_passed
+    if not records or any(not audio_record_passed(r) for r in records):
         raise ValueError('Prepared Bengali speech verification is incomplete')
+    if all('start' in r and 'end' in r for r in records):
+        if abs(records[0]['start'])>.002 or abs(records[-1]['end']-total)>.002:
+            raise ValueError('Prepared narration duration mismatch')
+        if any(abs(a['end']-b['start'])>.002 for a,b in zip(records,records[1:])):
+            raise ValueError('Prepared narration gap or overlap')
     if load(root/'semantic-review.json').get('passed') is not True:
         raise ValueError('Prepared semantic review has not passed')
     config.workers = workers

@@ -40,14 +40,16 @@ def validate_final(root,production=False):
         raise ValueError('Blank frames, decoding failure or extended silence detected')
     if production:
         narration=load(root/'narration.json')
-        if any(s.get('asr',{}).get('similarity',0)<.65 for s in narration):
-            raise ValueError('Bengali speech verification missing')
+        from somoy_jatri.narration.providers import audio_record_passed
+        if not narration or any(not audio_record_passed(s) for s in narration):
+            raise ValueError('Narration audio checks missing')
         if load(root/'semantic-review.json').get('passed') is not True:
             raise ValueError('Semantic review missing')
         require_research_review(load(root/'research.json'))
     qc={'passed':True,'production_ready':production,'duration':total,'width':v['width'],
         'height':v['height'],'voice_peak':voice_peak,'sha256':digest(root/'video.mp4'),
-        'limitations':['No automated proof of historical visual accuracy or perceived voice quality']}
+        'limitations':['No automated proof of historical visual accuracy or perceived voice quality',
+                        'Captions use measured utterance timing; pronunciation is not verified by ASR']}
     save(root/'qc.json',qc)
     return qc
 

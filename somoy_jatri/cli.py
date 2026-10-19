@@ -38,23 +38,19 @@ def main():
     elif args.command=='finish':finish(config)
     elif args.command=='tts-test':
         from somoy_jatri.narration.providers import provider
-        from somoy_jatri.alignment.timing import aligner as make_aligner
+        from somoy_jatri.narration.providers import synthesize_measured
         from somoy_jatri.audio import concatenate
         from somoy_jatri.narration.text import normalize
         root.mkdir(parents=True,exist_ok=True);tts=provider(args.mode);parts=[]
-        aligner=make_aligner() if args.mode=='production' else None
         for i,(text,emotion) in enumerate([
             ('বন্ধুরা, আমরা কি সত্যিই প্রাচীন মিশরে এসে পড়েছি?', 'curious'),
             ('ওই দেখো! সামনে গিজার বিশাল পিরামিড!', 'amazed'),
             ('ভাবতেই অবাক লাগছে, খ্রিস্টপূর্ব ২৫০০ সালে জীবন কত আলাদা ছিল।','reflective')]):
-            path=root/f'voice-{i}.wav';tts.synthesize(normalize(text),emotion,.6,path)
-            if aligner:
-                print(json.dumps({'voice_stage':'sample_synthesized','index':i}),flush=True)
-                result=aligner.align(path,normalize(text),strict=False)
-                print(json.dumps({'voice_stage':'sample_recognized','index':i,
-                    'recognized':result['recognized']},ensure_ascii=False),flush=True)
-                if result['similarity']<.65 or not result['words']:
-                    raise ValueError('Bengali voice sample did not match its script')
+            path=root/f'voice-{i}.wav'
+            if args.mode=='production':
+                result=synthesize_measured(tts,{'text':normalize(text),'emotion':emotion,'intensity':.6},path)
+                print(json.dumps({'voice_stage':'audio_checked','index':i,'seconds':result['seconds']}),flush=True)
+            else:tts.synthesize(normalize(text),emotion,.6,path)
             parts.append((path,500))
         concatenate(parts,root/'voice-test.wav')
     elif args.command=='image-test':

@@ -54,3 +54,24 @@ def duck_gain(voice, base=.13):
         previous = max(activity, previous*.88)
         envelope[i:i+block] = base * (1-.78*previous)
     return envelope
+
+
+def fit_narration(path,bounds,maximum=900,target=895,max_tempo=1.10):
+    """Fit a modest overrun without dropping speech; retain measured caption boundaries."""
+    total=bounds[-1]['end']
+    if total<=maximum or total/target>max_tempo:return bounds
+    from somoy_jatri.utils import duration,save
+    factor=total/target
+    candidate=path.with_name(path.stem+'-tempo.wav')
+    try:
+        run(['ffmpeg','-v','error','-y','-i',path,'-af',f'atempo={factor:.10f}',
+             '-ar',str(RATE),'-ac','1','-c:a','pcm_s16le',candidate])
+        measured=duration(candidate)
+        if not 0<measured<=maximum:raise ValueError('Tempo correction failed duration check')
+        candidate.replace(path)
+        scale=measured/total
+        result=[{k:value*scale for k,value in b.items()} for b in bounds]
+        save(path.with_name('narration-duration.json'),{'method':'bounded-tempo','tempo_factor':factor,
+             'original_seconds':total,'measured_seconds':measured,'maximum_tempo':max_tempo})
+        return result
+    finally:candidate.unlink(missing_ok=True)

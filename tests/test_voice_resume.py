@@ -22,24 +22,28 @@ def test_voice_worker_publishes_only_assigned_takes_and_reuses_old_audio(tmp_pat
     root=tmp_path/'episode-123';root.mkdir();(root/'utterances').mkdir()
     save(root/'config.json',asdict(Config(mode='production',run_id=root.name)))
     story=mock_story();save(root/'story.json',story)
-    old=root/'utterances/0000.wav';old.write_bytes(b'existing voice')
+    old=root/'utterances/0000.wav';
+    import numpy as np
+    from somoy_jatri.audio import write_wav
+    samples=.1*np.sin(np.arange(24000)*.1)
+    write_wav(old,samples)
+    original=old.read_bytes()
     save(old.with_suffix('.json'),{'fingerprint':take_fingerprint(story['segments'][0],'production')})
     calls=[]
     class Voice:
         def synthesize(self,text,emotion,intensity,path):
-            calls.append(text);path.write_bytes(b'new voice')
+            calls.append(text);write_wav(path,samples)
     class Recognition:
         def align(self,*args,**kwargs):return ASR
     monkeypatch.setattr('somoy_jatri.narration.worker.provider',lambda mode:Voice())
-    monkeypatch.setattr('somoy_jatri.narration.worker.aligner',Recognition)
+
     target=tmp_path/'shard'
     generate_shard(root,0,2,target)
     assert len(calls)==1  # Take zero was re-verified, not synthesized again.
-    assert old.read_bytes()==b'existing voice'
+    assert old.read_bytes()==original
     assert {p.name for p in (target/'utterances').iterdir()}=={'0000.wav','0000.json','0002.wav','0002.json'}
     # Valid receipts permit recovery without loading a voice or ASR model.
     monkeypatch.setattr('somoy_jatri.narration.worker.provider',lambda mode:pytest.fail('Loaded voice for cached takes'))
-    monkeypatch.setattr('somoy_jatri.narration.worker.aligner',lambda:pytest.fail('Repeated ASR for cached takes'))
     generate_shard(root,0,2,tmp_path/'cached-shard')
 
 

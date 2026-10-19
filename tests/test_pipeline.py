@@ -40,12 +40,15 @@ def test_duration_and_config():
     with pytest.raises(ValueError):Config(run_id='../escape')
     with pytest.raises(ValueError):Config(workers=64)
 
-def test_actual_audio_drives_shots(prepared):
+def test_images_cut_every_seven_seconds_independent_of_voice(prepared):
     config,shots=prepared
     narration=load(config.root/'narration.json')
-    assert shots[1]['start']==narration[0]['end']
-    assert len({round(s['end']-s['start'],3) for s in shots})>1
-    assert all(abs(s['end']-s['start']-7)>.01 for s in shots)
+    assert shots[1]['start']==7
+    assert shots[1]['start']!=narration[0]['end']
+    assert all(s['end']-s['start']==7 for s in shots[:-1])
+    assert 0<shots[-1]['end']-shots[-1]['start']<=7
+    assert shots[-1]['end']==narration[-1]['end']
+
 
 def test_timeline_rejects_gap_and_overlap(prepared):
     _,shots=prepared
@@ -59,7 +62,7 @@ def test_timeline_rejects_nan(prepared):
 
 def test_prompt_correspondence(prepared):
     _,shots=prepared
-    assert 'pottery merchant' in shots[1]['prompt']
+    assert all(s['subject'] in s['prompt'] for s in shots)
     shots[1]['anchors']=['smartphone']
     with pytest.raises(ValueError):validate(shots,shots[-1]['end'])
 
@@ -72,7 +75,7 @@ def test_shards_complete_and_disjoint(prepared):
 def test_music_moods_and_fades(prepared):
     from somoy_jatri.music.scoring import plan,score
     _,shots=prepared;cues=plan(shots);audio=score(cues,shots[-1]['end'])
-    assert len(cues)==3
+    assert len(cues)==len(shots)
     assert len(audio)==round(shots[-1]['end']*24000)
     assert abs(audio[0])<.00001 and abs(audio[-1])<.00001
     for c in cues[:-1]:

@@ -43,21 +43,21 @@ Inspect `output/preview/video.mp4`, `captions.srt`, `captions.ass`, `thumbnail.j
 
 All stage boundaries use UTF-8 JSON manifests. Assets live under run IDs. The pipeline logs durations and peak resident memory without credential values. Commands are argv lists, never generated shell strings. Copy `.env.example` to `.env` if helpful, but export variables explicitly: the CLI deliberately does not automatically load files containing secrets.
 
-## Narration and dynamic timing
+## Narration and seven-second images
 
 The default CPU voice is the public Bengali Parler model (`Tanmoyshome/bn-parler-tts`). It has a fixed Bengali female-speaker description and does not provide verified emotion or named-speaker control. The optional gated `ai4bharat/indic-parler-tts` backend supports the documented Bengali speaker descriptions. Accent, naturalness and emotion still require listening review. See [model evaluation](docs/models.md).
 
-Every short semantic utterance is synthesized separately. Its decoded audio sample count establishes exact boundaries, including intentional pauses. The final narration is concatenated before creating shot manifests. When `GROQ_API_KEY` is configured, multilingual `whisper-large-v3` checks speech against the original Bangla; otherwise faster-whisper (`small`, `language=bn`, CPU int8) runs locally. English-only Whisper models are rejected. This is transcription-based alignment, not a Bengali forced-aligner accuracy claim. A take below 0.65 script similarity is regenerated up to three times; preparation stops if all takes fail. The threshold is never lowered to accept a failed take. ASR word times are clipped to the decoded audio boundaries, with invalid timing rejected. Word times refine captions when usable; measured utterance boundaries remain the sentence fallback.
+Each short utterance is synthesized separately and checked for decoded duration, finite samples, audible level and clipping. Unusable audio is regenerated up to three times. Production no longer requires a transcription similarity score. A checksum and text fingerprint bind each reusable voice file to its script. Pronunciation still needs listening review; passing these checks does not certify exact spoken words.
 
-Each distinct narrated subject receives a shot with its own duration. There is **no fixed image interval** and no proportional text-length timing in production. Complex sentences must be split into separate visual utterances during script generation. A deterministic validator checks coverage, overlaps, gaps and prompt anchors; a separate Groq review compares Bangla narration with English visuals and dossier facts. This model review is not factual proof. Continuity is prompt-based scene memory, not guaranteed pixel-level identity.
+Images change every **7 seconds**, independently of utterance boundaries, with a shorter final image when necessary. The visual sequence progresses through the reviewed storyboard; it is not word-synchronized. Captions use the original Bangla text and measured utterance start/end times, so image changes do not split or repeat captions. Existing word timestamps can refine captions for older saved episodes.
 
-If voice duration falls outside 600–900 seconds, Groq revises the script and narration is regenerated (maximum three versions). Speech is never forcibly truncated or sped up to meet duration.
+For a modest overrun, FFmpeg applies a pitch-preserving tempo adjustment capped at 1.10× and measures the result again. Caption boundaries scale to the measured output. Larger overruns or narration below 600 seconds require script revision (maximum three versions). Speech is never truncated.
 
 ## Visuals
 
 SSD-1B starts at 1024×576, 16 steps, float32 CPU, attention/VAE slicing. Prompts contain historical period, setting, action, clothing, architecture, first-person framing and negative constraints. The initial revision is pinned to the reference's inspected checkpoint. Set both `CPU_IMAGE_MODEL` **and** `CPU_MODEL_REVISION` when switching models; implement another `ImageProvider` for a different architecture.
 
-Only verified images with matching prompt fingerprints/checksums are reused. Failed generation retains the run. No unrelated environmental image is substituted for a missing merchant or other narrated subject. Camera motion uses efficient FFmpeg zoom/pan/tilt/drift; it is not full image-to-video inference. Depth-based parallax/reference conditioning are extension points, not implemented capabilities. Shot cuts are synchronized to cumulative frame-rounded audio boundaries; crossfades between images are not currently implemented.
+Only verified images with matching prompt fingerprints/checksums are reused. Failed generation retains the run. No unrelated environmental image is substituted for a missing merchant or other narrated subject. Camera motion uses efficient FFmpeg zoom/pan/tilt/drift; it is not full image-to-video inference. Depth-based parallax/reference conditioning are extension points, not implemented capabilities. Shot cuts follow the fixed seven-second schedule with cumulative frame rounding; crossfades between images are not currently implemented.
 
 Default four image jobs, with GitHub `max-parallel: 4`. Each runner loads one model. Increasing the matrix count does not enlarge one runner's RAM/CPU and may increase queue time or billable use. SSD-1B may exceed a standard runner's practical memory/time budget; validate one image before a full episode. Use a larger appropriately configured runner if necessary. No CPU speed claims have been measured here.
 
@@ -118,7 +118,7 @@ The YouTube helper requires `EXPECTED_CHANNEL_ID` and confirms the selected chan
 
 | GitHub Actions secret | Purpose |
 |---|---|
-| `GROQ_API_KEY` | Natural Bangla script generation, semantic review, and production Bengali speech alignment |
+| `GROQ_API_KEY` | Natural Bangla script generation and semantic review |
 | `HF_TOKEN` | Optional for the public default voice; required if selecting a gated model |
 | `YOUTUBE_TOKEN_JSON` | Separate OAuth authorized-user JSON for this channel |
 | `DRIVE_TOKEN_JSON` | OAuth authorized-user JSON with `drive.file` scope |
@@ -143,7 +143,7 @@ For a local prepared production run, use `prepare`, each `images --shard N`, `fi
 
 - `checks.yml`: secret-free tests and real short preview.
 - `components.yml`: female Bangla voice, historical image, or music test.
-- `generate.yml`: dynamic prepare → parallel image shards → finish/QC → optional upload.
+- `generate.yml`: measured narration and seven-second image prepare → parallel image shards → finish/QC → optional upload.
 - `recovery.yml`: restore, regenerate a shard, finish, verify an upload or clean.
 - `daily.yml`: explicit daily gate. No active cron trigger by default.
 
@@ -165,7 +165,7 @@ The daily workflow is scheduled for 00:00 UTC / 06:00 Dhaka. It selects the next
 ## Troubleshooting and remaining integration work
 
 - Missing model access: accept current upstream access conditions and check `HF_TOKEN`; no paid fallback is automatic.
-- TTS/ASR mismatch: inspect the individual utterance, normalization and voice test. Do not bypass the similarity gate to publish.
+- Voice failure: inspect the saved utterance for silence, clipping or invalid duration. Audio checks do not certify pronunciation.
 - Duration failure: preparation rewrites and resynthesizes within bounded attempts. Review script lengths after failure.
 - Source excerpt mismatch: websites change; review and update evidence instead of fabricating citations.
 - OOM/timeouts: lower resolution/steps, reduce concurrent jobs, or provision a suitable runner. Recover verified images from checkpoints.
@@ -179,9 +179,9 @@ Story requests prefer GPT-OSS 120B. On a long quota reset, an available GPT-OSS 
 
 Completed narration can be reused with **Resume prepared episode and upload privately**. Enter the original Actions run number containing a successful `prepared` artifact. The workflow checks production mode, 600–900-second narration, Bengali speech verification, timeline coverage and semantic review before repartitioning only the image worker count. Audio and scene content are retained. Upload remains private and uses the original episode ID to preserve duplicate-upload protection. New generation and the daily dispatcher now request up to 16 parallel standard CPU image jobs, subject to account capacity, with four CPU threads per worker.
 
-For an interrupted narration stage, use **Resume voice in parallel and upload privately** with the original run number. It reviews the saved story before more synthesis, reuses existing utterances, distributes remaining takes over eight CPU workers by default, and merges disjoint voice artifacts. Successful takes retain a fingerprint, audio checksum and ASR receipt, so assembly does not repeat synthesis or transcription. The resulting episode ID is unchanged, protecting against duplicate uploads. Automatically sourced research is eligible for private review uploads; it never receives a fabricated human reviewer and remains blocked from public/unlisted upload.
+For an interrupted narration stage, use **Resume voice in parallel and upload privately** with the original run number. It reviews the saved story before more synthesis, reuses existing utterances, distributes remaining takes over eight CPU workers by default, and merges disjoint voice artifacts. Successful takes retain a fingerprint, audio checksum and measured-audio receipt, so assembly does not repeat synthesis or transcription. The resulting episode ID is unchanged, protecting against duplicate uploads. Automatically sourced research is eligible for private review uploads; it never receives a fabricated human reviewer and remains blocked from public/unlisted upload.
 
 
 ### Optional Gemini text fallback
 
-Set the repository secret `GEMINI_API_KEY` to enable Gemini when Groq text-model quota is exhausted. The default model is `gemini-3.8-flash`, with `gemini-3.5-flash-lite` available when its quota is exhausted. `GEMINI_MODEL` and `GEMINI_FALLBACK_MODELS` can select compatible models. The same JSON schemas, citation validation, storyboard review, and speech quality gates remain required. `STORY_PROVIDER=gemini` exercises Gemini directly in the full verification workflow. Audio transcription continues to use the configured multilingual ASR provider. Keys are sent in request headers and never logged or committed.
+Set the repository secret `GEMINI_API_KEY` to enable Gemini when Groq text-model quota is exhausted. The default model is `gemini-3.8-flash`, with `gemini-3.5-flash-lite` available when its quota is exhausted. `GEMINI_MODEL` and `GEMINI_FALLBACK_MODELS` can select compatible models. The same JSON schemas, citation validation, storyboard review, and audio checks remain required. `STORY_PROVIDER=gemini` exercises Gemini directly in the full verification workflow. Image timing does not require audio transcription. Keys are sent in request headers and never logged or committed.

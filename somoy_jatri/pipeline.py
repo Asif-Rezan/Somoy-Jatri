@@ -4,7 +4,6 @@ from somoy_jatri.utils import save,load,duration
 from somoy_jatri.narration.text import normalize,validate_segment
 from somoy_jatri.narration.providers import provider
 from somoy_jatri.audio import concatenate,read_wav
-from somoy_jatri.alignment.timing import aligner as make_aligner
 from somoy_jatri.storyboard.timeline import build,evaluate_semantics,reviewed_story
 
 
@@ -53,7 +52,7 @@ def prepare(config,topic='',period=''):
         else:
             dossier=validate(load(source),live=True)
         if period and period!=dossier['period']:raise ValueError('Period input differs from reviewed dossier')
-    if config.mode=='production' and dossier.get('research_method')=='automatic source extraction' and len(dossier['facts'])<8:
+    if config.mode=='production' and dossier.get('research_method')=='automatic source extraction' and len(dossier['facts'])<8 and not (root/'story.json').exists():
         from somoy_jatri.research.automatic import enrich
         dossier=enrich(dossier)
     save(root/'research.json',dossier)
@@ -91,38 +90,37 @@ def prepare(config,topic='',period=''):
         for i,s in enumerate(story['segments']):
             path=utterances/f'{i:04}.wav'
             # Manifest fingerprint prevents using stale speech after script revisions.
-            from somoy_jatri.narration.providers import take_fingerprint,verified_take,save_verified_take
+            from somoy_jatri.narration.providers import (take_fingerprint,measured_take,
+                save_measured_take,synthesize_measured)
             fingerprint=take_fingerprint(s,config.mode)
             stamp=path.with_suffix('.json')
-            cached = path.exists() and stamp.exists() and load(stamp).get('fingerprint')==fingerprint
-            asr={}
+            cached=path.exists() and stamp.exists() and load(stamp).get('fingerprint')==fingerprint
+            audio={}
             if config.mode=='production':
-                from somoy_jatri.narration.providers import synthesize_verified
                 print(json.dumps({'prepare_stage':'voice_start','index':i}),flush=True)
-                asr=verified_take(path,fingerprint)
-                if asr is None:
+                audio=measured_take(path,fingerprint)
+                if audio is None:
                     tts=tts or provider(config.mode)
-                    aligner=aligner or make_aligner()
-                    asr=synthesize_verified(tts,aligner,s,path,reuse=cached)
-                    save_verified_take(path,fingerprint,asr)
-                print(json.dumps({'prepare_stage':'voice_verified','index':i}),flush=True)
+                    audio=synthesize_measured(tts,s,path,reuse=cached)
+                    save_measured_take(path,fingerprint,audio)
+                print(json.dumps({'prepare_stage':'audio_checked','index':i}),flush=True)
             elif not cached:
                 tts=tts or provider(config.mode)
                 tts.synthesize(s['text'],s['emotion'],s['intensity'],path)
-            if config.mode=='mock': save(stamp,{'fingerprint':fingerprint})
-            parts.append((path,s['pause_after_ms']));records.append({'text':s['text'],'asr':asr})
+            if config.mode=='mock':save(stamp,{'fingerprint':fingerprint})
+            parts.append((path,s['pause_after_ms']));records.append({'text':s['text'],'audio':audio})
         bounds=concatenate(parts,root/'narration.wav')
+        if config.mode=='production':
+            from somoy_jatri.audio import fit_narration
+            bounds=fit_narration(root/'narration.wav',bounds)
         total=bounds[-1]['end']
         if config.mode=='mock' or 600<=total<=900:break
-        if revision==2:raise ValueError('Narration duration outside 600–900s after revisions; never speed up or truncate')
+        if revision==2:raise ValueError('Narration duration outside 600–900s after duration correction and script revisions')
         story=generate(dossier,config.target,previous,
             f'Measured previous voice duration {total:.1f}s. Adjust total words by ratio {config.target/total:.3f}.')
     for record,b in zip(records,bounds):record.update(b)
     save(root/'narration.json',records)
     shots=build(story,bounds,dossier)
-    for shot,record in zip(shots,records):
-        shot['words']=[dict(w,start=w['start']+shot['start'],end=w['end']+shot['start'])
-                       for w in record.get('asr',{}).get('words',[])]
     review={'passed':True,'method':'mock-only, no semantic quality claim'} if config.mode=='mock' else reviewed_story(story,dossier,root/'semantic-review.json')
     save(root/'semantic-review.json',review);save(root/'timeline.json',shots)
     return shots

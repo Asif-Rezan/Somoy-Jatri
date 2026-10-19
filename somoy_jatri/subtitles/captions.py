@@ -36,6 +36,13 @@ def chunks(shot):
 
 def generate(root,shots):
     font()
+    # Captions follow the measured speech files, never the seven-second image cuts.
+    from somoy_jatri.utils import load
+    if (root/'narration.json').exists():
+        records=load(root/'narration.json')
+        shots=[{'start':r['start'],'speech_end':r['speech_end'],'narration':r['text'],
+                'words':[dict(w,start=w['start']+r['start'],end=w['end']+r['start'])
+                         for w in r.get('asr',{}).get('words',[])]} for r in records]
     entries=[e for s in shots for e in chunks(s)]
     srt=[];ass=['[Script Info]','ScriptType: v4.00+','PlayResX: 1920','PlayResY: 1080',
         '[V4+ Styles]',

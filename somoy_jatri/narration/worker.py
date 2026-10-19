@@ -8,8 +8,7 @@ from somoy_jatri.config import Config
 from somoy_jatri.utils import load, save
 from somoy_jatri.narration.text import normalize, validate_segment
 from somoy_jatri.narration.providers import (
-    provider, synthesize_verified, take_fingerprint, verified_take, save_verified_take)
-from somoy_jatri.alignment.timing import aligner
+    provider, synthesize_measured, take_fingerprint, measured_take, save_measured_take)
 
 
 def partial_checkpoint(root, image_workers):
@@ -19,7 +18,7 @@ def partial_checkpoint(root, image_workers):
     if not 1<=image_workers<=16: raise ValueError('Use 1–16 image workers')
     story = load(root/'story.json')
     dossier=load(root/'research.json')
-    if dossier.get('research_method')=='automatic source extraction' and len(dossier['facts'])<8:
+    if dossier.get('research_method')=='automatic source extraction' and len(dossier['facts'])<8 and not (root/'story.json').exists():
         from somoy_jatri.research.automatic import enrich
         dossier=enrich(dossier);save(root/'research.json',dossier)
     facts=dossier['facts']
@@ -58,13 +57,13 @@ def generate_shard(root, shard, count, target):
         if i%count!=shard: continue
         path=root/'utterances'/f'{i:04}.wav'
         fingerprint=take_fingerprint(segment,config.mode)
-        asr=verified_take(path,fingerprint)
+        asr=measured_take(path,fingerprint)
         if asr is None:
             stamp=path.with_suffix('.json')
             reuse=path.exists() and stamp.exists() and load(stamp).get('fingerprint')==fingerprint
-            tts=tts or provider(config.mode);recognizer=recognizer or aligner()
-            asr=synthesize_verified(tts,recognizer,segment,path,reuse=reuse)
-            save_verified_take(path,fingerprint,asr)
+            tts=tts or provider(config.mode)
+            asr=synthesize_measured(tts,segment,path,reuse=reuse)
+            save_measured_take(path,fingerprint,asr)
         # Only this shard's files are published; merging cannot overwrite other workers' takes.
         shutil.copy2(path,target/'utterances'/path.name)
         shutil.copy2(path.with_suffix('.json'),target/'utterances'/path.with_suffix('.json').name)

@@ -15,6 +15,10 @@ on:
         type: choice
         options: [prepared, voice-checkpoint]
         default: prepared
+      preview_only:
+        description: Skip YouTube upload
+        type: boolean
+        default: true
       voice_workers:
         description: Parallel CPU voice workers (1–16)
         type: number
@@ -238,6 +242,7 @@ jobs:
         run: |
           if [ -n "$DRIVE_FOLDER_ID" ]; then python -m somoy_jatri.cli backup --run-id "$RUN"; fi
       - name: Upload only when explicitly requested
+        if: ${{ !inputs.preview_only }}
         env:
           YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
           EXPECTED_CHANNEL_ID: ${{ vars.EXPECTED_CHANNEL_ID }}

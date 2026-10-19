@@ -7,7 +7,13 @@ MOTIONS = {'stable', 'slow_forward', 'slow_backward', 'pan_left', 'pan_right', '
 def build(story, bounds, dossier):
     if len(story['segments']) != len(bounds): raise ValueError('Missing narration boundary')
     shots, memories = [], {}
-    for i, (segment, b) in enumerate(zip(story['segments'], bounds)):
+    total=bounds[-1]['end']
+    # The visual sequence progresses independently of utterance and ASR boundaries.
+    for i in range(math.ceil(total/7)):
+        start=i*7.;end=min((i+1)*7.,total)
+        segment=story['segments'][min(len(story['segments'])-1,
+                                      int(i*len(story['segments'])/math.ceil(total/7)))]
+        b={'start':start,'end':end,'speech_end':end}
         scene = segment['scene']
         memories.setdefault(scene, {'layout': dossier['buildings'], 'clothing': dossier['clothing'],
             'weather': 'clear', 'time_of_day': 'daylight', 'camera_direction': 'forward'})
@@ -20,7 +26,7 @@ def build(story, bounds, dossier):
                   'Narrator behind camera. No modern objects, no fantasy.')
         shots.append(dict(segment, id=f'shot_{i:04}', start=b['start'], end=b['end'],
                           speech_end=b['speech_end'], narration=segment['text'], prompt=prompt,
-                          negative_prompt=NEGATIVE, continuity=memory.copy()))
+                          negative_prompt=NEGATIVE, continuity=memory.copy(), image_interval_seconds=7))
     validate(shots, bounds[-1]['end'])
     return shots
 
@@ -34,6 +40,11 @@ def validate(shots, total):
         if not all(math.isfinite(s[k]) for k in ('start', 'end')): raise ValueError('Nonfinite timing')
         if abs(s['start']-cursor) > .002 or s['end'] <= s['start']:
             raise ValueError('Gap, overlap or nonpositive shot')
+        if s.get('image_interval_seconds')==7:
+            if abs(s['start']/7-round(s['start']/7))>.000001 or s['end']-s['start']>7.000001:
+                raise ValueError('Invalid seven-second image schedule')
+            if s['end']<total-.002 and abs(s['end']-s['start']-7)>.000001:
+                raise ValueError('Only the final image may be shorter than seven seconds')
         if s.get('motion') not in MOTIONS: raise ValueError('Unsupported camera motion')
         anchors = s.get('anchors', [])
         if not anchors or not all(a.casefold() in s['prompt'].casefold() for a in anchors):
