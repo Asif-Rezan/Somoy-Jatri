@@ -18,7 +18,8 @@ jobs:
         with:
           python-version: '3.11'
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg fontconfig
-      - run: pip install -e '.[test]'
+      - run: pip install -e '.[test,alignment]'
+      - run: python scripts/check_alignment_audio.py
       - run: python -m pytest -q
       - run: python -m somoy_jatri.cli preview --run-id requested-preview
       - uses: actions/upload-artifact@v4

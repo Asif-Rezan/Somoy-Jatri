@@ -89,6 +89,7 @@ jobs:
       - if: inputs.mode == 'production'
         run: |
           pip install -r requirements-tts.txt
+          python scripts/check_alignment_audio.py
           python -c "import torch, torchaudio; from parler_tts import ParlerTTSForConditionalGeneration; assert torch.version.cuda is None"
       - name: Verify Bengali narration before writing a full story
         if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')

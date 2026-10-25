@@ -10,3 +10,5 @@ soundfile>=0.13,<0.14
 sentencepiece>=0.2,<0.3
 protobuf>=4,<7
 faster-whisper==1.2.1
+# PyAV 19 removed metadata_errors, still used by faster-whisper 1.2.1.
+av==16.1.0

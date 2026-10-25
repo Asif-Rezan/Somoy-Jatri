@@ -1,5 +1,5 @@
 {
-  "request": "2026-10-19-documentary-seven-second-images",
+  "request": "2026-10-25-fix-whisper-pyav-new-video",
   "inputs": {
     "mode": "production",
     "dossier": "auto",
