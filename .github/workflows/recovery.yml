@@ -8,7 +8,7 @@ on:
         type: string
       operation:
         type: choice
-        options: [restore, images, finish, upload, cleanup]
+        options: [restore, prepare, images, finish, upload, cleanup]
         default: restore
       snapshot:
         type: string
@@ -52,7 +52,19 @@ jobs:
       - name: Install reference MusicRNN CPU runtime
         if: inputs.operation == 'finish'
         run: npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1
-      - if: inputs.operation != 'restore'
+      - name: Install chapter preparation dependencies
+        if: inputs.operation == 'prepare'
+        run: |
+          pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-story.txt -r requirements-tts.txt
+      - if: inputs.operation == 'prepare'
+        env:
+          RESEARCH_DOSSIER: auto
+        run: |
+          python -u -m somoy_jatri.cli prepare --run-id "$RUN" --resume
+          python -u -m somoy_jatri.cli storyboard --run-id "$RUN"
+          python -u -m somoy_jatri.cli refine-plan --run-id "$RUN"
+      - if: inputs.operation != 'restore' && inputs.operation != 'prepare'
         run: python -m somoy_jatri.cli "$OPERATION" --run-id "$RUN" --shard "$SHARD"
       - if: inputs.operation != 'cleanup'
         run: python -m somoy_jatri.cli backup --run-id "$RUN" --snapshot "$SNAPSHOT"

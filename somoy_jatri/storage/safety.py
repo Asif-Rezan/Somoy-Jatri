@@ -5,19 +5,19 @@ from somoy_jatri.utils import load, save, digest
 
 def disposable(name):
     return name in {'mix.wav','music.wav','ambient.wav','narration.wav','video.mp4','thumbnail.jpg'} or bool(
-        re.fullmatch(r'(?:images/shot_\d+\.png|clips/shot_\d+\.mp4|utterances/\d+\.wav)', name))
+        re.fullmatch(r'(?:images/shot_\d+\.png|clips/shot_\d+\.mp4|utterances/\d+\.wav|narration-\d+\.wav)', name))
 
 
 def checkpoint(root):
     # Never archive .env, OAuth files, session URLs, or arbitrary files.
     names={'research.json','story.json','narration.json','timeline.json','music-plan.json',
            'semantic-review.json','config.json','qc.json','metadata.json','captions.srt',
-           'captions.ass','thumbnail.jpg','narration.wav','mix.wav','video.mp4','upload.json'}
+           'captions.ass','duration.json','plan.json','thumbnail.jpg','narration.wav','mix.wav','video.mp4','upload.json'}
     files=[]
     for p in root.rglob('*'):
         name=p.relative_to(root).as_posix()
         if p.is_file() and (name in names or disposable(name) or
-              re.fullmatch(r'(?:images/shot_\d+|utterances/\d+)\.json',name)):
+              re.fullmatch(r'(?:images/shot_\d+|utterances/\d+|narration-\d+\.meta|words-\d+(?:\.meta)?)\.json',name)):
             if p.is_symlink(): raise ValueError('Checkpoint symlink forbidden')
             files.append({'name':name,'sha256':digest(p)})
     save(root/'checkpoint.json',{'project':'somoy-jatri','run':root.name,'files':files})

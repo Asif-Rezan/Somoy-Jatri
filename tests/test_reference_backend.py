@@ -51,9 +51,9 @@ def test_twenty_shards_cover_every_image_once():
 
 def test_generation_starts_local_model_before_prepare():
     text = Path('.github/workflows/generate.yml').read_text()
-    assert text.index('bash scripts/setup_qwen.sh') < text.index('cli prepare')
+    assert text.index('scripts/check_story_cpu.py') < text.index('cli stage-story')
     assert 'max-parallel: 20' in text
-    assert 'TEXT_BACKEND: qwen-local' in text
+    assert 'PREPARATION_PROCESS: after-dark' in text
 
 
 def test_packaging_requires_bengali_and_short_question(monkeypatch):
