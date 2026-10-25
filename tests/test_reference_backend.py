@@ -54,3 +54,33 @@ def test_generation_starts_local_model_before_prepare():
     assert text.index('bash scripts/setup_qwen.sh') < text.index('cli prepare')
     assert 'max-parallel: 20' in text
     assert 'TEXT_BACKEND: qwen-local' in text
+
+
+def test_packaging_requires_bengali_and_short_question(monkeypatch):
+    from somoy_jatri.packaging import generate
+    monkeypatch.setattr(Groq, 'json', lambda *a, **k: {
+        'title':'গিজার পিরামিডের ইতিহাস', 'thumbnail_text':'ভেতরে কী আছে?',
+        'description':'প্রাচীন মিশরের ইতিহাস। তথ্যের আলোকে নির্মাণ।'})
+    result=generate({'location':'Giza','period':'Old Kingdom','facts':[]},
+                    {'segments':[{'text':'পিরামিডের সামনে দাঁড়িয়ে আছি।'}]})
+    assert result['thumbnail_text']=='ভেতরে কী আছে?'
+    monkeypatch.setattr(Groq, 'json', lambda *a, **k: {
+        'title':'English title', 'thumbnail_text':'What is inside?', 'description':'An English description.'})
+    with pytest.raises(ValueError, match='Bangla'):
+        generate({'location':'Giza','period':'Old Kingdom','facts':[]}, {'segments':[]})
+
+
+def test_production_music_uses_reference_generator(tmp_path, monkeypatch):
+    import numpy as np
+    from somoy_jatri.music.scoring import MusicRNN
+    from somoy_jatri.audio import write_wav, RATE
+    calls=[]
+    def generate(path):
+        calls.append(path)
+        t=np.arange(25*RATE)/RATE
+        write_wav(path,.1*np.sin(2*np.pi*220*t))
+    monkeypatch.setattr('somoy_jatri.music.music_cpu.generate',generate)
+    audio=MusicRNN(tmp_path).compose(30)
+    assert len(calls)==2
+    assert len(audio)==30*RATE and audio[0]==audio[-1]==0
+    assert np.max(np.abs(audio))<.02
