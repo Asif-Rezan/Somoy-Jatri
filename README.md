@@ -2,31 +2,44 @@
 
 **ইতিহাস শুধু শুনব না, নিজের চোখে দেখব!**
 
-A Bangla historical time-travel video pipeline aligned with
-`Asif-Rezan/youtube-dark-psychology-automation` at commit `85b67a9`.
-The reference repository is unchanged. See [reference comparison](docs/reference-analysis.md).
+A Bangla historical time-travel video pipeline. Preparation now follows
+`Asif-Rezan/Rezan-After-Dark` at `d6dcde3`; that repository is unchanged.
+See [reference comparison](docs/reference-analysis.md).
 
 ## Production pipeline
 
-- Local **Qwen3.5-9B Q4_K_M** writes research packets, original Bangla scripts,
-  storyboard reviews and packaging. The pinned loopback llama.cpp server has
-  thinking disabled. Qwen failures stop generation without a cloud fallback.
-- **Bengali Parler** narrates short utterances. Measured audio receipts and content
-  hashes prevent stale or silent takes. Duration recovery targets 600–900 seconds.
-  English Kokoro is not used for Bengali speech.
-- **SSD-1B** creates 1024×576 historical illustrations at 16 steps/guidance 9,
-  with the reference scheduler. A new image appears every seven seconds.
-  Twenty independent CPU image workers are requested by default.
-- **Magenta MusicRNN** generates one continuous historical instrumental soundtrack.
-  It does not switch at chapter boundaries. Music fades and ducks under narration.
-- Bengali captions, source-linked Bangla descriptions, Bangla titles and short
-  thumbnail questions accompany 1080p H.264/AAC output.
-- QC, private Drive checkpoints, guarded private YouTube uploads and verified
-  cleanup preserve the existing recovery and duplicate-upload protections.
+1. Install the reference's pinned local **Qwen3-4B-Instruct-2507 Q4_K_M** CPU
+   Python wheel and verify real grammar-constrained Bengali generation. No
+   llama.cpp server build or hosted text API is needed.
+2. Verify the Bengali production voice before full generation.
+3. **Stage story:** select curated sourced historical anchors, generate one
+   concise twenty-chapter outline, then four batches of five Bangla narrations,
+   followed by publishing metadata. Chapter word counts have bounded grammar
+   constraints and at most three retries. No repeated semantic-repair loop runs.
+4. **Prepare:** cache one audio asset per chapter. Bengali Parler internally
+   splits bounded text to avoid truncation. Measure actual duration and rewrite
+   only selected chapters if needed; resynthesize only changed chapters. Tempo
+   correction is capped at 4%, and there are at most three duration corrections.
+5. Cache multilingual Bengali Whisper word timestamps by audio/text hashes.
+   Derive the seven-second visual windows from the measured narration.
+6. **Storyboard:** request eight exact timed image prompts per batch, checkpoint
+   each batch and reuse completed work. **Refine plan:** verify coverage and bind
+   story, audio, captions and timeline with checksums.
+7. Twenty CPU workers generate SSD-1B images at 1024×576, 16 steps/guidance 9.
+   The final H.264/AAC video includes Bengali captions, packaging and a continuous
+   MusicRNN soundtrack with fades and speech ducking. Music does not switch at
+   chapter boundaries.
+8. QC, private Drive checkpoints, guarded private YouTube uploads and verified
+   cleanup retain their account identity and duplicate-upload protections.
 
-[Bengali voice and model details](docs/models.md). Passing automated checks does
-not certify pronunciation, accent, historical imagery or editorial quality.
-Review the output before wider release.
+The duration stays 600–900 seconds and images change every seven seconds.
+The preparation job has the reference's **150-minute limit**. This is a limit,
+not a promised generation time. CPU Bengali speech can still be slow.
+
+[Model details](docs/models.md). Structural/schema validation is not a claim of
+historical accuracy or semantic agreement. The reference process does not run
+an independent model review for every utterance. Review private output before
+wider release; curated automatically selected research remains private-only.
 
 ## Local preview
 
@@ -59,13 +72,15 @@ channel/folder IDs. Optional Hugging Face authentication uses `HF_TOKEN`.
 4. Set `preview_only=false` for a private upload. The existing daily schedule
    requests private generation at **06:00 Asia/Dhaka**.
 
-Automatic research selects from eleven curated topics, avoiding the last ten
-reserved topics, and checks source excerpts and citations. Automatically sourced
+Automatic research selects curated factual anchors and source links from eleven
+topics, avoiding the last ten reserved topics. Source IDs and schemas are checked;
+these anchors are not represented as a new live source extraction or human review. Automatically sourced
 episodes cannot upload publicly or unlisted. Human-reviewed research and explicit
 public opt-in are required for public upload.
 
 Local production preparation also needs `pip install -r requirements-tts.txt`,
-`pip install 'huggingface-hub>=0.34,<1'` and `bash scripts/setup_qwen.sh`.
+`pip install -r requirements-story.txt`. The same local Python model is reused
+within each process; downloaded weights are reused by the runner's cache.
 Image workers need `pip install -e '.[images]'`; final rendering needs
 `npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1`.
 Export settings explicitly: `.env` is not loaded automatically.
@@ -78,9 +93,11 @@ Multilingual local alignment is the default when alignment is requested.
 ## Recovery
 
 Use **Resume prepared episode and upload privately** for completed narration,
-**Resume voice in parallel and upload privately** for interrupted narration, or
+**Recover, verify upload or clean a saved episode → prepare** for interrupted
+chapter preparation, or
 **Recover, verify upload or clean a saved episode** for saved checkpoints. Always
-keep the original episode run ID. Preparation and per-shard checkpoints have
+keep the original episode run ID. For older utterance-format runs, use **Resume voice in parallel and upload privately**.
+Preparation and per-shard checkpoints have
 separate names; restore them into that same run. Actions artifacts last 14 days.
 
 An ambiguous YouTube insertion must be reconciled with the real video ID before

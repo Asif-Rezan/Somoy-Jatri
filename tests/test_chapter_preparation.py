@@ -192,3 +192,30 @@ def test_new_workflow_uses_reference_stages_and_smaller_runtime():
     assert scripts.index('cli stage-story')<scripts.index('cli prepare --run-id')<scripts.index('cli storyboard')<scripts.index('cli refine-plan')
     assert 'setup_qwen.sh' not in '\n'.join(x.get('run','') for x in steps if x.get('name')!='Start legacy Qwen only for old verified artifacts')
     assert doc['jobs']['prepare']['timeout-minutes']==150
+
+
+def test_word_cache_invalidates_when_audio_changes(tmp_path):
+    path=tmp_path/'narration-00.wav'
+    write_wav(path,.1*np.sin(np.arange(RATE)*.05))
+    class ASR:
+        calls=0
+        def align(self,*a,**k):
+            self.calls+=1
+            return {'words':[{'word':'আমি','start':0.,'end':.5}]}
+    asr=ASR()
+    p.ensure_words(tmp_path,0,path,'আমি',asr)
+    p.ensure_words(tmp_path,0,path,'আমি',asr)
+    assert asr.calls==1
+    write_wav(path,.1*np.sin(np.arange(RATE)*.08))
+    p.ensure_words(tmp_path,0,path,'আমি',asr)
+    assert asr.calls==2
+
+
+def test_chapter_caches_are_backed_up_without_secrets(tmp_path):
+    from somoy_jatri.storage.safety import checkpoint,disposable
+    for name in ['narration-00.wav','narration-00.meta.json','words-00.json','words-00.meta.json','plan.json','duration.json']:
+        (tmp_path/name).write_text('{}')
+    (tmp_path/'token.json').write_text('secret')
+    names={x['name'] for x in checkpoint(tmp_path)}
+    assert 'narration-00.wav' in names and 'words-00.meta.json' in names and 'token.json' not in names
+    assert disposable('narration-00.wav') and not disposable('narration-00.meta.json')

@@ -1,3 +1,5 @@
+> Historical implementation report. Current preparation is described in README.md and docs/reference-analysis.md.
+
 # Implementation report
 
 Implemented in `Asif-Rezan/Somoy-Jatri`; the reference repository was read only.
