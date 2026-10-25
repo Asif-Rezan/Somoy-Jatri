@@ -12,6 +12,7 @@ def test_long_story_is_batched_and_normalizes_directions(monkeypatch):
             'motion': 'fly', 'fact_ids': [0]} for _ in range(14)]}
     monkeypatch.setattr('somoy_jatri.scripts.groq.Groq.json', fake_json)
     dossier = {'location': 'Giza', 'facts': [{'claim': 'A fact', 'source_id': 's1'}]}
+    monkeypatch.setattr('somoy_jatri.packaging.generate', lambda *args: {'title':'গিজার ইতিহাস', 'thumbnail_text':'ভেতরে কী আছে?', 'description':'গিজার ইতিহাস।'})
     story = generate(dossier, 720, [])
     assert len(calls) == 20
     assert len(story['segments']) == 140

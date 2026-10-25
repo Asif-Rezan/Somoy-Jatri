@@ -1,3 +1,23 @@
+# Somoy Jatri — বাংলা সময়ভ্রমণ
+
+Updated against the reference on 2026-10-25. Production uses local Qwen3.5-9B,
+SSD-1B illustrations, twenty CPU image jobs and Magenta MusicRNN. Narration,
+packaging, captions and descriptions are Bangla. Bengali Parler and multilingual
+Whisper replace the reference English-only speech components.
+
+See [reference alignment](docs/reference-analysis.md) and [model settings](docs/models.md).
+Run **Verify Google connections**, then **Model component test** in production mode
+for voice, image and music. **Offline tests and short preview** exercises rendering
+without cloud credentials. **Generate episode and optional private upload** runs
+the complete pipeline; start with `preview_only=true` for review. The existing
+daily schedule continues requesting private videos at 06:00 Asia/Dhaka.
+
+Text generation no longer requires Groq or Gemini API keys. Keep this repository's
+own Drive and YouTube credentials and account variables. Never use the reference
+channel's credentials or folder.
+
+---
+
 # Somoy Jatri — Time Travel Vlogs
 
 **ইতিহাস শুধু শুনব না, নিজের চোখে দেখব!**

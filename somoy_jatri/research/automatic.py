@@ -36,7 +36,7 @@ def build(history):
         text = plain_text(response.text)
         if len(text) < 500:
             raise ValueError('Source page has too little readable evidence: ' + url)
-        pages.append({'id': f's{index}', 'url': url, 'text': text[:30000]})
+        pages.append({'id': f's{index}', 'url': url, 'text': text[:max(2000, 18000 // len(topic['sources']))]})
     print(json.dumps({'research_stage': 'sources_loaded', 'count': len(pages)}), flush=True)
     fields = ['politics', 'culture', 'clothing', 'buildings', 'tools', 'transportation',
               'food', 'trades', 'social_life', 'events']
@@ -89,7 +89,7 @@ def enrich(dossier):
         text=plain_text(response.text)
         start=text.find('Brief synthesis')
         if start>=0:text=text[start:]
-        pages.append({'id':source['id'],'text':text[:18000]})
+        pages.append({'id':source['id'],'text':text[:max(2000, 18000 // len(dossier['sources']))]})
     result=Groq().json('Extract 12 distinct, atomic historical facts relevant to the supplied location '
         'and period. Use only the source text, excluding modern visitor information. Each claim must '
         'include a source_id and an exact source_quote of at least 20 characters copied from that source. '

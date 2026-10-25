@@ -38,7 +38,7 @@ class SSDImages:
         seed = int(hashlib.sha256(shot['id'].encode()).hexdigest()[:8],16)
         # Preserve the assigned subject on retries; never silently substitute an unrelated empty scene.
         result = self.pipeline(prompt=shot['prompt'], negative_prompt=shot['negative_prompt'],
-            width=w, height=h, num_inference_steps=int(os.getenv('CPU_IMAGE_STEPS','16')),
+            width=w, height=h, guidance_scale=float(os.getenv('CPU_IMAGE_GUIDANCE', '9')), num_inference_steps=int(os.getenv('CPU_IMAGE_STEPS','16')),
             generator=self.torch.Generator('cpu').manual_seed(seed))
         if any(getattr(result,'nsfw_content_detected',None) or []):
             raise RuntimeError('Image rejected; preserve run for review')

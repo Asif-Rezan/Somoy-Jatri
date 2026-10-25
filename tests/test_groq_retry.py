@@ -1,3 +1,10 @@
+import os
+import pytest
+
+@pytest.fixture(autouse=True)
+def legacy_text_backend(monkeypatch):
+    monkeypatch.setenv('TEXT_BACKEND', 'groq')
+
 from somoy_jatri.scripts.groq import Groq
 
 

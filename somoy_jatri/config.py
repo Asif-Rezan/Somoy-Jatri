@@ -17,8 +17,8 @@ class Config:
             raise ValueError('mode must be mock or production')
         if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,79}', self.run_id):
             raise ValueError('Unsafe run identifier')
-        if not 1 <= self.workers <= 16:
-            raise ValueError('Use 1–16 independent image workers')
+        if not 1 <= self.workers <= 20:
+            raise ValueError('Use 1–20 independent image workers')
         if self.mode == 'production' and not 600 <= self.target <= 900:
             raise ValueError('Production target must be 600–900 seconds')
 
@@ -28,7 +28,10 @@ class Config:
 
     def preflight(self):
         if self.mode == 'production':
-            for name in ('GROQ_API_KEY', 'RESEARCH_DOSSIER'):
+            names = ['RESEARCH_DOSSIER']
+            if os.getenv('TEXT_BACKEND', 'qwen-local') != 'qwen-local':
+                names.append('GEMINI_API_KEY' if os.getenv('STORY_PROVIDER') == 'gemini' else 'GROQ_API_KEY')
+            for name in names:
                 if not os.getenv(name):
                     raise ValueError(name + ' is required for production preparation')
             if os.getenv('TTS_BACKEND', 'indic-parler') != 'indic-parler':

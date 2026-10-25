@@ -28,7 +28,8 @@ def validate_final(root,production=False):
         receipt=load(path.with_suffix('.json'))
         if receipt['sha256']!=digest(path):raise ValueError('Image checkpoint checksum mismatch')
     cues=load(root/'music-plan.json')
-    if len({s['mood'] for s in timeline})>1 and len(cues)<2:
+    expected_cues = 1 + sum(a['chapter'] != b['chapter'] for a,b in zip(timeline,timeline[1:]))
+    if cues and len(cues) != expected_cues:
         raise ValueError('Missing musical variety')
     if Image.open(root/'thumbnail.jpg').size!=(1280,720):raise ValueError('Thumbnail dimensions')
     # Decode all frames; blackdetect and silencedetect return measurements for review.

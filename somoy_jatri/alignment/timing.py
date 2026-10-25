@@ -99,4 +99,4 @@ class GroqASR:
 
 def aligner():
     import os
-    return GroqASR() if os.getenv('GROQ_API_KEY') else BengaliASR()
+    return GroqASR() if os.getenv('ALIGNMENT_BACKEND', 'local') == 'groq' else BengaliASR()

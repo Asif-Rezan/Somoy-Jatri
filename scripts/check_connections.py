@@ -2,22 +2,21 @@
 import json
 import os
 
-import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 from somoy_jatri.storage.drive import Store
 
 
-def main():
-    response = requests.get('https://api.groq.com/openai/v1/models',
-        headers={'Authorization': 'Bearer ' + os.environ['GROQ_API_KEY']}, timeout=30)
-    response.raise_for_status()
-    model = os.getenv('STORY_MODEL', 'openai/gpt-oss-120b')
-    if model not in {item['id'] for item in response.json()['data']}:
-        raise ValueError('Configured story model is unavailable')
-    print(json.dumps({'check': 'Groq authorization and model availability', 'passed': True}), flush=True)
+STAGE = "configuration"
 
+def main():
+    global STAGE
+    for name in ("DRIVE_TOKEN_JSON", "DRIVE_FOLDER_ID", "YOUTUBE_TOKEN_JSON",
+                 "EXPECTED_CHANNEL_ID", "EXPECTED_DRIVE_EMAIL"):
+        if not os.getenv(name):
+            raise ValueError("Missing setting: " + name)
+    STAGE = "Drive account and private folder"
     store = Store()
     account = store.client.about().get(fields='user(emailAddress)').execute()['user']['emailAddress']
     if account.casefold() != os.environ['EXPECTED_DRIVE_EMAIL'].casefold():
@@ -28,6 +27,7 @@ def main():
         raise ValueError('Drive checkpoint round trip failed')
     print(json.dumps({'check': 'Drive account, private root and checkpoint read/write', 'passed': True}), flush=True)
 
+    STAGE = 'YouTube credentials and channel identity'
     info = json.loads(os.environ['YOUTUBE_TOKEN_JSON'])
     if not info.get('refresh_token'):
         raise ValueError('YouTube refresh credentials missing')
@@ -43,5 +43,7 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as error:
-        print(json.dumps({'connections_passed': False, 'error_type': type(error).__name__}), flush=True)
+        status = getattr(getattr(error, 'resp', None), 'status', None)
+        print(json.dumps({'connections_passed': False, 'stage': STAGE,
+                          'error_type': type(error).__name__, 'http_status': status}), flush=True)
         raise SystemExit(1)

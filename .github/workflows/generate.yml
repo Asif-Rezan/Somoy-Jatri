@@ -21,9 +21,9 @@ on:
         type: number
         default: 720
       workers:
-        description: Independent image jobs (1–16)
+        description: Independent image jobs (1–20)
         type: number
-        default: 16
+        default: 20
       visibility:
         type: choice
         options: [private, unlisted, public]
@@ -46,12 +46,15 @@ concurrency:
   cancel-in-progress: false
 env:
   RUN: episode-${{ github.run_id }}
+  TEXT_BACKEND: qwen-local
+  STORY_MODEL: Qwen/Qwen3.5-9B
+  ALIGNMENT_BACKEND: local
   CPU_THREADS: '4'
   HF_HUB_DISABLE_XET: '1'
   RUN_SCOPED_CLEANUP: 'true'
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
@@ -84,7 +87,7 @@ jobs:
           python - <<'PYCODE'
           import os,json
           n=int(os.environ['WORKERS'])
-          if not 1<=n<=16: raise ValueError('Use 1–16 workers')
+          if not 1<=n<=20: raise ValueError('Use 1–20 workers')
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write('matrix='+json.dumps({'shard':list(range(n))})+'\n')
           PYCODE
@@ -110,6 +113,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERIFIED_OPERATION: stage
         run: python scripts/stage_verified_story.py
+      - name: Start reference Qwen3.5-9B CPU text model
+        if: inputs.mode == 'production'
+        run: |
+          pip install 'huggingface-hub>=0.34,<1'
+          bash scripts/setup_qwen.sh
       - name: Prepare Bangla narration and seven-second image schedule
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -165,7 +173,7 @@ jobs:
   publish-cleanup:
     needs: finish
     if: inputs.mode == 'production' && !inputs.preview_only && needs.finish.result == 'success'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -186,9 +194,9 @@ jobs:
     needs: prepare
     strategy:
       fail-fast: false
-      max-parallel: 16
+      max-parallel: 20
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
@@ -227,7 +235,7 @@ jobs:
           retention-days: 14
   finish:
     needs: images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
@@ -247,6 +255,8 @@ jobs:
           pattern: images-*
           merge-multiple: true
           path: output/episode-${{ github.run_id }}/images
+      - name: Install reference MusicRNN CPU model runtime
+        run: npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1
       - run: python -m somoy_jatri.cli finish --run-id "$RUN"
       - name: Save verified final output to separate Drive folder
         env:

@@ -65,7 +65,12 @@ def main():
         from somoy_jatri.audio import write_wav
         root.mkdir(parents=True,exist_ok=True)
         cues=[dict(start=i*8,end=(i+1)*8,mood=m,style='ambient',fade=1.5) for i,m in enumerate(['amazed','curious','reflective'])]
-        write_wav(root/'music-test.wav',score(cues,24))
+        if args.mode == 'production':
+            from somoy_jatri.music.scoring import MusicRNN
+            audio = MusicRNN(root).compose(24)
+        else:
+            audio = score(cues,24)
+        write_wav(root/'music-test.wav',audio)
     elif args.command=='drive-init':
         from google.oauth2.credentials import Credentials
         from googleapiclient.discovery import build

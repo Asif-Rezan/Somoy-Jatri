@@ -7,9 +7,9 @@ on:
         required: true
         type: number
       workers:
-        description: Parallel CPU image jobs (1–16)
+        description: Parallel CPU image jobs (1–20)
         type: number
-        default: 16
+        default: 20
 permissions:
   contents: read
   actions: read
@@ -23,7 +23,7 @@ env:
   RUN_SCOPED_CLEANUP: 'true'
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
@@ -71,9 +71,9 @@ jobs:
     needs: prepare
     strategy:
       fail-fast: false
-      max-parallel: 16
+      max-parallel: 20
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
@@ -111,7 +111,7 @@ jobs:
           retention-days: 14
   finish:
     needs: images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
@@ -131,6 +131,8 @@ jobs:
           pattern: images-*
           merge-multiple: true
           path: output/${{ env.RUN }}/images
+      - name: Install reference MusicRNN CPU model runtime
+        run: npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1
       - run: python -m somoy_jatri.cli finish --run-id "$RUN"
       - name: Save verified final output to separate Drive folder
         env:

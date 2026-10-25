@@ -17,3 +17,6 @@ somoy-jatri = "somoy_jatri.cli:main"
 include = ["somoy_jatri*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+"somoy_jatri.music" = ["*.cjs"]
