@@ -47,6 +47,12 @@ def validate_final(root,production=False):
         if load(root/'semantic-review.json').get('passed') is not True:
             raise ValueError('Semantic review missing')
         require_research_review(load(root/'research.json'))
+        receipt=load(root/'semantic-review.json')
+        if receipt.get('method')=='reference-schema-and-evidence-validation':
+            from somoy_jatri.preparation.pipeline import verify_preparation
+            verify_preparation(root)
+            if receipt.get('story_sha256')!=digest(root/'story.json') or receipt.get('timeline_sha256')!=digest(root/'timeline.json'):
+                raise ValueError('Chapter preparation receipt is stale')
     qc={'passed':True,'production_ready':production,'duration':total,'width':v['width'],
         'height':v['height'],'voice_peak':voice_peak,'sha256':digest(root/'video.mp4'),
         'limitations':['No automated proof of historical visual accuracy or perceived voice quality',
@@ -58,5 +64,5 @@ def validate_final(root,production=False):
 def require_research_review(dossier):
     # Automatically sourced episodes are permitted for private review. Upload independently
     # refuses public/unlisted visibility for this method; never fabricate a human reviewer.
-    if not dossier.get('reviewed_by') and dossier.get('research_method')!='automatic source extraction':
+    if not dossier.get('reviewed_by') and dossier.get('research_method') not in {'automatic source extraction','curated source catalog'}:
         raise ValueError('Research review missing')

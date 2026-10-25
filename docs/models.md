@@ -1,30 +1,27 @@
 # Models — 2026-10-25
 
-| Stage | Production default | Reference relationship |
-|---|---|---|
-| Text, research, storyboard, packaging | Qwen/Qwen3.5-9B via pinned Q4_K_M GGUF and local llama.cpp | Same model/runtime pins |
-| Illustration | segmind/SSD-1B, CPU float32, 1024×576, 16 steps, guidance 9 | Same model/settings |
-| Music | Magenta MusicRNN basic_rnn, @magenta/music 1.23.1, CPU | Same model/instrument renderer |
-| Bangla voice | Tanmoyshome/bn-parler-tts via pinned Parler library | Bengali replacement for English Kokoro |
-| Caption transcription | faster-whisper 1.2.1, multilingual small, CPU int8, language bn | Bengali replacement for base.en |
+| Stage | New production default |
+|---|---|
+| Outline, narration, packaging and timed storyboards | Qwen/Qwen3-4B-Instruct-2507, local CPU via llama-cpp-python 0.3.36 |
+| Quantized weights | unsloth/Qwen3-4B-Instruct-2507-GGUF, Q4_K_M, revision a06e946bb6b655725eafa393f4a9745d460374c9 |
+| Weight SHA-256 | 3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597 |
+| Runtime | 16,384-token context, at most four CPU threads, reused per process; no external text API |
+| Illustration | segmind/SSD-1B, CPU float32, 1024×576, 16 steps, guidance 9 |
+| Music | Magenta MusicRNN basic_rnn, @magenta/music 1.23.1, CPU |
+| Bangla voice | Tanmoyshome/bn-parler-tts via pinned Parler library, bounded internal text chunks assembled/cached per chapter |
+| Word alignment | faster-whisper 1.2.1, multilingual base, CPU int8, language bn, two threads, beam size 3 |
 
-`TEXT_BACKEND=qwen-local` is the default. Qwen errors stop generation without
-cloud fallback. To deliberately exercise old cloud integrations set
-`TEXT_BACKEND=groq`, optionally `STORY_PROVIDER=gemini`. Local alignment is the
-default even if a Groq key exists; `ALIGNMENT_BACKEND=groq` is an explicit opt-in.
+The first four rows use the new Rezan-After-Dark preparation reference. Explicit
+JSON schemas constrain local generation and are validated again in Python.
+Incomplete output has at most three attempts. Model identity, checksum or context
+errors stop without cloud fallback. English-only word regexes, Kokoro narration
+and base.en are replaced with Bengali-compatible adapters.
 
-The Bengali voice default is the existing public model, not the gated Indic
-Parler model described in older documentation. `TTS_MODEL=ai4bharat/indic-parler-tts`
-remains optional and needs authorized Hugging Face access. Voice quality, accent
-and historical reconstruction accuracy still require listening/viewing review.
+`PREPARATION_PROCESS=after-dark` selects fresh chapter preparation. Old saved
+utterance-format artifacts retain their legacy Qwen3.5-9B/Groq/Gemini recovery
+utilities; these are not used by fresh production preparation.
 
-Sources: [Qwen weights](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF),
-[SSD-1B](https://huggingface.co/segmind/SSD-1B),
-[Bangla Parler](https://huggingface.co/Tanmoyshome/bn-parler-tts),
-[Kokoro](https://huggingface.co/hexgrad/Kokoro-82M),
-[Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts),
-[faster-whisper](https://github.com/SYSTRAN/faster-whisper).
-
-Production uses a continuous MusicRNN soundtrack across the whole episode. It
-does not restart or change music at chapter boundaries. Narration ducking and
-opening/closing fades remain enabled.
+Production music is continuous through the episode, with opening/closing fades
+and narration ducking. It does not switch at chapter boundaries. Bengali voice
+quality, pronunciation and historical reconstruction accuracy need private
+listening/viewing review; a schema/audio check cannot establish those qualities.

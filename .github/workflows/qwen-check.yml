@@ -13,18 +13,9 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - run: pip install -e . 'huggingface-hub>=0.34,<1'
-      - run: bash scripts/setup_qwen.sh
-      - name: Verify real structured Bangla output without cloud credentials
-        run: |
-          python - <<'PY'
-          import re
-          from somoy_jatri.scripts.groq import Groq
-          schema={'type':'object','properties':{'text':{'type':'string'}},
-                  'required':['text'],'additionalProperties':False}
-          result=Groq().json('Write one short natural Bangla greeting as text.',schema=schema)
-          if not re.search(r'[\u0980-\u09ff]',result['text']):
-              raise ValueError('Expected Bengali script')
-          print('Local Qwen structured Bengali generation passed')
-          PY
+          python-version: '3.12'
+      - run: pip install -e . -r requirements-story.txt
+      - name: Verify reference Qwen3-4B structured Bengali generation
+        run: python -u scripts/check_story_cpu.py
+      - name: Verify full reference outline and four Bengali chapter batches
+        run: python -u scripts/check_reference_story.py

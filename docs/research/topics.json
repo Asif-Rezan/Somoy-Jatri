@@ -5,6 +5,11 @@
     "period": "Old Kingdom, c. 2600–2500 BCE",
     "sources": [
       "https://whc.unesco.org/en/list/86/"
+    ],
+    "facts": [
+      "Giza is part of the Memphis and its Necropolis World Heritage site.",
+      "The site includes the pyramids of Khufu, Khafre and Menkaure.",
+      "Distinguish archaeological evidence from theories about construction."
     ]
   },
   {
@@ -13,6 +18,10 @@
     "period": "Indus civilization, c. 2500 BCE",
     "sources": [
       "https://whc.unesco.org/en/list/138/"
+    ],
+    "facts": [
+      "Mohenjo-daro is a major archaeological site of the Indus civilization.",
+      "Its planned urban layout and drainage are important surviving evidence."
     ]
   },
   {
@@ -21,6 +30,10 @@
     "period": "Nabataean era, c. 1st century CE",
     "sources": [
       "https://whc.unesco.org/en/list/326/"
+    ],
+    "facts": [
+      "Petra was the capital of the Nabataeans.",
+      "Its setting includes rock-cut architecture and an extensive water management system."
     ]
   },
   {
@@ -29,6 +42,10 @@
     "period": "Byzantine era, c. 10th century CE",
     "sources": [
       "https://whc.unesco.org/en/list/357/"
+    ],
+    "facts": [
+      "The Göreme landscape contains rock-cut sanctuaries and underground settlements.",
+      "The area preserves traces of Byzantine art and history."
     ]
   },
   {
@@ -37,6 +54,10 @@
     "period": "Old Kingdom, c. 27th century BCE",
     "sources": [
       "https://whc.unesco.org/en/list/86/"
+    ],
+    "facts": [
+      "The Step Pyramid of Djoser belongs to the Memphis necropolis.",
+      "The monument marks an important stage in the development of pyramid building."
     ]
   },
   {
@@ -45,6 +66,10 @@
     "period": "Historical irrigation systems; dates vary by site",
     "sources": [
       "https://whc.unesco.org/en/list/1506/"
+    ],
+    "facts": [
+      "Qanats use gently sloping underground channels to carry water by gravity.",
+      "The World Heritage property includes eleven qanats in Iran."
     ]
   },
   {
@@ -53,6 +78,10 @@
     "period": "Roman era, 1st century CE",
     "sources": [
       "https://whc.unesco.org/en/list/829/"
+    ],
+    "facts": [
+      "The eruption of Vesuvius in 79 CE buried Pompeii and Herculaneum.",
+      "Their remains preserve evidence of Roman urban life."
     ]
   },
   {
@@ -61,6 +90,13 @@
     "period": "Fatimid era, 10th–12th centuries CE",
     "sources": [
       "https://whc.unesco.org/en/list/89/"
+    ],
+    "facts": [
+      "Historic Cairo was founded in the 10th century.",
+      "Its mosques, madrasas and other monuments reflect several centuries of Islamic history.",
+      "Cairo became the headquarters of the Fatimid Caliphate in 969 CE.",
+      "The city preserves mosques, madrasas, bathhouses and fountains.",
+      "Its surviving street plan and buildings also record Ayyubid, Mamluk and Ottoman periods."
     ]
   },
   {
@@ -69,6 +105,10 @@
     "period": "Abbasid era, 9th century CE",
     "sources": [
       "https://whc.unesco.org/en/list/276/"
+    ],
+    "facts": [
+      "Samarra served as an Abbasid capital in the 9th century.",
+      "Its archaeological remains include monumental mosques and distinctive architecture."
     ]
   },
   {
@@ -77,6 +117,13 @@
     "period": "14th century CE",
     "sources": [
       "https://www.loc.gov/item/2021666192/"
+    ],
+    "facts": [
+      "Ibn Battuta was born in Tangier in 1304.",
+      "He began a journey at about age 21, originally intending to make the hajj to Mecca.",
+      "His travels continued for almost 30 years and extended across North Africa, Asia and beyond.",
+      "After returning to Morocco in the early 1350s, he was commissioned to produce an account of his travels.",
+      "That account is commonly called the Rihla; distinguish its own claims from independently confirmed evidence."
     ]
   },
   {
@@ -85,6 +132,10 @@
     "period": "10th–11th centuries CE",
     "sources": [
       "https://plato.stanford.edu/entries/ibn-sina/"
+    ],
+    "facts": [
+      "Ibn Sina, also known as Avicenna, lived in the 10th and 11th centuries.",
+      "His Canon of Medicine became an influential medical work."
     ]
   }
 ]

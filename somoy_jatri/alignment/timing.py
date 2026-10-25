@@ -36,13 +36,13 @@ class BengaliASR:
     def __init__(self):
         import os
         from faster_whisper import WhisperModel
-        model = os.getenv('ALIGNMENT_MODEL', 'small')
+        model = os.getenv('ALIGNMENT_MODEL', 'base')
         if model.endswith('.en'): raise ValueError('English-only aligner forbidden')
-        self.model = WhisperModel(model, device='cpu', compute_type='int8')
+        self.model = WhisperModel(model, device='cpu', compute_type='int8', cpu_threads=2)
 
     def align(self, path, text, strict=True):
         segments, info = self.model.transcribe(str(path), language='bn', word_timestamps=True,
-                                               beam_size=5, vad_filter=False)
+                                               beam_size=3, vad_filter=False)
         segments = list(segments)
         recognized = ''.join(s.text for s in segments)
         similarity = SequenceMatcher(None, canonical(text), canonical(recognized)).ratio()

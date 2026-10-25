@@ -1,43 +1,44 @@
-# Reference alignment — 2026-10-25
+# Preparation reference alignment — 2026-10-25
 
-Compared against `Asif-Rezan/youtube-dark-psychology-automation` at
-`85b67a9bd990cae4169c30807cf0b8662ec649ba`. The reference repository was read only.
+Preparation reference: `Asif-Rezan/Rezan-After-Dark`, commit
+`d6dcde36a636946279ec7bc20c05d2c56625b958`. The reference is read only.
+This supersedes the earlier Qwen3.5-9B preparation integration.
 
-Somoy Jatri now uses the same pinned Qwen3.5-9B Q4_K_M local text model,
-llama.cpp revision, loopback-only inference and disabled thinking. Research,
-scripts, semantic review, packaging and duration revisions use this backend by
-default. There is no automatic cloud text fallback from Qwen. Explicit legacy
-Groq/Gemini diagnostics remain available. Groq is no longer a Google readiness
-requirement, and alignment defaults to local multilingual Whisper.
+| Stage | Reference process used by Somoy Jatri |
+|---|---|
+| CPU runtime | Same Qwen3-4B-Instruct-2507 identity, Q4_K_M artifact/revision/checksum, llama-cpp-python 0.3.36 wheel, 16,384 context, at most four threads |
+| Readiness | Real grammar-constrained local text check, then real language-specific voice check before full story |
+| Story | One concise twenty-chapter outline, four five-chapter narration batches, publishing metadata after narration |
+| Output checks | Grammar word bounds plus measured word counts, at most three invalid-output/length attempts; no hosted fallback |
+| Audio | One checksum/text/voice-bound chapter cache; reuse unchanged chapters |
+| Duration | Actual measured audio, maximum 4% tempo adjustment, selected-chapter rewrites/resynthesis, three correction attempts |
+| Alignment | Cached measured word timestamps bound to each chapter's audio and text |
+| Storyboard | Generate prompts only after audio timing, eight exact windows per request, checkpoint each completed batch |
+| Finalization | Verify story/audio/caption/plan hashes and complete timeline before image workers |
 
-Images match SSD-1B, 1024×576, 16 steps, guidance 9, seven-second slots and twenty
-CPU workers. Production music uses the reference Magenta basic_rnn and historical
-instrument renderer, generating independent sections instead of repeating a loop.
-Mock previews keep lightweight procedural audio. Packaging uses accurate Bangla
-titles, complementary short questions and a left-text/right-art thumbnail layout.
+Language/content adaptations: Bengali Parler replaces English Kokoro, with
+bounded internal text splitting and one chapter-level cache. Multilingual
+Whisper base with language `bn` replaces base.en. Word-count grammar accepts
+Bengali characters and punctuation. Historical factual anchors and fictional
+time travel remain; horror prompts, channel identity and credentials are not
+copied. Existing 600–900-second videos and seven-second images are retained.
+The initial Bangla target is 75 words per chapter; actual audio determines acceptance.
+The job deadline is 240 minutes instead of the English reference's 150 to allow
+the slower Bengali voice adapter; this does not add any generation or review work.
 
-Language-specific differences are deliberate: Kokoro's reference English voice
-and Whisper base.en cannot provide Bengali narration and transcription. Somoy
-Jatri retains `Tanmoyshome/bn-parler-tts` and multilingual Whisper small with
-language `bn`. Existing emotion metadata, measured utterances, source citation
-checks and first-person time-travel framing remain. No English model is silently
-used for Bengali speech. Model defaults are documented in docs/models.md.
+Fresh runs use curated source anchors directly, like the reference's curated
+input, rather than making extra live research/extraction/enrichment requests.
+The dossier says `curated source catalog` and does not fabricate a reviewer or
+claim that paraphrases are exact quotations. These runs are restricted to private
+uploads. A structural/evidence receipt replaces the old repeated semantic-review
+loop and explicitly states that it is not proof of historical visual accuracy.
 
-The topic catalog now covers the reference subjects and excludes the last ten
-reserved topics when choosing the next episode.
+Image generation, continuous historical MusicRNN, Drive identity checks,
+private YouTube upload journals and verified cleanup remain in place. Chapter
+media and timestamp caches are included in recovery checkpoints. Old saved
+utterance-format artifacts retain their legacy resume path.
 
-Existing private uploads, channel/folder identity guards, per-run checksums,
-Drive retries, independent image jobs, resumable preparation, recovery and
-verified cleanup are retained. Credentials and channel/folder IDs are not copied
-from the reference repository. Recovery paths install MusicRNN when assembling
-production output; voice recovery starts Qwen when revalidating the storyboard.
-
-Failures observed: repeated preparation connection checks stopped at Groq HTTP
-errors; an earlier run exhausted rate limits during generation; offline checks
-failed because the music variety gate disagreed with the chapter-level score.
-The Google check now reports the failing service and HTTP status without dumping
-credential-bearing exceptions. The music gate checks chapter boundaries.
-
-A passing offline preview does not establish live model quality or a completed
-private YouTube upload. Large CPU models can hit runner memory or time limits;
-production uploads must still pass all existing validation and identity guards.
+The cancelled older run repeatedly repaired/re-reviewed its first semantic batch
+before any voice synthesis. That cycle is not part of the new preparation path.
+No runtime or speed guarantee is inferred from the reference; real full-video
+performance must be measured on the production runner.

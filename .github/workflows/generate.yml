@@ -46,8 +46,10 @@ concurrency:
   cancel-in-progress: false
 env:
   RUN: episode-${{ github.run_id }}
-  TEXT_BACKEND: qwen-local
-  STORY_MODEL: Qwen/Qwen3.5-9B
+  PREPARATION_PROCESS: after-dark
+  STORY_MODEL: Qwen/Qwen3-4B-Instruct-2507
+  ALIGNMENT_MODEL: base
+  OMP_NUM_THREADS: '4'
   ALIGNMENT_BACKEND: local
   CPU_THREADS: '4'
   HF_HUB_DISABLE_XET: '1'
@@ -55,7 +57,7 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-24.04
-    timeout-minutes: 360
+    timeout-minutes: 240
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
@@ -64,7 +66,13 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+      - name: Install reference local Qwen CPU runtime
+        if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')
+        run: pip install -e . -r requirements-story.txt
+      - name: Verify Qwen Bengali generation before video setup
+        if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')
+        run: python -u scripts/check_story_cpu.py
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg fontconfig
       - run: pip install -e '.[google]'
       - name: Verify private upload readiness before generation
@@ -79,7 +87,14 @@ jobs:
           EXPECTED_DRIVE_EMAIL: ${{ vars.EXPECTED_DRIVE_EMAIL }}
         run: python -u scripts/check_connections.py
       - if: inputs.mode == 'production'
-        run: pip install -r requirements-tts.txt
+        run: |
+          pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-tts.txt
+      - name: Verify Bengali narration before writing a full story
+        if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python -u scripts/check_bangla_voice.py
       - id: matrix
         env:
           WORKERS: ${{ inputs.workers }}
@@ -113,18 +128,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERIFIED_OPERATION: stage
         run: python scripts/stage_verified_story.py
-      - name: Start reference Qwen3.5-9B CPU text model
-        if: inputs.mode == 'production'
+      - name: Start legacy Qwen only for old verified artifacts
+        if: inputs.mode == 'production' && startsWith(inputs.dossier, 'verified:')
         run: |
           pip install 'huggingface-hub>=0.34,<1'
           bash scripts/setup_qwen.sh
-      - name: Prepare Bangla narration and seven-second image schedule
+      - name: Stage fresh Bangla story — reference outline and four chapter batches
+        if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
           RESEARCH_DOSSIER: ${{ inputs.dossier }}
-          MODE: ${{ inputs.mode }}
           TOPIC: ${{ inputs.topic }}
           PERIOD: ${{ inputs.period }}
           TARGET: ${{ inputs.target }}
@@ -144,7 +156,42 @@ jobs:
           extra=()
           if [ "$CAPTIONS" != "true" ]; then extra+=(--no-captions); fi
           if [ "$MUSIC" != "true" ]; then extra+=(--no-music); fi
-          python -m somoy_jatri.cli prepare --mode "$MODE" --run-id "$RUN" --topic "$TOPIC" --period "$PERIOD" --target "$TARGET" --workers "$WORKERS" "${extra[@]}"
+          python -u -m somoy_jatri.cli stage-story --mode production --run-id "$RUN" --topic "$TOPIC" --period "$PERIOD" --target "$TARGET" --workers "$WORKERS" "${extra[@]}"
+      - name: Prepare chapter audio, selective duration recovery and word alignment
+        if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')
+        env:
+          RESEARCH_DOSSIER: ${{ inputs.dossier }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python -u -m somoy_jatri.cli prepare --run-id "$RUN" --resume
+      - name: Storyboard measured seven-second windows in eight-shot batches
+        if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')
+        run: python -u -m somoy_jatri.cli storyboard --run-id "$RUN"
+      - name: Refine and verify final preparation checksums
+        if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')
+        run: python -u -m somoy_jatri.cli refine-plan --run-id "$RUN"
+      - name: Prepare mock preview or explicitly verified legacy storyboard
+        if: inputs.mode == 'mock' || startsWith(inputs.dossier, 'verified:')
+        env:
+          RESEARCH_DOSSIER: ${{ inputs.dossier }}
+          STORY_MODEL: Qwen/Qwen3.5-9B
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          MODE: ${{ inputs.mode }}
+          TARGET: ${{ inputs.target }}
+          WORKERS: ${{ inputs.workers }}
+          CAPTIONS: ${{ inputs.captions }}
+          MUSIC: ${{ inputs.music }}
+        run: |
+          extra=()
+          if [ "$CAPTIONS" != "true" ]; then extra+=(--no-captions); fi
+          if [ "$MUSIC" != "true" ]; then extra+=(--no-music); fi
+          python -u -m somoy_jatri.cli prepare --mode "$MODE" --run-id "$RUN" --target "$TARGET" --workers "$WORKERS" "${extra[@]}"
+      - name: Save completed preparation and topic history privately
+        env:
+          DRIVE_TOKEN_JSON: ${{ secrets.DRIVE_TOKEN_JSON }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+        run: |
           if [ -n "$DRIVE_FOLDER_ID" ]; then
             python -m somoy_jatri.cli backup --run-id "$RUN" --snapshot prepared
             python - <<'PYCODE'

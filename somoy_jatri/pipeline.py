@@ -18,7 +18,7 @@ def mock_story():
     return {'title':'সময়ের পথে একটি পরীক্ষা | Somoy Jatri','tags':['Bangla history','Time travel vlog'],'segments':segments}
 
 
-def prepare(config,topic='',period=''):
+def prepare_legacy(config,topic='',period=''):
     import json
     from dataclasses import asdict
     root=config.root;root.mkdir(parents=True,exist_ok=True)
@@ -165,3 +165,15 @@ def finish(config):
     from somoy_jatri.storage.safety import checkpoint
     checkpoint(root)
     return qc
+
+
+def prepare(config,topic='',period=''):
+    # Old artifacts retain their old preparation path; new production uses chapters.
+    path=config.root/'story.json'
+    old_story=load(path) if path.exists() else {}
+    if config.mode=='production' and (old_story.get('format')=='reference-chapters-v1' or
+            (not old_story and os.getenv('PREPARATION_PROCESS','after-dark')=='after-dark')):
+        from somoy_jatri.preparation.pipeline import stage_story,prepare_audio
+        if not path.exists():stage_story(config,topic,period)
+        return prepare_audio(config)
+    return prepare_legacy(config,topic,period)

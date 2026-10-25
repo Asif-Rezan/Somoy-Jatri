@@ -10,7 +10,7 @@ from somoy_jatri.utils import load,save
 def main():
     p=argparse.ArgumentParser(description='Somoy Jatri — historical reconstruction pipeline')
     p.add_argument('command',choices=['prepare','images','finish','preview','tts-test','image-test',
-        'music-test','upload','backup','restore','cleanup','drive-init','reconcile'])
+        'music-test','stage-story','storyboard','refine-plan','upload','backup','restore','cleanup','drive-init','reconcile'])
     p.add_argument('--resume',action='store_true',help='Reuse saved configuration for preparation')
     p.add_argument('--mode',choices=['mock','production'],default='mock')
     p.add_argument('--run-id',default='preview');p.add_argument('--workers',type=int,default=4)
@@ -21,11 +21,20 @@ def main():
     args=p.parse_args();start=time.monotonic()
     config=Config(args.mode,args.run_id,args.workers,not args.no_captions,not args.no_music,args.target)
     root=config.root
-    if (args.command not in {'prepare','preview','drive-init'} or (args.command=='prepare' and args.resume)) and (root/'config.json').exists():
+    if (args.command not in {'prepare','stage-story','preview','drive-init'} or (args.command=='prepare' and args.resume)) and (root/'config.json').exists():
         config=Config(**load(root/'config.json'))
         if config.run_id!=args.run_id:raise ValueError('Saved run identity mismatch')
     from somoy_jatri.pipeline import prepare,finish
-    if args.command=='prepare': prepare(config,args.topic,args.period)
+    if args.command=='stage-story':
+        from somoy_jatri.preparation.pipeline import stage_story
+        stage_story(config,args.topic,args.period)
+    elif args.command=='storyboard':
+        from somoy_jatri.preparation.pipeline import storyboard
+        storyboard(root)
+    elif args.command=='refine-plan':
+        from somoy_jatri.preparation.pipeline import refine_plan
+        refine_plan(root)
+    elif args.command=='prepare': prepare(config,args.topic,args.period)
     elif args.command=='preview':
         if config.mode!='mock':raise ValueError('Use separate stages for production')
         shots=prepare(config)

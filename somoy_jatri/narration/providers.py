@@ -141,6 +141,7 @@ def synthesize_measured(tts,segment,path,reuse=False,attempts=3):
 def audio_record_passed(record):
     audio=record.get('audio',{})
     # Existing ASR-verified receipts remain valid for older saved episodes.
-    return (audio.get('method')=='measured-audio' and audio.get('passed') is True
+    return (audio.get('method')=='measured-chapter-audio' and audio.get('passed') is True
+            and .3<=audio.get('seconds',0)<=180 and audio.get('rms',0)>=.0005) or (audio.get('method')=='measured-audio' and audio.get('passed') is True
             and .3<=audio.get('seconds',0)<=60 and audio.get('rms',0)>=.0005) or (
                 record.get('asr',{}).get('similarity',0)>=.65 and bool(record.get('asr',{}).get('words')))

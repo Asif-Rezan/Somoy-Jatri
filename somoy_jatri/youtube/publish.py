@@ -27,7 +27,7 @@ def validate_privacy(privacy):
 def upload(root,privacy='private',client=None,persist=None):
     validate_privacy(privacy)
     dossier=load(root/'research.json') if (root/'research.json').exists() else {}
-    if dossier.get('research_method')=='automatic source extraction' and privacy!='private':
+    if dossier.get('research_method') in {'automatic source extraction','curated source catalog'} and privacy!='private':
         raise ValueError('Automatically researched episodes must remain private until human review')
     if os.getenv('UPLOAD_ENABLED')!='true':raise ValueError('Uploads disabled')
     qc=load(root/'qc.json');config=load(root/'config.json')

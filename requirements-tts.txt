@@ -1,4 +1,4 @@
-# Separate Python 3.11 environment recommended; Parler controls its Transformers version.
+# Separate Python 3.12 environment recommended; Parler controls its Transformers version.
 parler-tts @ git+https://github.com/huggingface/parler-tts.git@d108732cd57788ec86bc857d99a6cabd66663d68
 soundfile>=0.13,<0.14
 sentencepiece>=0.2,<0.3
