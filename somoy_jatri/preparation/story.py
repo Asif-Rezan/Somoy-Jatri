@@ -71,6 +71,38 @@ def validate(story, dossier):
     return story
 
 
+def publishing_metadata(prompt, request=ask):
+    schema = obj({
+        'title': {'type': 'string', 'minLength': 1, 'maxLength': 90},
+        'thumbnail_text': {'type': 'string',
+            'pattern': r'^[^ \t\r\n]+( [^ \t\r\n]+){1,4}$'},
+        'description': {'type': 'string', 'minLength': 1},
+    })
+    feedback = ''
+    for attempt in range(3):
+        package = request(prompt + feedback, 1200, schema)
+        errors = []
+        for key in schema['required']:
+            value = package.get(key)
+            if not isinstance(value, str):
+                errors.append(key + '_missing_text')
+            elif not re.search(r'[\u0980-\u09ff]', value):
+                errors.append(key + '_missing_bangla')
+        if isinstance(package.get('title'), str) and not 1 <= len(package['title']) <= 90:
+            errors.append('title_length')
+        if isinstance(package.get('thumbnail_text'), str) and not 2 <= len(package['thumbnail_text'].split()) <= 5:
+            errors.append('thumbnail_word_count')
+        if not errors:
+            return package
+        # Static validation codes expose the cause without logging provider data.
+        print(json.dumps({'prepare_stage': 'publishing_metadata_retry',
+            'attempt': attempt + 1, 'errors': errors}), flush=True)
+        feedback = ('\nThe previous metadata failed these checks: ' + ', '.join(errors)
+            + '. Return corrected metadata. Every field must contain Bangla; '
+            'title must be 1–90 characters; thumbnail_text must be 2–5 words separated by spaces.')
+    raise ValueError('Invalid Bangla publishing metadata after three attempts')
+
+
 def generate(dossier, previous, request=ask):
     evidence=json.dumps({'location':dossier['location'],'period':dossier['period'],
         'facts':dossier['facts'],'uncertain':dossier['uncertain']},ensure_ascii=False)
@@ -109,14 +141,11 @@ def generate(dossier, previous, request=ask):
         'tags':['সময় যাত্রী','বাংলা ইতিহাস','সময়ভ্রমণ']}
     validate(story,dossier)
     # Publishing metadata follows complete narration, as in the reference.
-    package=request('Create accurate Bangla YouTube packaging for this sourced time-travel episode. '
+    package=publishing_metadata('Create accurate Bangla YouTube packaging for this sourced time-travel episode. '
         'Return title (max 90 characters), thumbnail_text (a complementary 2–5 word Bangla question answered by the episode), '
         'and description (two short Bangla sentences about the subject and evidence). No sensational or unsupported promises. '
         f'Evidence: {evidence}. Title: {story["title"]}. Chapter outline: '
-        +json.dumps([s['summary'] for s in scenes],ensure_ascii=False),1200,
-        obj({k:{'type':'string'} for k in ['title','thumbnail_text','description']}))
-    if any(not re.search(r'[\u0980-\u09ff]',v) for v in package.values()) or len(package['title'])>100 or not 2<=len(package['thumbnail_text'].split())<=5:
-        raise ValueError('Invalid Bangla publishing metadata')
+        +json.dumps([s['summary'] for s in scenes],ensure_ascii=False),request)
     story.update(title=package['title'],packaging=package)
     return validate(story,dossier)
 
