@@ -55,8 +55,8 @@ jobs:
       - name: Install chapter preparation dependencies
         if: inputs.operation == 'prepare'
         run: |
-          pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-story.txt -r requirements-tts.txt
+          python -c "import torch, torchaudio; from parler_tts import ParlerTTSForConditionalGeneration; assert torch.version.cuda is None"
       - if: inputs.operation == 'prepare'
         env:
           RESEARCH_DOSSIER: auto
