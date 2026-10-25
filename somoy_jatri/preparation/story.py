@@ -26,7 +26,7 @@ def ask(prompt, limit, schema, temperature=.7):
 
 def text_schema(lower, upper):
     # Same word-count grammar as the reference, including Bengali letters/marks/dari.
-    word=r"[\u0980-\u09ffA-Za-z0-9][\u0980-\u09ffA-Za-z0-9,.;:!?'\-]*"
+    word=r"[\u0980-\u09ffA-Za-z0-9][\u0980-\u09ffA-Za-z0-9,.;:!?।'\-]*"
     final=r"[\u0980-\u09ffA-Za-z0-9][\u0980-\u09ffA-Za-z0-9'\-]*[।.!?]"
     return {'type':'string','pattern':'^'+word+'( '+word+'){'+str(lower-2)+','+str(upper-2)+'} '+final+'$'}
 
@@ -81,7 +81,7 @@ def generate(dossier, previous, request=ask):
         'Time travel is fictional. History must use ONLY the supplied evidence. No horror, invented dialogue, '
         'unsupported dates or discoveries. Explicitly label uncertain details as reconstruction. '
         'Each chapter advances the visit without repeating earlier chapters. Return a Bangla title (max 90 characters), '
-        'then chapter_01 through chapter_20 with a Bangla summary, a concise English image_prompt, '
+        'then chapter_01 through chapter_20 with a concise 8–12 word Bangla summary, an 8–14 word English image_prompt, '
         'and fact_ids using zero-based fact indices; subjective reactions may use []. '
         f'Evidence: {evidence}. Recent topics to avoid: {recent}. No full narration or publishing metadata yet.',
         3000,obj({'title':{'type':'string'},'scenes':obj({key:scene for key in KEYS})}))

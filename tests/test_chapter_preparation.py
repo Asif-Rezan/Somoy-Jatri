@@ -46,6 +46,7 @@ def test_reference_outline_then_four_batches_and_packaging(monkeypatch):
 def test_bengali_word_grammar_and_bounded_repairs():
     schema=s.text_schema(3,5)
     validate('আমি এখানে দাঁড়িয়ে আছি।',schema)
+    validate('আমি এখানে। আমরা আছি।',schema)
     with pytest.raises(Exception):validate('আমি আছি।',schema)
     calls=[]
     def request(prompt,limit,schema):
