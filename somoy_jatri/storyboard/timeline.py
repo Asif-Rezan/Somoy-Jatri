@@ -193,7 +193,7 @@ def evaluate_semantics(story, dossier, report_path=None, repair=False):
 
 
 def shard(shots, index, count):
-    if not 1 <= count <= 16 or not 0 <= index < count: raise ValueError('Invalid shard')
+    if not 1 <= count <= 20 or not 0 <= index < count: raise ValueError('Invalid shard')
     return [s for i,s in enumerate(shots) if i % count == index]
 
 

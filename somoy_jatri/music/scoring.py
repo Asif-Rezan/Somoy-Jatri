@@ -75,3 +75,27 @@ def mix(voice_path, music, ambient, output):
     peak=float(np.max(np.abs(result)))
     if peak>.94: result*=.94/peak
     write_wav(output,result)
+
+
+class MusicRNN:
+    """Reference Magenta model with a continuous score for the whole episode."""
+    def __init__(self, root):
+        self.root = root
+
+    def compose(self, total):
+        from somoy_jatri.music.music_cpu import generate
+        # One inference and render per section; repeat-free independent continuations.
+        sections = []
+        while sum(len(a) for a in sections) < round(total * RATE):
+            path = self.root / f'music-rnn-{len(sections):02}.wav'
+            if not path.exists():
+                generate(path)
+            audio = read_wav(path)
+            if not np.isfinite(audio).all() or len(audio) < 20 * RATE:
+                raise ValueError('Invalid MusicRNN section')
+            sections.append(audio)
+        result = np.concatenate(sections)[:round(total * RATE)] * .16
+        fade = min(2 * RATE, len(result)//2)
+        result[:fade] *= np.linspace(0, 1, fade)
+        result[-fade:] *= np.linspace(1, 0, fade)
+        return result

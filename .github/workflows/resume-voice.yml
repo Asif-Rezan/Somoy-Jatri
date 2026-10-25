@@ -24,9 +24,9 @@ on:
         type: number
         default: 8
       image_workers:
-        description: Parallel CPU image workers (1–16)
+        description: Parallel CPU image workers (1–20)
         type: number
-        default: 16
+        default: 20
 permissions:
   contents: read
   actions: read
@@ -39,7 +39,7 @@ env:
   HF_HUB_DISABLE_XET: '1'
 jobs:
   checkpoint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
@@ -78,7 +78,7 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix: ${{ fromJSON(needs.checkpoint.outputs.matrix) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
           retention-days: 14
   prepare:
     needs: voices
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
@@ -133,6 +133,10 @@ jobs:
           pattern: voice-[0-9]*
           merge-multiple: true
           path: output/${{ env.RUN }}
+      - name: Start reference Qwen CPU text model
+        run: |
+          pip install "huggingface-hub>=0.34,<1"
+          bash scripts/setup_qwen.sh
       - name: Assemble verified narration and timing
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -174,9 +178,9 @@ jobs:
     needs: prepare
     strategy:
       fail-fast: false
-      max-parallel: 16
+      max-parallel: 20
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
@@ -214,7 +218,7 @@ jobs:
           retention-days: 14
   finish:
     needs: images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
@@ -234,6 +238,8 @@ jobs:
           pattern: images-*
           merge-multiple: true
           path: output/${{ env.RUN }}/images
+      - name: Install reference MusicRNN CPU model runtime
+        run: npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1
       - run: python -m somoy_jatri.cli finish --run-id "$RUN"
       - name: Save verified final output to separate Drive folder
         env:

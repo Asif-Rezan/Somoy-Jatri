@@ -15,7 +15,7 @@ def partial_checkpoint(root, image_workers):
     config = Config(**load(root/'config.json'))
     if config.mode!='production' or config.run_id!=root.name:
         raise ValueError('Matching production checkpoint required')
-    if not 1<=image_workers<=16: raise ValueError('Use 1–16 image workers')
+    if not 1<=image_workers<=20: raise ValueError('Use 1–20 image workers')
     story = load(root/'story.json')
     dossier=load(root/'research.json')
     if dossier.get('research_method')=='automatic source extraction' and len(dossier['facts'])<8 and not (root/'story.json').exists():

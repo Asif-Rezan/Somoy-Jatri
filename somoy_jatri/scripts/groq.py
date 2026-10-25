@@ -27,6 +27,17 @@ class Groq:
     unavailable_until = {}
 
     def json(self, prompt, schema=None, temperature=.75, reasoning_effort='low'):
+        if os.getenv('TEXT_BACKEND', 'qwen-local') == 'qwen-local' and os.getenv('STORY_PROVIDER', 'auto') == 'auto':
+            from somoy_jatri.scripts.qwen_text import request
+            result = request({'messages': [{'role': 'user', 'content': 'Return only a valid JSON object.\n' + prompt}],
+                'max_completion_tokens': 4096, 'temperature': temperature,
+                'response_format': ({'type': 'json_schema', 'json_schema': {'name': 'somoy_response',
+                    'strict': True, 'schema': schema}} if schema else {'type': 'json_object'})})
+            parsed = json.loads(result['choices'][0]['message']['content'])
+            if schema:
+                from jsonschema import validate
+                validate(parsed, schema)
+            return parsed
         if os.getenv('STORY_PROVIDER')=='gemini' or (not os.getenv('GROQ_API_KEY') and os.getenv('GEMINI_API_KEY')):
             from somoy_jatri.scripts.gemini import Gemini
             return Gemini().json(prompt,schema=schema,temperature=temperature,reasoning_effort=reasoning_effort)
@@ -199,6 +210,9 @@ def generate(dossier, target, previous, feedback=''):
             time.sleep(float(os.getenv('STORY_PACE_SECONDS', '10')))
     if len(segments) < 80:
         raise ValueError('Long-form story has too few visual utterances')
-    return {'title': f'{dossier["location"]} ভ্রমণ | সময় যাত্রী',
-            'tags': ['Bangla history', 'Somoy Jatri', 'Time travel vlog'],
-            'segments': segments}
+    story = {'title': f'{dossier["location"]} ভ্রমণ | সময় যাত্রী',
+            'tags': ['বাংলা ইতিহাস', 'সময় যাত্রী', 'সময়ভ্রমণ'], 'segments': segments}
+    from somoy_jatri.packaging import generate as package
+    story['packaging'] = package(dossier, story)
+    story['title'] = story['packaging']['title']
+    return story

@@ -29,7 +29,7 @@ class SSDImages:
         self.pipeline = DiffusionPipeline.from_pretrained(os.getenv('CPU_IMAGE_MODEL','segmind/SSD-1B'),
             revision=os.getenv('CPU_MODEL_REVISION','60987f37e94cd59c36b1cba832b9f97b57395a10'),
             torch_dtype=torch.float32, use_safetensors=True, trust_remote_code=False).to('cpu')
-        self.pipeline.scheduler = DPMSolverMultistepScheduler.from_config(self.pipeline.scheduler.config)
+        self.pipeline.scheduler = DPMSolverMultistepScheduler.from_config(self.pipeline.scheduler.config, algorithm_type='dpmsolver++', use_karras_sigmas=True)
         self.pipeline.enable_attention_slicing(); self.pipeline.enable_vae_slicing()
 
     def generate(self, shot, path):
@@ -38,7 +38,7 @@ class SSDImages:
         seed = int(hashlib.sha256(shot['id'].encode()).hexdigest()[:8],16)
         # Preserve the assigned subject on retries; never silently substitute an unrelated empty scene.
         result = self.pipeline(prompt=shot['prompt'], negative_prompt=shot['negative_prompt'],
-            width=w, height=h, num_inference_steps=int(os.getenv('CPU_IMAGE_STEPS','16')),
+            width=w, height=h, guidance_scale=float(os.getenv('CPU_IMAGE_GUIDANCE', '9')), num_inference_steps=int(os.getenv('CPU_IMAGE_STEPS','16')),
             generator=self.torch.Generator('cpu').manual_seed(seed))
         if any(getattr(result,'nsfw_content_detected',None) or []):
             raise RuntimeError('Image rejected; preserve run for review')

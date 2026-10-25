@@ -41,3 +41,10 @@ def test_source_excerpt_matches_after_script_removal(monkeypatch):
                   sources=[{'id': 's1', 'title': 'Page', 'url': 'https://example.org',
                             'excerpt': 'Evidence Paragraph about the site'}])
     assert validate(packet, live=True, require_review=False) is packet
+
+
+def test_topic_rotation_uses_reference_ten_episode_window(tmp_path):
+    catalog=tmp_path/'topics.json'
+    catalog.write_text(json.dumps([{'id':str(i)} for i in range(11)]))
+    history=[{'topic_id':str(i)} for i in range(11)]
+    assert choose(history,catalog)['id']=='0'

@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   recover:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
       RUN: ${{ inputs.run }}
@@ -49,6 +49,9 @@ jobs:
       - run: python -m somoy_jatri.cli restore --run-id "$RUN" --snapshot "$SNAPSHOT"
       - if: inputs.operation == 'images'
         run: pip install -e '.[images]'
+      - name: Install reference MusicRNN CPU runtime
+        if: inputs.operation == 'finish'
+        run: npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1
       - if: inputs.operation != 'restore'
         run: python -m somoy_jatri.cli "$OPERATION" --run-id "$RUN" --shard "$SHARD"
       - if: inputs.operation != 'cleanup'

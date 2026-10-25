@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   component:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
       CPU_THREADS: '4'
@@ -36,6 +36,8 @@ jobs:
         run: pip install -r requirements-tts.txt
       - if: inputs.mode == 'production' && inputs.component == 'image-test'
         run: pip install -e '.[images]'
+      - if: inputs.mode == 'production' && inputs.component == 'music-test'
+        run: npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1
       - run: python -m somoy_jatri.cli "$COMPONENT" --mode "$MODE" --run-id component
       - uses: actions/upload-artifact@v4
         if: always()

@@ -137,20 +137,26 @@ def finish(config):
     root=config.root;shots=load(root/'timeline.json');total=shots[-1]['end']
     cues=plan(shots);save(root/'music-plan.json',cues)
     catalog=load(os.environ['AMBIENT_CATALOG']) if os.getenv('AMBIENT_CATALOG') else None
-    music=score(cues,total) if config.music else np.zeros(round(total*24000))
+    music_backend = 'music-rnn' if config.mode == 'production' else 'procedural'
+    if config.music and music_backend == 'music-rnn':
+        from somoy_jatri.music.scoring import MusicRNN
+        music = MusicRNN(root).compose(total)
+    else:
+        music = score(cues,total) if config.music else np.zeros(round(total*24000))
     mix(root/'narration.wav',music,ambient(shots,total,catalog),root/'mix.wav')
     generate(root,shots)
-    create(root,'সময়ের পথে!' if config.mode=='mock' else load(root/'research.json')['location'])
+    story = load(root/'story.json')
+    create(root,story.get('packaging', {}).get('thumbnail_text', 'সময়ের আড়ালে কী?'))
     render(root,shots,captions=config.captions,mock=config.mode=='mock')
     dossier=load(root/'research.json');story=load(root/'story.json')
     chapters=[];last=None
     from somoy_jatri.subtitles.captions import timestamp
     for s in shots:
         if s['chapter']!=last:
-            seconds=round(s['start']);chapters.append(f'{seconds//60:02}:{seconds%60:02} {s["chapter"]}');last=s['chapter']
+            seconds=round(s['start']);chapters.append(f'{seconds//60:02}:{seconds%60:02} অধ্যায় {len(chapters)+1}');last=s['chapter']
     disclosure='এটি AI দিয়ে তৈরি ঐতিহাসিক পুনর্নির্মাণ। সময়ভ্রমণ ও বর্ণনাকারীর অভিজ্ঞতা কাল্পনিক। কিছু দৃশ্য সম্ভাব্য পুনর্গঠন।'
-    description=disclosure+'\n\n'+'\n'.join(chapters)+'\n\nSources:\n'+'\n'.join(s['url'] for s in dossier['sources'])
-    description+='\nMusic: original procedural synthesis.\n#SomoyJatri #BanglaHistory #TimeTravel'
+    description=story.get('packaging', {}).get('description', '')+'\n\n'+disclosure+'\n\n'+'\n'.join(chapters)+'\n\nতথ্যসূত্র:\n'+'\n'.join(s['url'] for s in dossier['sources'])
+    description+='\nসংগীত: '+ ('Magenta MusicRNN' if config.music and music_backend == 'music-rnn' else 'original procedural synthesis' if config.music else 'বন্ধ') +'.\n#SomoyJatri #BanglaHistory #TimeTravel'
     if catalog:
         description+='\nSound credits:\n'+'\n'.join(str(c.get('source',''))+' — '+str(c.get('license','')) for c in catalog.values())
     save(root/'metadata.json',{'title':story['title'][:100],'description':description[:5000],

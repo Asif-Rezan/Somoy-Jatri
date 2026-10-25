@@ -10,8 +10,8 @@ def repartition(root, workers):
     config = Config(**load(root/'config.json'))
     if config.mode != 'production' or config.run_id != root.name:
         raise ValueError('A matching production voice checkpoint is required')
-    if not 1 <= workers <= 16:
-        raise ValueError('Use 1–16 image workers')
+    if not 1 <= workers <= 20:
+        raise ValueError('Use 1–20 image workers')
     total = duration(root/'narration.wav')
     if not 600 <= total <= 900:
         raise ValueError('Prepared narration must be 600–900 seconds')
