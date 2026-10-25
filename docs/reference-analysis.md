@@ -12,9 +12,7 @@ requirement, and alignment defaults to local multilingual Whisper.
 
 Images match SSD-1B, 1024×576, 16 steps, guidance 9, seven-second slots and twenty
 CPU workers. Production music uses the reference Magenta basic_rnn and historical
-instrument renderer, generating independent sections instead of repeating a loop. Each chapter uses
-its dominant mood to condition the model motif and sampling temperature, set
-tempo and intensity, and crossfade into the next chapter beneath narration.
+instrument renderer, generating independent sections instead of repeating a loop.
 Mock previews keep lightweight procedural audio. Packaging uses accurate Bangla
 titles, complementary short questions and a left-text/right-art thumbnail layout.
 

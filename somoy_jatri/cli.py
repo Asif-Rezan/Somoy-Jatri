@@ -67,7 +67,7 @@ def main():
         cues=[dict(start=i*8,end=(i+1)*8,mood=m,style='ambient',fade=1.5) for i,m in enumerate(['amazed','curious','reflective'])]
         if args.mode == 'production':
             from somoy_jatri.music.scoring import MusicRNN
-            audio = MusicRNN(root).compose(24,cues)
+            audio = MusicRNN(root).compose(24)
         else:
             audio = score(cues,24)
         write_wav(root/'music-test.wav',audio)

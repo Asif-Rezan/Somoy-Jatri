@@ -25,6 +25,6 @@ Sources: [Qwen weights](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF),
 [Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts),
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
 
-Production music retains mood control: chapter duration determines the dominant
-mood, which selects motif, model sampling temperature, tempo and mix intensity.
-Chapter boundaries crossfade; image cuts do not restart the music.
+Production uses a continuous MusicRNN soundtrack across the whole episode. It
+does not restart or change music at chapter boundaries. Narration ducking and
+opening/closing fades remain enabled.

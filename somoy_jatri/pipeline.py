@@ -140,7 +140,7 @@ def finish(config):
     music_backend = 'music-rnn' if config.mode == 'production' else 'procedural'
     if config.music and music_backend == 'music-rnn':
         from somoy_jatri.music.scoring import MusicRNN
-        music = MusicRNN(root).compose(total,cues)
+        music = MusicRNN(root).compose(total)
     else:
         music = score(cues,total) if config.music else np.zeros(round(total*24000))
     mix(root/'narration.wav',music,ambient(shots,total,catalog),root/'mix.wav')
