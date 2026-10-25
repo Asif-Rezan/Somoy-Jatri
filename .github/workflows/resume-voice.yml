@@ -40,7 +40,7 @@ env:
 jobs:
   checkpoint:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 360
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
@@ -57,6 +57,10 @@ jobs:
           run-id: ${{ inputs.source_run }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: output/${{ env.RUN }}
+      - name: Start reference Qwen for saved story validation
+        run: |
+          pip install "huggingface-hub>=0.34,<1"
+          bash scripts/setup_qwen.sh
       - name: Validate saved story before more voice generation
         id: matrix
         env:

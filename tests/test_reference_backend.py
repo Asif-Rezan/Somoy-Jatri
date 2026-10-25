@@ -84,3 +84,13 @@ def test_production_music_uses_reference_generator(tmp_path, monkeypatch):
     assert len(calls)==2
     assert len(audio)==30*RATE and audio[0]==audio[-1]==0
     assert np.max(np.abs(audio))<.02
+
+
+def test_voice_recovery_starts_qwen_before_story_review():
+    import yaml
+    doc=yaml.safe_load(Path('.github/workflows/resume-voice.yml').read_text())
+    checkpoint=doc['jobs']['checkpoint']
+    steps=checkpoint['steps']
+    start=next(i for i,s in enumerate(steps) if 'setup_qwen.sh' in s.get('run',''))
+    review=next(i for i,s in enumerate(steps) if s.get('env',{}).get('VOICE_OPERATION')=='checkpoint')
+    assert start<review and checkpoint['timeout-minutes']>=90
