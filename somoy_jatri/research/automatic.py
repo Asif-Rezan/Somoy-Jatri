@@ -19,7 +19,7 @@ def choose(history, catalog=Path('docs/research/topics.json')):
     topics = json.loads(catalog.read_text(encoding='utf-8'))
     if not topics or len({t['id'] for t in topics}) != len(topics):
         raise ValueError('Topic catalog is empty or contains duplicate IDs')
-    used = {item.get('topic_id') for item in history}
+    used = {item.get('topic_id') for item in history[-10:]}
     available = [t for t in topics if t['id'] not in used]
     if not available:
         raise ValueError('Curated topics exhausted; add another sourced topic')

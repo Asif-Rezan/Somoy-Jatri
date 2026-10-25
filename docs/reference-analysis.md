@@ -23,6 +23,9 @@ language `bn`. Existing emotion metadata, measured utterances, source citation
 checks and first-person time-travel framing remain. No English model is silently
 used for Bengali speech. Model defaults are documented in docs/models.md.
 
+The topic catalog now covers the reference subjects and excludes the last ten
+reserved topics when choosing the next episode.
+
 Existing private uploads, channel/folder identity guards, per-run checksums,
 Drive retries, independent image jobs, resumable preparation, recovery and
 verified cleanup are retained. Credentials and channel/folder IDs are not copied

@@ -1,6 +1,90 @@
 [
-  {"id":"giza","location":"Giza, Egypt","period":"Old Kingdom, c. 2600–2500 BCE","sources":["https://whc.unesco.org/en/list/86/"]},
-  {"id":"mohenjo-daro","location":"Mohenjo-daro, Pakistan","period":"Indus civilization, c. 2500 BCE","sources":["https://whc.unesco.org/en/list/138/"]},
-  {"id":"petra","location":"Petra, Jordan","period":"Nabataean era, c. 1st century CE","sources":["https://whc.unesco.org/en/list/326/"]},
-  {"id":"goreme","location":"Göreme, Türkiye","period":"Byzantine era, c. 10th century CE","sources":["https://whc.unesco.org/en/list/357/"]}
+  {
+    "id": "giza",
+    "location": "Giza, Egypt",
+    "period": "Old Kingdom, c. 2600–2500 BCE",
+    "sources": [
+      "https://whc.unesco.org/en/list/86/"
+    ]
+  },
+  {
+    "id": "mohenjo-daro",
+    "location": "Mohenjo-daro, Pakistan",
+    "period": "Indus civilization, c. 2500 BCE",
+    "sources": [
+      "https://whc.unesco.org/en/list/138/"
+    ]
+  },
+  {
+    "id": "petra",
+    "location": "Petra, Jordan",
+    "period": "Nabataean era, c. 1st century CE",
+    "sources": [
+      "https://whc.unesco.org/en/list/326/"
+    ]
+  },
+  {
+    "id": "goreme",
+    "location": "Göreme, Türkiye",
+    "period": "Byzantine era, c. 10th century CE",
+    "sources": [
+      "https://whc.unesco.org/en/list/357/"
+    ]
+  },
+  {
+    "id": "saqqara",
+    "location": "Saqqara, Egypt",
+    "period": "Old Kingdom, c. 27th century BCE",
+    "sources": [
+      "https://whc.unesco.org/en/list/86/"
+    ]
+  },
+  {
+    "id": "persian-qanat",
+    "location": "Persian qanat settlements, Iran",
+    "period": "Historical irrigation systems; dates vary by site",
+    "sources": [
+      "https://whc.unesco.org/en/list/1506/"
+    ]
+  },
+  {
+    "id": "pompeii",
+    "location": "Pompeii, Italy",
+    "period": "Roman era, 1st century CE",
+    "sources": [
+      "https://whc.unesco.org/en/list/829/"
+    ]
+  },
+  {
+    "id": "historic-cairo",
+    "location": "Historic Cairo, Egypt",
+    "period": "Fatimid era, 10th–12th centuries CE",
+    "sources": [
+      "https://whc.unesco.org/en/list/89/"
+    ]
+  },
+  {
+    "id": "samarra",
+    "location": "Samarra, Iraq",
+    "period": "Abbasid era, 9th century CE",
+    "sources": [
+      "https://whc.unesco.org/en/list/276/"
+    ]
+  },
+  {
+    "id": "ibn-battuta",
+    "location": "Journeys of Ibn Battuta",
+    "period": "14th century CE",
+    "sources": [
+      "https://www.loc.gov/item/2021666192/"
+    ]
+  },
+  {
+    "id": "ibn-sina",
+    "location": "Life and scholarship of Ibn Sina",
+    "period": "10th–11th centuries CE",
+    "sources": [
+      "https://plato.stanford.edu/entries/ibn-sina/"
+    ]
+  }
 ]
