@@ -191,7 +191,7 @@ def test_new_workflow_uses_reference_stages_and_smaller_runtime():
     scripts='\n'.join(x.get('run','') for x in steps)
     assert scripts.index('cli stage-story')<scripts.index('cli prepare --run-id')<scripts.index('cli storyboard')<scripts.index('cli refine-plan')
     assert 'setup_qwen.sh' not in '\n'.join(x.get('run','') for x in steps if x.get('name')!='Start legacy Qwen only for old verified artifacts')
-    assert doc['jobs']['prepare']['timeout-minutes']==150
+    assert doc['jobs']['prepare']['timeout-minutes']==240
 
 
 def test_word_cache_invalidates_when_audio_changes(tmp_path):

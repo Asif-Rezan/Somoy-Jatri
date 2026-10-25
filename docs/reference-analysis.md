@@ -23,6 +23,8 @@ Bengali characters and punctuation. Historical factual anchors and fictional
 time travel remain; horror prompts, channel identity and credentials are not
 copied. Existing 600–900-second videos and seven-second images are retained.
 The initial Bangla target is 75 words per chapter; actual audio determines acceptance.
+The job deadline is 240 minutes instead of the English reference's 150 to allow
+the slower Bengali voice adapter; this does not add any generation or review work.
 
 Fresh runs use curated source anchors directly, like the reference's curated
 input, rather than making extra live research/extraction/enrichment requests.

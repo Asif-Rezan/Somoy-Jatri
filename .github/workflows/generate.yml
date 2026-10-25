@@ -57,7 +57,7 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
+    timeout-minutes: 240
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:

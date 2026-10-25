@@ -33,8 +33,10 @@ See [reference comparison](docs/reference-analysis.md).
    cleanup retain their account identity and duplicate-upload protections.
 
 The duration stays 600–900 seconds and images change every seven seconds.
-The preparation job has the reference's **150-minute limit**. This is a limit,
-not a promised generation time. CPU Bengali speech can still be slow.
+The preparation job allows **240 minutes** for the Bengali speech adapter; the
+English reference allows 150. This is a failure deadline, not a generation target
+or speed control. The same bounded preparation sequence runs; Bengali CPU speech
+can still be slow.
 
 [Model details](docs/models.md). Structural/schema validation is not a claim of
 historical accuracy or semantic agreement. The reference process does not run
