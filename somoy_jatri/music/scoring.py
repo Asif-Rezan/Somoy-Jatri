@@ -46,12 +46,23 @@ class LicensedMusic:
 
 def plan(shots):
     cues=[]
-    for s in shots:
-        key=s['chapter']
+    for shot in shots:
+        key=shot['chapter']
         if cues and cues[-1]['chapter']==key:
-            cues[-1]['end']=s['end'];continue
-        cues.append({'start':s['start'],'end':s['end'],'chapter':s['chapter'],
-            'mood':'reflective','style':'historical_documentary','intensity':.35,'fade':1.5,'ducking':True})
+            cues[-1]['end']=shot['end']
+            cues[-1]['shots'].append(shot)
+            continue
+        cues.append({'start':shot['start'],'end':shot['end'],'chapter':key,
+            'style':'historical_documentary','fade':1.5,'ducking':True,'shots':[shot]})
+    for cue in cues:
+        # Dominant mood by spoken/visual time, avoiding a restart at each image cut.
+        weights={}
+        for shot in cue.pop('shots'):
+            mood=shot.get('mood','reflective')
+            weights[mood]=weights.get(mood,0)+shot['end']-shot['start']
+        cue['mood']=max(weights,key=weights.get)
+        cue['intensity']={'excited':.6,'amazed':.55,'dramatic':.65,
+                          'concerned':.45,'curious':.4,'soft':.2}.get(cue['mood'],.35)
     return cues
 
 
@@ -78,24 +89,35 @@ def mix(voice_path, music, ambient, output):
 
 
 class MusicRNN:
-    """Reference Magenta model with a continuous score for the whole episode."""
+    """Reference model, with mood-conditioned motifs and chapter crossfades."""
     def __init__(self, root):
         self.root = root
 
-    def compose(self, total):
+    def generate(self, cue, seconds, seed):
+        import hashlib
+        import json
         from somoy_jatri.music.music_cpu import generate
-        # One inference and render per section; repeat-free independent continuations.
-        sections = []
-        while sum(len(a) for a in sections) < round(total * RATE):
-            path = self.root / f'music-rnn-{len(sections):02}.wav'
+        key=hashlib.sha256(json.dumps({'mood':cue['mood'],'seed':seed,
+            'seconds':seconds,'version':2},sort_keys=True).encode()).hexdigest()[:16]
+        sections=[]
+        count=0
+        while count < round(seconds * RATE):
+            path=self.root / f'music-rnn-{key}-{len(sections):02}.wav'
             if not path.exists():
-                generate(path)
-            audio = read_wav(path)
-            if not np.isfinite(audio).all() or len(audio) < 20 * RATE:
+                generate(path,mood=cue['mood'])
+            audio=read_wav(path)
+            if not np.isfinite(audio).all() or len(audio)<20*RATE:
                 raise ValueError('Invalid MusicRNN section')
             sections.append(audio)
-        result = np.concatenate(sections)[:round(total * RATE)] * .16
-        fade = min(2 * RATE, len(result)//2)
-        result[:fade] *= np.linspace(0, 1, fade)
-        result[-fade:] *= np.linspace(1, 0, fade)
+            count+=len(audio)
+        result=np.concatenate(sections)[:round(seconds*RATE)]
+        result*=.08+.2*cue.get('intensity',.35)
+        fade=min(round(cue.get('fade',1.5)*RATE),len(result)//2)
+        if fade:
+            result[:fade]*=np.linspace(0,1,fade)
+            result[-fade:]*=np.linspace(1,0,fade)
         return result
+
+    def compose(self, total, cues=None):
+        cues=cues or [dict(start=0,end=total,mood='reflective',intensity=.35,fade=1.5)]
+        return score(cues,total,provider=self)

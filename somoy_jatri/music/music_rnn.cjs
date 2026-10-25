@@ -10,10 +10,20 @@ async function main() {
   await model.initialize();
   // Newly composed seed phrase, not a borrowed song.
   // An original D-Dorian motif: mysterious, with a brighter natural sixth.
-  const pitches = [62, 64, 65, 69, 71, 69, 67, 64];
+  const mood = process.argv[3] || 'reflective';
+  const settings = {
+    curious: [[62,64,65,69,71,69,67,64], .55],
+    amazed: [[62,66,69,74,73,69,66,64], .7],
+    excited: [[62,66,69,71,74,71,69,66], .8],
+    concerned: [[62,65,63,62,69,67,65,63], .45],
+    dramatic: [[50,57,62,65,69,65,62,57], .65],
+    soft: [[62,65,69,67,65,64,62,62], .35],
+    reflective: [[62,64,65,69,67,65,64,62], .4]
+  };
+  const [pitches, temperature] = settings[mood] || settings.reflective;
   const primer = {quantizationInfo: {stepsPerQuarter: 4}, totalQuantizedSteps: 32,
     notes: pitches.map((pitch, i) => ({pitch, quantizedStartStep: i * 4, quantizedEndStep: i * 4 + 3}))};
-  const result = await model.continueSequence(primer, 512, 0.55);
+  const result = await model.continueSequence(primer, 512, temperature);
   if (!result.notes || result.notes.length < 8) throw new Error('Model generated insufficient music');
   fs.writeFileSync(process.argv[2] || 'music-notes.json', JSON.stringify(result));
   model.dispose();

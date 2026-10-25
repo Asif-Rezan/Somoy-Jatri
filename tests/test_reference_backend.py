@@ -75,7 +75,7 @@ def test_production_music_uses_reference_generator(tmp_path, monkeypatch):
     from somoy_jatri.music.scoring import MusicRNN
     from somoy_jatri.audio import write_wav, RATE
     calls=[]
-    def generate(path):
+    def generate(path, mood='reflective'):
         calls.append(path)
         t=np.arange(25*RATE)/RATE
         write_wav(path,.1*np.sin(2*np.pi*220*t))

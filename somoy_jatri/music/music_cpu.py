@@ -17,8 +17,11 @@ CHORDS = ((62, 65, 69, 76),  # D minor add9
           (60, 64, 67, 74))  # C add9
 
 
-def render_sequence(sequence, path):
-    seconds = float(sequence['totalQuantizedSteps']) * STEP + 3
+def render_sequence(sequence, path, mood='reflective'):
+    bpm={'curious':88,'amazed':100,'excited':108,'concerned':76,
+         'dramatic':96,'soft':68,'reflective':72,'neutral':80}.get(mood,80)
+    step=60/bpm/4
+    seconds = float(sequence['totalQuantizedSteps']) * step + 3
     if not 20 <= seconds <= 180 or not sequence.get('notes'):
         raise ValueError('Generated score has no usable notes or duration')
     audio = np.zeros((math.ceil(seconds * RATE), 2), dtype=np.float32)
@@ -26,8 +29,8 @@ def render_sequence(sequence, path):
     # bass drone. Each new chord suggests another room or vista opening up.
     total_steps = int(sequence['totalQuantizedSteps'])
     for chord_index, start_step in enumerate(range(0, total_steps, 64)):
-        start = int(start_step * STEP * RATE)
-        count = min(int(64 * STEP * RATE), len(audio) - start)
+        start = int(start_step * step * RATE)
+        count = min(int(64 * step * RATE), len(audio) - start)
         ct = np.arange(count, dtype=np.float32) / RATE
         attack = np.minimum(ct / 1.5, 1)
         release = np.minimum((count / RATE - ct) / 1.5, 1)
@@ -42,10 +45,10 @@ def render_sequence(sequence, path):
             audio[start:start+count, 0] += signal * (1-pan)
             audio[start:start+count, 1] += signal * pan
     for index, note in enumerate(sequence['notes']):
-        start = int(int(note['quantizedStartStep']) * STEP * RATE)
+        start = int(int(note['quantizedStartStep']) * step * RATE)
         if start < 0 or start >= len(audio):
             continue
-        length = max(.35, (int(note['quantizedEndStep']) - int(note['quantizedStartStep'])) * STEP)
+        length = max(.35, (int(note['quantizedEndStep']) - int(note['quantizedStartStep'])) * step)
         count = min(int((length + 2.5) * RATE), len(audio) - start)
         nt = np.arange(count, dtype=np.float32) / RATE
         pitch = min(SCALE, key=lambda value: abs(value - int(note['pitch'])))
@@ -62,7 +65,7 @@ def render_sequence(sequence, path):
         audio[start:start+count, 1] += signal * pan
     # A very quiet upper-register glint gives the scene discovery and air.
     for index, start_step in enumerate(range(0, total_steps, 32)):
-        start = int(start_step * STEP * RATE)
+        start = int(start_step * step * RATE)
         count = min(int(3 * RATE), len(audio) - start)
         if count <= 0:
             continue
@@ -90,11 +93,11 @@ def render_sequence(sequence, path):
     return seconds
 
 
-def generate(path):
+def generate(path, mood='reflective'):
     notes_path = path.with_suffix('.notes.json')
-    subprocess.run(['node', str(Path(__file__).with_name('music_rnn.cjs')), str(notes_path)], check=True)
+    subprocess.run(['node', str(Path(__file__).with_name('music_rnn.cjs')), str(notes_path), mood], check=True)
     sequence = json.loads(notes_path.read_text())
-    seconds = render_sequence(sequence, path)
+    seconds = render_sequence(sequence, path, mood=mood)
     print(json.dumps({'check': 'Generated music audio', 'passed': True, 'duration_seconds': round(seconds, 2)}), flush=True)
 
 

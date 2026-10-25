@@ -24,3 +24,7 @@ Sources: [Qwen weights](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF),
 [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M),
 [Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts),
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
+
+Production music retains mood control: chapter duration determines the dominant
+mood, which selects motif, model sampling temperature, tempo and mix intensity.
+Chapter boundaries crossfade; image cuts do not restart the music.
