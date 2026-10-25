@@ -1,8 +1,5 @@
 name: Diagnose Groq quota without exposing credentials
 on:
-  push:
-    branches: [main]
-    paths: ['scripts/check_groq_quota.py', '.github/workflows/groq-quota.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,12 +16,6 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -e .
-      - uses: actions/download-artifact@v4
-        with:
-          name: storyboard-replay
-          run-id: 39148632152
-          github-token: ${{ github.token }}
-          path: output/quota-input
       - run: python -u scripts/check_groq_quota.py
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}

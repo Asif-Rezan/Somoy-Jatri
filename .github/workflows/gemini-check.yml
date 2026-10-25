@@ -1,9 +1,6 @@
 name: Verify Gemini connection
 # Exercise the widely supported v1beta JSON-schema fields.
 on:
-  push:
-    branches: [main]
-    paths: [.github/workflows/gemini-check.yml]
   workflow_dispatch:
 permissions:
   contents: read
