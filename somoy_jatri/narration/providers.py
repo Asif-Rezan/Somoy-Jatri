@@ -54,8 +54,53 @@ class IndicParlerTTS:
         write_wav(path, audio.cpu().numpy().squeeze(), self.model.config.sampling_rate)
 
 
+ONLINE_VOICE = 'bn-BD-PradeepNeural'
+ONLINE_RATE = '-8%'
+
+
+class OnlineBanglaTTS:
+    """One Bangladesh Bangla narrator for the entire episode; no emotion switching."""
+    def synthesize(self, text, emotion, intensity, path):
+        import edge_tts
+        import subprocess
+        import tempfile
+        import time
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='somoy-online-voice-', dir=path.parent) as work:
+            mp3 = Path(work) / 'speech.mp3'
+            wav = Path(work) / 'speech.wav'
+            for attempt in range(3):
+                try:
+                    edge_tts.Communicate(text, ONLINE_VOICE, rate=ONLINE_RATE,
+                        pitch='+0Hz', volume='+0%', connect_timeout=20,
+                        receive_timeout=90).save_sync(str(mp3))
+                    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(mp3),
+                        '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', str(wav)],
+                        capture_output=True, check=True, timeout=120)
+                    # Audio validation occurs before the file becomes cacheable.
+                    from somoy_jatri.audio import read_wav
+                    samples = read_wav(wav)
+                    if not len(samples) or not np.isfinite(samples).all() or np.max(np.abs(samples)) < .001:
+                        raise ValueError('Online voice returned invalid audio')
+                    wav.replace(path)
+                    return
+                except Exception:
+                    if attempt == 2:
+                        raise RuntimeError('Online Bangla narration failed after three attempts; retry when the service is available') from None
+                    time.sleep(2 ** attempt)
+
+
 def provider(mode):
-    return MockTTS() if mode == 'mock' else IndicParlerTTS()
+    if mode == 'mock':
+        return MockTTS()
+    backend = os.getenv('TTS_BACKEND', 'edge-tts')
+    if backend == 'edge-tts':
+        return OnlineBanglaTTS()
+    if backend == 'indic-parler':
+        return IndicParlerTTS()
+    raise ValueError('Unsupported production voice provider')
+
 
 
 def synthesize_verified(tts, aligner, segment, path, reuse=False, attempts=3):
@@ -75,6 +120,11 @@ def synthesize_verified(tts, aligner, segment, path, reuse=False, attempts=3):
 def take_fingerprint(segment, mode):
     import hashlib
     import json
+    if os.getenv('TTS_BACKEND', 'edge-tts') == 'edge-tts':
+        return hashlib.sha256(json.dumps({'text': segment['text'], 'mode': mode,
+            'backend': 'edge-tts', 'voice': ONLINE_VOICE, 'rate': ONLINE_RATE,
+            'pitch': '+0Hz', 'volume': '+0%', 'version': 'online-documentary-v1'},
+            sort_keys=True).encode()).hexdigest()
     return hashlib.sha256(json.dumps({'text': segment['text'], 'mode': mode,
         'model': os.getenv('TTS_MODEL', 'Tanmoyshome/bn-parler-tts'),
         'caption': documentary_caption(os.getenv('TTS_MODEL') == 'ai4bharat/indic-parler-tts'),

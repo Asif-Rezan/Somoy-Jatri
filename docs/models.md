@@ -8,7 +8,7 @@
 | Runtime | 16,384-token context, at most four CPU threads, reused per process; no external text API |
 | Illustration | segmind/SSD-1B, CPU float32, 1024×576, 16 steps, guidance 9 |
 | Music | Magenta MusicRNN basic_rnn, @magenta/music 1.23.1, CPU |
-| Bangla voice | Tanmoyshome/bn-parler-tts via pinned Parler library, bounded internal text chunks assembled/cached per chapter |
+| Bangla voice | Microsoft Edge online bn-BD-PradeepNeural, fixed rate -8%, neutral pitch, cached per chapter |
 | Word alignment | faster-whisper 1.2.1, multilingual base, CPU int8, language bn, two threads, beam size 3 |
 
 The first four rows follow the chapter preparation process from
@@ -28,15 +28,17 @@ quality, pronunciation and historical reconstruction accuracy need private
 listening/viewing review; a schema/audio check cannot establish those qualities.
 
 New narration is objective third-person history, with no first-person vlog host.
-Bangla speech uses one fixed male/moderate/clear description and greedy decoding;
-scene emotion fields are ignored. The ungated fine-tune cannot guarantee speaker
-identity across different texts. For named-speaker conditioning the optional
-`ai4bharat/indic-parler-tts` adapter defaults to recommended Bengali speaker Arjun;
-it requires accepted model access terms and a runner token. See the
-[Bangla model card](https://huggingface.co/Tanmoyshome/bn-parler-tts) and
-[Indic speaker list](https://huggingface.co/ai4bharat/indic-parler-tts).
+Bangla speech uses Microsoft Edge's online `bn-BD-PradeepNeural` male narrator,
+with fixed rate (-8%), pitch (+0 Hz), and volume (+0%). Install
+`requirements-voice.txt`. This sends narration text to the online service and
+requires network access, but no API key. Three failed service attempts stop
+without switching speakers. The local Parler adapter remains opt-in using
+`TTS_BACKEND=indic-parler` and `requirements-tts.txt`.
 
-Voice cache receipts include `bangla-documentary-v2` and new chapter scripts use
+See [Microsoft's voice list](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support)
+and the [Edge TTS client](https://github.com/rany2/edge-tts).
+
+Voice cache receipts include the backend, voice, rate and `online-documentary-v1` and new chapter scripts use
 `reference-chapters-documentary-v2`. Start a new episode rather than resuming an
 old vlog story. MusicRNN rejects sparse/invalid continuations with at most five
 independent sampling attempts; it never substitutes silence or repeated loops.

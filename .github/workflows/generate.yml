@@ -88,9 +88,9 @@ jobs:
         run: python -u scripts/check_connections.py
       - if: inputs.mode == 'production'
         run: |
-          pip install -r requirements-tts.txt
+          pip install -r requirements-voice.txt
           python scripts/check_alignment_audio.py
-          python -c "import torch, torchaudio; from parler_tts import ParlerTTSForConditionalGeneration; assert torch.version.cuda is None"
+          python -c "import edge_tts; from somoy_jatri.narration.providers import ONLINE_VOICE; assert ONLINE_VOICE == 'bn-BD-PradeepNeural'"
       - name: Verify Bengali narration before writing a full story
         if: inputs.mode == 'production' && !startsWith(inputs.dossier, 'verified:')
         env:

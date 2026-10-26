@@ -34,5 +34,5 @@ class Config:
             for name in names:
                 if not os.getenv(name):
                     raise ValueError(name + ' is required for production preparation')
-            if os.getenv('TTS_BACKEND', 'indic-parler') != 'indic-parler':
+            if os.getenv('TTS_BACKEND', 'edge-tts') not in {'edge-tts', 'indic-parler'}:
                 raise ValueError('Unverified production voice provider')

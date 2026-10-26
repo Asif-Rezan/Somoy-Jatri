@@ -55,8 +55,8 @@ jobs:
       - name: Install chapter preparation dependencies
         if: inputs.operation == 'prepare'
         run: |
-          pip install -r requirements-story.txt -r requirements-tts.txt
-          python -c "import torch, torchaudio; from parler_tts import ParlerTTSForConditionalGeneration; assert torch.version.cuda is None"
+          pip install -r requirements-story.txt -r requirements-voice.txt
+          python -c "import edge_tts; from somoy_jatri.narration.providers import ONLINE_VOICE; assert ONLINE_VOICE == 'bn-BD-PradeepNeural'"
       - if: inputs.operation == 'prepare'
         env:
           RESEARCH_DOSSIER: auto

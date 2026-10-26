@@ -10,13 +10,18 @@ fictional time travel, or scene-dependent voice/emotion changes. New chapter sto
 `reference-chapters-documentary-v2`; start a fresh episode to replace older vlog scripts.
 Voice receipts include the delivery version so previous narration is regenerated.
 
-The public Bangla Parler adapter now uses a fixed male/moderate/clear description,
-greedy decoding and a fixed inference seed. Its model has no named-speaker control,
-so identity consistency and perceived quality still require a real listening check.
-For a named Bengali speaker, set `TTS_MODEL=ai4bharat/indic-parler-tts` and
-`TTS_VOICE=Arjun` (recommended Bengali voice). That model requires accepted Hugging
-Face access conditions and credentials in the runner. Both adapters ignore legacy
-emotion fields. No claim is made that a Bangla model reproduces Kokoro's English voice.
+The production voice is Microsoft Edge's online **bn-BD-PradeepNeural** narrator,
+a fixed Bangladesh Bangla male voice at a slightly slower rate (-8%), neutral pitch,
+and fixed volume. Install `requirements-voice.txt`. Narration text is sent to the
+online service; no API key is required. Service failures retry three times and
+stop clearly, with no automatic switch to a different voice. Audio is converted
+to 24 kHz mono WAV and cached per chapter. Switching from local narration invalidates
+old voice receipts. Listen to the production sample before judging pronunciation.
+
+The earlier local Parler adapter remains an explicit opt-in via
+`TTS_BACKEND=indic-parler` plus `requirements-tts.txt`; it is no longer the production
+default. Its public Bangla fine-tune has no named-speaker control. All adapters
+ignore legacy scene emotion fields.
 
 MusicRNN retries sparse/invalid continuations up to five times with increasing
 sampling variety before failing clearly. It writes notes atomically and never fills
@@ -32,8 +37,8 @@ missing music with silence or a repeated loop.
    concise twenty-chapter outline, then four batches of five Bangla narrations,
    followed by publishing metadata. Chapter word counts have bounded grammar
    constraints and at most three retries. No repeated semantic-repair loop runs.
-4. **Prepare:** cache one audio asset per chapter. Bengali Parler internally
-   splits bounded text to avoid truncation. Measure actual duration and rewrite
+4. **Prepare:** cache one audio asset per chapter. Bounded text chunks
+   keep narration requests short. Measure actual duration and rewrite
    only selected chapters if needed; resynthesize only changed chapters. Tempo
    correction is capped at 4%, and there are at most three duration corrections.
 5. Cache multilingual Bengali Whisper word timestamps by audio/text hashes.

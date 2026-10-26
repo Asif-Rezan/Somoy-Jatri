@@ -104,6 +104,7 @@ def test_chapter_cache_is_bound_to_text_audio_and_voice(tmp_path,monkeypatch):
     p.chapter_audio(tmp_path,0,'আমি এখন অন্য কথা ভাবছি।',voice)
     assert voice.calls>first
     first=voice.calls
+    monkeypatch.setenv('TTS_BACKEND','indic-parler')
     monkeypatch.setenv('TTS_VOICE','Riya')
     p.chapter_audio(tmp_path,0,'আমি এখন অন্য কথা ভাবছি।',voice)
     assert voice.calls>first

@@ -33,7 +33,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg fontconfig
       - run: pip install -e .
       - if: inputs.mode == 'production' && inputs.component == 'tts-test'
-        run: pip install -r requirements-tts.txt
+        run: pip install -r requirements-voice.txt
       - if: inputs.mode == 'production' && inputs.component == 'image-test'
         run: pip install -e '.[images]'
       - if: inputs.mode == 'production' && inputs.component == 'music-test'

@@ -17,6 +17,7 @@ def test_long_story_is_batched_and_normalizes_directions(monkeypatch):
     assert len(calls) == 20
     assert len(story['segments']) == 140
     assert story['segments'][0]['emotion'] == 'neutral'
-    assert story['segments'][0]['intensity'] == 1
+    assert story['segments'][0]['intensity'] == .5
+    assert all(s['emotion']=='neutral' and s['mood']=='neutral' for s in story['segments'])
     assert story['segments'][0]['pause_after_ms'] == 1500
     assert story['segments'][0]['motion'] == 'stable'
