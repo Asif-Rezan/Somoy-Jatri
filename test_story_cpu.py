@@ -39,6 +39,14 @@ class QwenTests(unittest.TestCase):
         self.assertNotIn('reasoning_effort', sent)
         self.assertIn('JSON Schema', sent['messages'][-1]['content'])
 
+    def test_invalid_schema_has_actionable_safe_error_before_model_load(self):
+        payload = self.payload()
+        payload['response_format']['json_schema']['schema']['required'] = ['ready', 'ready']
+        with patch.object(s, 'load_model') as load:
+            with self.assertRaisesRegex(s.StoryGenerationError, 'schema at required'):
+                s.request_story('chat/completions', payload)
+        load.assert_not_called()
+
     def test_invalid_type_extra_fields_and_truncation_never_accepted(self):
         for content, finish in [('{"ready":"yes"}', 'stop'),
                                 ('{"ready":true,"extra":1}', 'stop'),

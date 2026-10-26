@@ -94,3 +94,5 @@ Ambient scores render at 48 kHz with slow pad swells and diffuse stereo space. E
 The soft ambient arrangement uses a restrained low-register pentatonic melody and rounded sustained pads, without piercing flute doubling, noisy strings or percussion attacks. It keeps lower mastering peaks and smooth high-frequency roll-off.
 
 Daily generation validates the full test suite under production content settings before downloading models. A validated generated story is immediately checkpointed in the run’s private Drive state and reused on a retry of that run. Invalid checkpoints still fail validation; upload ambiguity still requires reconciliation to avoid duplicates.
+
+Outline chapters own independent schemas, including their claim references. Regression tests validate all topic-enriched schemas and every generated-stage schema, and Qwen readiness checks production outline schemas before loading the model. Invalid-schema errors identify the failing schema path instead of hiding the cause behind a generic exception type.

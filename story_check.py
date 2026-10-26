@@ -4,10 +4,19 @@ import os
 from pathlib import Path
 
 from story_cpu import MODEL_ID, StoryGenerationError, request_story
-from workflow import narration_batch
+from workflow import narration_batch, story_outline_schema, narration_schema
+from islamic_content import catalog
+from jsonschema import Draft202012Validator
 
 
 def check():
+    # Exercise the exact topic-enriched schemas before loading a large model.
+    # A one-chapter narration probe alone cannot detect outline-construction bugs.
+    for topic in catalog():
+        Draft202012Validator.check_schema(story_outline_schema(topic))
+    for begin in (1, 6, 11, 16):
+        keys = [f'chapter_{i:02}' for i in range(begin, begin+5)]
+        Draft202012Validator.check_schema(narration_schema(keys, 110))
     def ask(prompt, limit, schema):
         result = request_story('chat/completions', {'model': MODEL_ID,
             'messages': [{'role': 'user', 'content': prompt}],

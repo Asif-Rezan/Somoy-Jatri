@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import time
 
-from jsonschema import Draft202012Validator, ValidationError
+from jsonschema import Draft202012Validator, ValidationError, SchemaError
 
 MODEL_ID = 'Qwen/Qwen3-4B-Instruct-2507'
 GGUF_REPO = 'unsloth/Qwen3-4B-Instruct-2507-GGUF'
@@ -67,7 +67,11 @@ def request_story(endpoint, payload):
     schema = payload.get('response_format', {}).get('json_schema', {}).get('schema')
     if not isinstance(schema, dict):
         raise StoryGenerationError('Script generation requires an explicit JSON schema')
-    Draft202012Validator.check_schema(schema)
+    try:
+        Draft202012Validator.check_schema(schema)
+    except SchemaError as error:
+        location = '/'.join(str(part) for part in error.path) or 'root'
+        raise StoryGenerationError(f'Invalid script schema at {location}; fix schema construction before inference') from None
     validator = Draft202012Validator(schema)
     messages = copy.deepcopy(payload['messages'])
     messages.append({'role': 'user', 'content': 'Return only JSON matching this schema. '

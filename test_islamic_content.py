@@ -66,10 +66,31 @@ class ContentTests(unittest.TestCase):
             self.assertEqual(c.safe_visual(prompt,topic),topic['thumbnail_visual_story'])
         self.assertEqual(c.safe_visual('An empty stone courtyard',topic),'An empty stone courtyard')
 
+    def test_every_topic_outline_schema_is_valid_and_chapters_are_independent(self):
+        from jsonschema import Draft202012Validator
+        for topic in c.catalog():
+            with self.subTest(topic=topic['id']):
+                schema = w.story_outline_schema(topic)
+                Draft202012Validator.check_schema(schema)
+                chapters = schema['properties']['scenes']['properties']
+                self.assertEqual(len(chapters), 20)
+                for chapter in chapters.values():
+                    self.assertEqual(chapter['required'].count('claim_ids'), 1)
+                    self.assertEqual(chapter['properties']['claim_ids']['items']['enum'],
+                                     [claim['id'] for claim in topic['claims']])
+                chapters['chapter_01']['required'].append('mutation-probe')
+                chapters['chapter_01']['properties']['claim_ids']['items']['enum'].append('probe')
+                self.assertNotIn('mutation-probe', chapters['chapter_02']['required'])
+                self.assertNotIn('probe', chapters['chapter_02']['properties']['claim_ids']['items']['enum'])
+                self.assertNotIn('probe', [claim['id'] for claim in topic['claims']])
+
     def test_generation_preserves_reference_outline_four_batches_then_package(self):
         topic=c.catalog()[0];calls=[]
         def request(endpoint,payload):
-            props=payload['response_format']['json_schema']['schema']['properties']
+            from jsonschema import Draft202012Validator
+            schema = payload['response_format']['json_schema']['schema']
+            Draft202012Validator.check_schema(schema)
+            props=schema['properties']
             prompt=payload['messages'][0]['content'];calls.append(prompt)
             if 'scenes' in props:
                 value={'title':'Abbasid Samarra','protagonist_name':'','character_description':'Empty courtyard',
@@ -80,6 +101,7 @@ class ContentTests(unittest.TestCase):
                 value={'narrations':{key:text for key in props['narrations']['properties']}}
             elif 'passed' in props:value={'passed':True,'issues':[]}
             else:raise AssertionError('Unexpected model stage')
+            Draft202012Validator(schema).validate(value)
             return {'choices':[{'finish_reason':'stop','message':{'content':json.dumps(value)}}]}
         def package(story,topic,ask):
             story.update(description=c.source_notes(topic),tags=['Islamic history'],

@@ -74,18 +74,23 @@ def request_story(endpoint, payload):
     return generate(endpoint, payload)
 
 
-def story_outline_schema():
+def story_outline_schema(topic=None):
     def object_schema(properties):
         return {'type': 'object', 'properties': properties,
             'required': list(properties), 'additionalProperties': False}
     text_schema = {'type': 'string'}
     # Final shot prompts are generated from timed narration, so don't generate
     # discarded four-image chapter variants or duplicate YouTube metadata here.
-    scene_schema = object_schema({'summary': text_schema, 'image_prompt': text_schema})
+    def scene_schema():
+        fields = {'summary': {'type': 'string'}, 'image_prompt': {'type': 'string'}}
+        if topic is not None:
+            fields['claim_ids'] = {'type': 'array', 'minItems': 1, 'maxItems': 4,
+                'items': {'type': 'string', 'enum': [claim['id'] for claim in topic['claims']]}}
+        return object_schema(fields)
     chapter_keys = [f'chapter_{i:02}' for i in range(1, 21)]
     return object_schema({**{k: text_schema for k in
         ('title', 'character_description', 'protagonist_name')},
-        'scenes': object_schema({k: scene_schema for k in chapter_keys})})
+        'scenes': object_schema({k: scene_schema() for k in chapter_keys})})
 
 
 def narration_text_schema(lower, upper):
@@ -141,7 +146,6 @@ def make_story(day, previous):
         return validate_story(validate_content(json.loads(Path(os.environ['STORY_FILE']).read_text())))
     model = os.getenv('STORY_MODEL', 'Qwen/Qwen3-4B-Instruct-2507')
     chapter_keys = [f'chapter_{i:02}' for i in range(1, 21)]
-    outline_schema = story_outline_schema()
     def ask(prompt, limit, schema):
         result = request_story('chat/completions', {'model': model,
             'messages': [{'role': 'user', 'content': prompt}],
@@ -158,10 +162,7 @@ def make_story(day, previous):
     available = [topic for topic in topics if topic['id'] not in recent_ids] or topics
     topic = available[dt.date.fromisoformat(day).toordinal() % len(available)]
     theme = CONTENT_POLICY + ' Evidence packet: ' + json.dumps(topic)
-    for scene in outline_schema['properties']['scenes']['properties'].values():
-        scene['properties']['claim_ids'] = {'type':'array','minItems':1,'maxItems':4,
-            'items':{'type':'string','enum':[c['id'] for c in topic['claims']]}}
-        scene['required'].append('claim_ids')
+    outline_schema = story_outline_schema(topic)
     recent_context = [{'title': str(item.get('title', ''))[:100],
                        'plot': str(item.get('plot', ''))[:400]}
                       for item in previous[-10:] if isinstance(item, dict)]
