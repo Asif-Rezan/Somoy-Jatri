@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   component:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.component == 'hf-voice-audition' && 'ubuntu-22.04' || 'ubuntu-24.04' }}
     timeout-minutes: 180
     env:
       CPU_THREADS: '4'
