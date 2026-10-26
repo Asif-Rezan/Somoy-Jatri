@@ -4,7 +4,7 @@ on:
     inputs:
       component:
         type: choice
-        options: [tts-test, image-test, music-test]
+        options: [tts-test, image-test, music-test, hf-voice-audition]
         default: tts-test
       mode:
         type: choice
@@ -38,10 +38,23 @@ jobs:
         run: pip install -e '.[images]'
       - if: inputs.mode == 'production' && inputs.component == 'music-test'
         run: npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1
-      - run: python -m somoy_jatri.cli "$COMPONENT" --mode "$MODE" --run-id component
+      - name: Install Hugging Face voice audition runtime
+        if: inputs.component == 'hf-voice-audition'
+        run: |
+          pip install torch==2.7.1+cpu torchaudio==2.7.1+cpu --index-url https://download.pytorch.org/whl/cpu
+          pip install coqui-tts==0.28.0 'transformers>=4.57,<5' huggingface-hub soundfile
+      - name: Audition fixed female Bangla model without changing production
+        if: inputs.component == 'hf-voice-audition'
+        env:
+          TORCH_FORCE_WEIGHTS_ONLY_LOAD: '1'
+        run: python -u scripts/audition_hf_bangla.py
+      - if: inputs.component != 'hf-voice-audition'
+        run: python -m somoy_jatri.cli "$COMPONENT" --mode "$MODE" --run-id component
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: model-component-test
-          path: output/component/*
+          path: |
+            output/component/*
+            output/hf-voice-audition/*
           retention-days: 7
