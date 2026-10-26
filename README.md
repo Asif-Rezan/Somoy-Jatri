@@ -88,3 +88,5 @@ New uploads publish publicly and must pass visibility, HD, channel, thumbnail an
 The background score uses slowly swelling modal strings, sustained airy flute-like phrases and soft frame-drum pulses, without piano, plucked-key melodies or vocals. Packaging uses distinct title/thumbnail candidates, prominent subject keywords, readable gold/emerald hooks and source-linked descriptions without production-tool details.
 
 Thumbnails omit channel branding and use a specific, evidence-supported curiosity question that the episode answers.
+
+Ambient scores render at 48 kHz with slow string/flute swells and diffuse stereo space. Each new video receives fresh melody and arrangement seeds, varying tempo, key, phrasing and stereo placement within the same historical exploration style. Saved seeds reproduce the arrangement during recovery.

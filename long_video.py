@@ -692,6 +692,8 @@ def upload():
     if any(h.get('hash') == digest for h in history):
         raise RuntimeError('Story was already uploaded')
     state = {'phase': 'rendered', 'story': story, 'hash': digest, 'validation': report}
+    if (ROOT/'music.notes.json').exists():
+        state['music_arrangement'] = json.loads((ROOT/'music.notes.json').read_text())
     for name in ('video.mp4', 'thumbnail.jpg', 'captions.srt', 'story.json', 'plan.json', 'music.audio', 'validation.json'):
         store.upload(ROOT/name, f'runs/{run_id()}/{name}')
     store.save(key, state)

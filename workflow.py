@@ -740,6 +740,8 @@ def run(daily=False):
     for name in ('video.mp4', 'thumbnail.jpg', 'captions.srt', 'story.json', 'validation.json', 'plan.json'):
         store.upload(root/name, f'runs/{run_id}/{name}')
     state['validation'] = report
+    if (root/'music.notes.json').exists():
+        state['music_arrangement'] = json.loads((root/'music.notes.json').read_text())
     state['phase'] = 'rendered'
     store.save(key, state)
     if os.getenv('UPLOAD_ENABLED') == 'true':

@@ -1,5 +1,6 @@
 // Free CPU inference using Magenta's pretrained 13 MB MelodyRNN.
 const fs = require('fs');
+const {randomInt} = require('crypto');
 
 
 async function main() {
@@ -9,8 +10,10 @@ async function main() {
   await tf.ready();
   const model = new MusicRNN('https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/basic_rnn');
   await model.initialize();
-  // Original A-minor seed; the renderer adds sparse documentary textures.
-  const pitches = [57, 60, 64, 59, 57, 65, 64, 60];
+  // Fresh modal primer for each video; the renderer preserves the ambient palette.
+  const root = [60, 62, 64][randomInt(3)];
+  const degrees = [0, 1, 4, 5, 7, 8, 10];
+  const pitches = Array.from({length: 8}, (_, i) => root + (i === 0 || i === 7 ? 0 : degrees[randomInt(degrees.length)]));
   const primer = {quantizationInfo: {stepsPerQuarter: 4}, totalQuantizedSteps: 32,
     notes: pitches.map((pitch, i) => ({pitch, quantizedStartStep: i * 4, quantizedEndStep: i * 4 + 3}))};
   try {
