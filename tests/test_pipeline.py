@@ -90,7 +90,7 @@ def test_ducking():
 def test_bangla_subtitles(prepared):
     from somoy_jatri.subtitles.captions import generate
     config,shots=prepared;generate(config.root,shots)
-    assert 'বন্ধুরা' in (config.root/'captions.srt').read_text()
+    assert 'প্রাচীন বাজারে' in (config.root/'captions.srt').read_text()
     assert 'Noto Sans Bengali' in (config.root/'captions.ass').read_text()
 
 def test_ffmpeg_command():

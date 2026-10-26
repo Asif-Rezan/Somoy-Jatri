@@ -10,12 +10,12 @@ from somoy_jatri.storyboard.timeline import build,evaluate_semantics,reviewed_st
 def mock_story():
     segments=[]
     for text,subject,visual,scene,mood,motion in [
-        ('বন্ধুরা, আমি এখন কোথায় এসে পড়লাম!','ancient market','A wide ancient marketplace with pottery stalls','market','amazed','slow_forward'),
-        ('সামনে একজন মানুষ মাটির পাত্র সাজিয়ে রাখছেন।','pottery merchant','Close view of a merchant arranging clay pottery','market','curious','stable'),
-        ('নদীর দিকে তাকিয়ে ভাবছি, সময় কত কিছু বদলে দেয়।','river boats','Wooden boats on a calm river at sunset','river','reflective','pan_right')]:
+        ('প্রাচীন বাজারে নানা পণ্যের বেচাকেনা চলত।','ancient market','A wide ancient marketplace with pottery stalls','market','neutral','slow_forward'),
+        ('সামনে একজন মানুষ মাটির পাত্র সাজিয়ে রাখছেন।','pottery merchant','Close view of a merchant arranging clay pottery','market','neutral','stable'),
+        ('নদীপথ প্রাচীন জনপদগুলোর যোগাযোগে গুরুত্বপূর্ণ ভূমিকা রাখত।','river boats','Wooden boats on a calm river at sunset','river','neutral','pan_right')]:
         segments.append(dict(text=text,subject=subject,visual=visual,scene=scene,mood=mood,motion=motion,
             chapter=scene,emotion=mood,intensity=.5,pause_after_ms=300,anchors=subject.split(),ambient='river' if scene=='river' else 'wind',fact_ids=[]))
-    return {'title':'সময়ের পথে একটি পরীক্ষা | Somoy Jatri','tags':['Bangla history','Time travel vlog'],'segments':segments}
+    return {'title':'সময়ের পথে একটি পরীক্ষা | Somoy Jatri','tags':['Bangla history','Historical documentary'],'segments':segments}
 
 
 def prepare_legacy(config,topic='',period=''):
@@ -154,9 +154,9 @@ def finish(config):
     for s in shots:
         if s['chapter']!=last:
             seconds=round(s['start']);chapters.append(f'{seconds//60:02}:{seconds%60:02} অধ্যায় {len(chapters)+1}');last=s['chapter']
-    disclosure='এটি AI দিয়ে তৈরি ঐতিহাসিক পুনর্নির্মাণ। সময়ভ্রমণ ও বর্ণনাকারীর অভিজ্ঞতা কাল্পনিক। কিছু দৃশ্য সম্ভাব্য পুনর্গঠন।'
+    disclosure='এটি AI দিয়ে তৈরি ঐতিহাসিক পুনর্নির্মাণ। কিছু দৃশ্য সম্ভাব্য পুনর্গঠন।'
     description=story.get('packaging', {}).get('description', '')+'\n\n'+disclosure+'\n\n'+'\n'.join(chapters)+'\n\nতথ্যসূত্র:\n'+'\n'.join(s['url'] for s in dossier['sources'])
-    description+='\nসংগীত: '+ ('Magenta MusicRNN' if config.music and music_backend == 'music-rnn' else 'original procedural synthesis' if config.music else 'বন্ধ') +'.\n#SomoyJatri #BanglaHistory #TimeTravel'
+    description+='\nসংগীত: '+ ('Magenta MusicRNN' if config.music and music_backend == 'music-rnn' else 'original procedural synthesis' if config.music else 'বন্ধ') +'.\n#SomoyJatri #BanglaHistory #HistoricalDocumentary'
     if catalog:
         description+='\nSound credits:\n'+'\n'.join(str(c.get('source',''))+' — '+str(c.get('license','')) for c in catalog.values())
     save(root/'metadata.json',{'title':story['title'][:100],'description':description[:5000],
@@ -171,7 +171,7 @@ def prepare(config,topic='',period=''):
     # Old artifacts retain their old preparation path; new production uses chapters.
     path=config.root/'story.json'
     old_story=load(path) if path.exists() else {}
-    if config.mode=='production' and (old_story.get('format')=='reference-chapters-v1' or
+    if config.mode=='production' and (old_story.get('format') in {'reference-chapters-v1', 'reference-chapters-documentary-v2'} or
             (not old_story and os.getenv('PREPARATION_PROCESS','after-dark')=='after-dark')):
         from somoy_jatri.preparation.pipeline import stage_story,prepare_audio
         if not path.exists():stage_story(config,topic,period)

@@ -18,7 +18,7 @@ def dossier():
 
 
 def draft():
-    text=' '.join(['আমি প্রাচীন স্থাপত্যের ইতিহাস নিয়ে ভাবছি।']*12)
+    text=' '.join(['প্রাচীন স্থাপত্যের ইতিহাসে বহু গুরুত্বপূর্ণ তথ্য রয়েছে।']*12)
     return {'format':s.FORMAT,'title':'গিজার ইতিহাস','scenes':[
         {'narration':text+(s.CTA if i==19 else ''),'summary':'প্রাচীন স্থাপত্যের পর্যবেক্ষণ',
          'image_prompt':'Stone pyramid in the desert','fact_ids':[0]} for i in range(20)]}
@@ -33,7 +33,7 @@ def test_reference_outline_then_four_batches_and_packaging(monkeypatch):
             return {'title':'গিজার ইতিহাস','scenes':{key:{'summary':'প্রাচীন স্থাপত্যের পর্যবেক্ষণ',
                 'image_prompt':'Ancient stone pyramid','fact_ids':[0]} for key in s.KEYS}}
         if 'narrations' in props:
-            text=' '.join(['আমি']*74)+' ভাবছি।'
+            text=' '.join(['ইতিহাস']*74)+' রয়েছে।'
             return {'narrations':{key:text for key in props['narrations']['properties']}}
         return {'title':'গিজার ইতিহাস','thumbnail_text':'ভেতরে কী আছে?','description':'প্রাচীন স্থাপত্যের ইতিহাস।'}
     result=s.generate(dossier(),[],request)

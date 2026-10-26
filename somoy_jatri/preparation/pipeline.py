@@ -78,9 +78,9 @@ def chapter_chunks(text, limit=240):
 
 
 def fingerprint(text):
-    return hashlib.sha256(json.dumps({'text':text,'model':os.getenv('TTS_MODEL','Tanmoyshome/bn-parler-tts'),
-        'voice':os.getenv('TTS_VOICE','Aditi'),'emotion':os.getenv('TTS_EMOTION_ENABLED','true'),
-        'adapter':'chapter-bengali-v1'},sort_keys=True).encode()).hexdigest()
+    from somoy_jatri.narration.providers import take_fingerprint
+    return take_fingerprint({'text': text}, 'production')
+
 
 
 def audio_measure(path):
@@ -265,7 +265,7 @@ def storyboard(root,request=scripts.ask):
             'Illustrate the concrete action, object or documented setting in the measured Bangla narration window. '
             'Chapter narration only resolves context; do not illustrate earlier or later events. '
             'Subject and action first, then relevant objects and location. One simple composition, no typography. '
-            'Historical first-person travel documentary, narrator behind camera; no horror or modern objects. '
+            'Historical documentary reconstruction, objective camera; no visible presenter; no horror or modern objects. '
             'Uncertain visual detail must be described as artistic reconstruction, never documented evidence. '
             f'Location: {dossier["location"]}. Period: {dossier["period"]}. Facts: '+json.dumps(dossier['facts'],ensure_ascii=False)
             +'. Chapter context: '+json.dumps(context,ensure_ascii=False)
@@ -275,7 +275,7 @@ def storyboard(root,request=scripts.ask):
             visual=values[shot['id']].strip()
             if not 5<=len(visual.split())<=30:raise ValueError('Storyboard visual must be concise')
             shot.update(subject=visual,visual=visual,anchors=[visual],
-                prompt=visual+'. Photorealistic historical documentary reconstruction, first-person POV, no typography.',
+                prompt=visual+'. Photorealistic historical documentary reconstruction, objective cinematic framing, no typography.',
                 negative_prompt=NEGATIVE)
         save(root/'plan.json',plan)
         event('storyboard_progress',completed=min(begin+8,len(plan['shots'])),total=len(plan['shots']))

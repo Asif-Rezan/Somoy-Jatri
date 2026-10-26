@@ -19,7 +19,7 @@ def build(story, bounds, dossier):
             'weather': 'clear', 'time_of_day': 'daylight', 'camera_direction': 'forward'})
         memory = memories[scene]
         subject = segment['subject']
-        prompt = (f'{subject}. {segment["visual"]}. First-person POV, photorealistic documentary travel footage. '
+        prompt = (f'{subject}. {segment["visual"]}. Photorealistic historical documentary reconstruction, objective cinematic framing. '
                   f'{dossier["location"]}, {dossier["period"]}. '
                   f'Consistent layout: {memory["layout"]}. Clothing: {memory["clothing"]}. '
                   'Natural daylight, eye-level framing, period tools, geographically consistent architecture. '
@@ -79,7 +79,7 @@ def repair_batch(model, batch, dossier, issues, attempt=0):
         schema={'type':'object','additionalProperties':False,'properties':{
             f'segment_{i}':item for i in indices},'required':[f'segment_{i}' for i in indices]}
     prompt=('Correct ONLY actual factual, citation, or Bangla/English scene mismatches in '
-        'these historical vlog segments. Treat every listed issue as a required correction. '
+        'these historical documentary segments. Treat every listed issue as a required correction. '
         'When no fact supports a claim, REMOVE that claim from BOTH Bangla narration and English '
         'subject/visual. A new citation or changing a compass direction cannot fix unsupported narration. '
         'Do not preserve an incorrect assertion merely to preserve the original wording. '
@@ -162,8 +162,8 @@ def evaluate_semantics(story, dossier, report_path=None, repair=False):
                 'required':['passed','issues']}
             result=model.json('Review each Bangla utterance against its English visual/subject and '
                 'fact_ids. Reject invented historical claims, anachronisms, mismatched subjects, and '
-                'multiple visual events or incoherent Bangla. Allow explicitly labelled artistic reconstruction, fictional '
-                'time travel and subjective reactions; these do not require invented factual citations. '
+                'multiple visual events or incoherent Bangla. Reject first-person vlog hosts and fictional time travel. '
+                'Allow explicitly labelled artistic reconstruction without invented factual citations. '
                 'Review EVERY segment and list ALL actual errors in one response, not just the first. '
                 'Use only the supplied evidence; do not reject it based on outside knowledge. '
                 'Do not treat an explicitly subjective observation, lighting, shadow or reconstruction as '

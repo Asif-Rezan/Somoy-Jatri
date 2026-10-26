@@ -135,7 +135,7 @@ def generate(dossier, target, previous, feedback=''):
         ('movement', 'Transport and movement through the setting'),
         ('exchange', 'Food, trade or social life where sources support them'),
         ('reflection', 'What the surviving evidence establishes and leaves uncertain'),
-        ('return', 'Return to the present and a brief like/comment/subscribe invitation'),
+        ('return', 'Historical legacy and a brief like/comment/subscribe invitation'),
     ]
     template = {'segments': [{'text': 'One short natural Bangla utterance',
         'subject': 'One English visual subject', 'visual': 'Matching English visual',
@@ -150,8 +150,8 @@ def generate(dossier, target, previous, feedback=''):
             if needed <= 0:
                 break
             ask = min(7, needed)
-            prompt = ('Write a short part of an ORIGINAL first-person Bangladeshi female time-travel vlog '
-                'in natural conversational Bangla. Fictional time travel only, no horror. '
+            prompt = ('Write a short part of an ORIGINAL Bangla historical documentary '
+                'in clear natural Bangladeshi Bangla. Objective third-person narration, no first-person host, fictional time travel or personal reactions; no horror. '
                 f'Chapter {index+1}/10: {chapter}. Purpose: {purpose}. '
                 f'Return exactly {ask} distinct visual utterances, each 10–20 Bangla words '
                 'and at most 220 characters. One visual event per utterance. '
@@ -211,7 +211,7 @@ def generate(dossier, target, previous, feedback=''):
     if len(segments) < 80:
         raise ValueError('Long-form story has too few visual utterances')
     story = {'title': f'{dossier["location"]} ভ্রমণ | সময় যাত্রী',
-            'tags': ['বাংলা ইতিহাস', 'সময় যাত্রী', 'সময়ভ্রমণ'], 'segments': segments}
+            'tags': ['বাংলা ইতিহাস', 'সময় যাত্রী', 'ঐতিহাসিক তথ্যচিত্র'], 'segments': segments}
     from somoy_jatri.packaging import generate as package
     story['packaging'] = package(dossier, story)
     story['title'] = story['packaging']['title']

@@ -9,7 +9,7 @@ def generate(dossier, story):
         'description': {'type':'string'}},
         'required':['title','thumbnail_text','description'], 'additionalProperties':False}
     result = Groq().json(
-        'Write accurate YouTube packaging in natural Bangla for this historical time-travel episode. '
+        'Write accurate YouTube packaging in natural Bangla for this historical documentary. '
         'Return title (maximum 90 characters, subject near start), thumbnail_text '
         '(a complementary 2–5 word Bangla question answered in the episode), and description '
         '(2 Bangla sentences about the subject and evidence). No invented discoveries, '

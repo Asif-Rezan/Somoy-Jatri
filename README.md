@@ -1,10 +1,26 @@
-# Somoy Jatri — বাংলা সময়ভ্রমণ
+# Somoy Jatri — বাংলা ঐতিহাসিক তথ্যচিত্র
 
-**ইতিহাস শুধু শুনব না, নিজের চোখে দেখব!**
+Bangla historical documentaries following the chapter-based CPU generation process in
+`Asif-Rezan/youtube-dark-psychology-automation`, adapted to sourced history and Bangla.
+Twenty chapters, four narration batches, duration correction, timed images, captions,
+and continuous ducked MusicRNN music follow the reference structure.
 
-A Bangla historical time-travel video pipeline. Preparation now follows
-`Asif-Rezan/Rezan-After-Dark` at `d6dcde3`; that repository is unchanged.
-See [reference comparison](docs/reference-analysis.md).
+Narration uses an objective third-person documentary register with no vlog host,
+fictional time travel, or scene-dependent voice/emotion changes. New chapter stories use
+`reference-chapters-documentary-v2`; start a fresh episode to replace older vlog scripts.
+Voice receipts include the delivery version so previous narration is regenerated.
+
+The public Bangla Parler adapter now uses a fixed male/moderate/clear description,
+greedy decoding and a fixed inference seed. Its model has no named-speaker control,
+so identity consistency and perceived quality still require a real listening check.
+For a named Bengali speaker, set `TTS_MODEL=ai4bharat/indic-parler-tts` and
+`TTS_VOICE=Arjun` (recommended Bengali voice). That model requires accepted Hugging
+Face access conditions and credentials in the runner. Both adapters ignore legacy
+emotion fields. No claim is made that a Bangla model reproduces Kokoro's English voice.
+
+MusicRNN retries sparse/invalid continuations up to five times with increasing
+sampling variety before failing clearly. It writes notes atomically and never fills
+missing music with silence or a repeated loop.
 
 ## Production pipeline
 

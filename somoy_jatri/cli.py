@@ -52,9 +52,9 @@ def main():
         from somoy_jatri.narration.text import normalize
         root.mkdir(parents=True,exist_ok=True);tts=provider(args.mode);parts=[]
         for i,(text,emotion) in enumerate([
-            ('বন্ধুরা, আমরা কি সত্যিই প্রাচীন মিশরে এসে পড়েছি?', 'curious'),
-            ('ওই দেখো! সামনে গিজার বিশাল পিরামিড!', 'amazed'),
-            ('ভাবতেই অবাক লাগছে, খ্রিস্টপূর্ব ২৫০০ সালে জীবন কত আলাদা ছিল।','reflective')]):
+            ('প্রাচীন মিশরের স্থাপত্য ইতিহাসের গুরুত্বপূর্ণ সাক্ষ্য।', 'curious'),
+            ('গিজার পিরামিডগুলো প্রাচীন মিশরীয় স্থাপত্যের নিদর্শন।', 'amazed'),
+            ('খ্রিস্টপূর্ব ২৫০০ সালের মিশরীয় সমাজ সম্পর্কে প্রত্নতাত্ত্বিক গবেষণা তথ্য দেয়।','reflective')]):
             path=root/f'voice-{i}.wav'
             if args.mode=='production':
                 result=synthesize_measured(tts,{'text':normalize(text),'emotion':emotion,'intensity':.6},path)
@@ -67,7 +67,7 @@ def main():
         from somoy_jatri.pipeline import mock_story
         from somoy_jatri.storyboard.timeline import build
         root.mkdir(parents=True,exist_ok=True)
-        shot={'id':'test','subject':'pottery merchant','prompt':'Pottery merchant at Giza, c.2500 BCE, first-person POV photorealistic documentary, linen garments, mudbrick stalls, natural light','negative_prompt':'modern objects, anime, cartoon'}
+        shot={'id':'test','subject':'pottery merchant','prompt':'Pottery merchant at Giza, c.2500 BCE, objective cinematic historical documentary, linen garments, mudbrick stalls, natural light','negative_prompt':'modern objects, anime, cartoon'}
         (MockImages() if args.mode=='mock' else SSDImages()).generate(shot,root/'image-test.png')
     elif args.command=='music-test':
         from somoy_jatri.music.scoring import score

@@ -15,8 +15,22 @@ class MockTTS:
         envelope = np.minimum(t/.03, 1) * np.minimum((seconds-t)/.06, 1)
         write_wav(path, .12*np.sin(2*np.pi*220*t)*envelope)
 
+VOICE_RENDER_VERSION = 'bangla-documentary-v2'
+
+
+def documentary_caption(named_voice=False):
+    if named_voice:
+        voice = os.getenv('TTS_VOICE', 'Arjun')
+        if voice not in {'Arjun', 'Aditi', 'Tapan', 'Rashmi', 'Arnav', 'Riya'}:
+            raise ValueError('Select a documented Bengali speaker')
+        return (f'{voice} delivers calm, neutral Bengali narration at a moderate pace, '
+                'with clear articulation and natural pauses, in a very clear close recording without background noise.')
+    # Match the fine-tune's attribute-based training descriptions.
+    return 'A Bengali male speaker speaks at a moderate pace in a very clear recording.'
+
+
 class IndicParlerTTS:
-    """Bengali female voice; the public model has no named speaker control."""
+    """Fixed documentary delivery; ignore legacy per-scene emotion fields."""
     def __init__(self):
         import torch
         from parler_tts import ParlerTTSForConditionalGeneration
@@ -30,24 +44,13 @@ class IndicParlerTTS:
         self.description = AutoTokenizer.from_pretrained(self.model.config.text_encoder._name_or_path)
 
     def synthesize(self, text, emotion, intensity, path):
-        styles = {'curious': 'conversational', 'excited': 'happy', 'amazed': 'surprised',
-                  'concerned': 'slightly fearful', 'reflective': 'calm narration',
-                  'soft': 'soft narration', 'dramatic': 'expressive narration'}
-        if self.named_voice:
-            voice = os.getenv('TTS_VOICE', 'Aditi')
-            if voice not in {'Aditi', 'Rashmi', 'Riya'}:
-                raise ValueError('Select a documented Bengali female speaker')
-            style = styles.get(emotion, emotion)
-            if os.getenv('TTS_EMOTION_ENABLED', 'true') != 'true': style = 'neutral'
-            caption = (f'{voice}, a Bengali female speaker, delivers {style} speech at a moderate pace, '
-                       'with natural pauses and very clear audio, close recording without background noise.')
-        else:
-            caption = 'A Bengali female speaker speaks at a moderate pace in a very clear recording.'
+        caption = documentary_caption(self.named_voice)
         d = self.description(caption, return_tensors='pt')
         p = self.tokenizer(text, return_tensors='pt')
-        with self.torch.inference_mode():
+        with self.torch.random.fork_rng(devices=[]), self.torch.inference_mode():
+            self.torch.manual_seed(1729)
             audio = self.model.generate(input_ids=d.input_ids, attention_mask=d.attention_mask,
-                prompt_input_ids=p.input_ids, prompt_attention_mask=p.attention_mask)
+                prompt_input_ids=p.input_ids, prompt_attention_mask=p.attention_mask, do_sample=False)
         write_wav(path, audio.cpu().numpy().squeeze(), self.model.config.sampling_rate)
 
 
@@ -71,9 +74,12 @@ def synthesize_verified(tts, aligner, segment, path, reuse=False, attempts=3):
 
 def take_fingerprint(segment, mode):
     import hashlib
-    # Keep compatibility with fingerprints already saved by the production workflow.
-    return hashlib.sha256((segment['text']+segment['emotion']+str(segment['intensity'])+
-        os.getenv('TTS_MODEL','indic-parler')+os.getenv('TTS_VOICE','Aditi')+mode).encode()).hexdigest()
+    import json
+    return hashlib.sha256(json.dumps({'text': segment['text'], 'mode': mode,
+        'model': os.getenv('TTS_MODEL', 'Tanmoyshome/bn-parler-tts'),
+        'caption': documentary_caption(os.getenv('TTS_MODEL') == 'ai4bharat/indic-parler-tts'),
+        'voice': os.getenv('TTS_VOICE', 'Arjun'), 'version': VOICE_RENDER_VERSION}, sort_keys=True).encode()).hexdigest()
+
 
 
 def verified_take(path, fingerprint):

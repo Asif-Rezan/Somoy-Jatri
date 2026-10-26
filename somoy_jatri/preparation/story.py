@@ -6,7 +6,7 @@ import re
 from somoy_jatri.preparation.story_cpu import MODEL_ID, request_story
 from somoy_jatri.narration.text import normalize
 
-FORMAT = 'reference-chapters-v1'
+FORMAT = 'reference-chapters-documentary-v2'
 KEYS = [f'chapter_{i:02}' for i in range(1,21)]
 CTA = ' কোন সময়ের ইতিহাস পরের পর্বে দেখতে চান? মন্তব্যে জানান, ভালো লাগলে লাইক দিন এবং সময় যাত্রীর সঙ্গে থাকতে সাবস্ক্রাইব করুন।'
 
@@ -45,20 +45,31 @@ def narration_batch(prompt, keys, target, request=ask):
         if all(lower<=count<=upper for count in counts.values()):
             if any(not re.search(r'[\u0980-\u09ff]',values[k]) for k in keys):
                 raise ValueError('Narration must be Bangla')
+            try:
+                for key in keys: validate_documentary(values[key])
+            except ValueError:
+                feedback='\nRewrite in objective third-person Bangla. Remove first-person pronouns and host reactions.'
+                continue
             return [normalize(values[key]) for key in keys]
         print(json.dumps({'prepare_stage':'chapter_word_retry','attempt':attempt+1,'word_counts':counts}),flush=True)
         feedback=f'\nRevise this draft to the required counts. Actual counts: {counts}. Draft: '+json.dumps(group,ensure_ascii=False)
-    raise RuntimeError('Chapter word targets failed after three attempts')
+    raise RuntimeError('Chapter word targets or documentary direction failed after three attempts')
+
+
+def validate_documentary(text):
+    if re.search(r'(?<![\u0980-\u09ff])(আমি|আমরা|আমার|আমাদের|আমাকে|আমাদেরকে)(?![\u0980-\u09ff])', text):
+        raise ValueError('Documentary narration cannot use a first-person host')
 
 
 def validate(story, dossier):
     if story.get('format')!=FORMAT or len(story.get('scenes',[]))!=20:
-        raise ValueError('Reference preparation requires twenty chapters')
+        raise ValueError('Documentary preparation requires a new twenty-chapter story; start a fresh episode for older vlog artifacts')
     if not isinstance(story.get('title'),str) or not 1<=len(story['title'])<=100:
         raise ValueError('Invalid chapter story title')
     for scene in story['scenes']:
         if not scene.get('narration') or not re.search(r'[\u0980-\u09ff]',scene['narration']):
             raise ValueError('Missing Bangla chapter narration')
+        validate_documentary(scene['narration'])
         if not scene.get('summary') or not scene.get('image_prompt'):
             raise ValueError('Missing chapter outline')
         if not isinstance(scene.get('fact_ids'),list) or any(type(i)!=int or not 0<=i<len(dossier['facts']) for i in scene['fact_ids']):
@@ -109,12 +120,12 @@ def generate(dossier, previous, request=ask):
     recent=[{'title':str(x.get('topic',x.get('title','')))[:100]} for x in previous[-10:]]
     scene=obj({'summary':{'type':'string'},'image_prompt':{'type':'string'},
         'fact_ids':{'type':'array','items':{'type':'integer','minimum':0,'maximum':len(dossier['facts'])-1}}})
-    outline=request('Plan twenty concise chapters for an original Bangla first-person historical time-travel vlog. '
-        'Time travel is fictional. History must use ONLY the supplied evidence. No horror, invented dialogue, '
+    outline=request('Plan twenty concise chapters for an original Bangla historical documentary. '
+        'Use an objective third-person narrator. No first-person travel, vlog host, imagined visits or personal reactions. History must use ONLY the supplied evidence. No horror, invented dialogue, '
         'unsupported dates or discoveries. Explicitly label uncertain details as reconstruction. '
-        'Each chapter advances the visit without repeating earlier chapters. Return a Bangla title (max 90 characters), '
+        'Each chapter advances the historical explanation without repeating earlier chapters. Return a Bangla title (max 90 characters), '
         'then chapter_01 through chapter_20 with a concise 8–12 word Bangla summary, an 8–14 word English image_prompt, '
-        'and fact_ids using zero-based fact indices; subjective reactions may use []. '
+        'and fact_ids using zero-based fact indices; nonfactual transitions may use []. '
         f'Evidence: {evidence}. Recent topics to avoid: {recent}. No full narration or publishing metadata yet.',
         3000,obj({'title':{'type':'string'},'scenes':obj({key:scene for key in KEYS})}))
     target=int(os.getenv('STORY_CHAPTER_WORD_TARGET','75'))
@@ -123,11 +134,11 @@ def generate(dossier, previous, request=ask):
     prior=''
     for begin in (0,5,10,15):
         keys=KEYS[begin:begin+5]
-        prompt=('Write only the assigned five chapters of this original Bangla historical time-travel vlog. '
-            'Natural conversational Bangladeshi Bangla. Use ONLY the evidence for historical statements. '
-            'Distinguish subjective reactions and explicitly labelled reconstructions from documented facts. '
+        prompt=('Write only the assigned five chapters of this original Bangla historical documentary. '
+            'Clear natural Bangladeshi Bangla in a calm documentary register. No আমি, আমরা, vlog greetings, fictional time travel or personal reactions. Use ONLY the evidence for historical statements. '
+            'Distinguish explicitly labelled reconstructions from documented facts. '
             'Never invent buildings, people, activities, motives or dialogue absent from the evidence. '
-            'Develop the assigned observations and their uncertainty without adding history. '
+            'Develop the assigned historical explanations and their uncertainty without adding history. '
             'No headings, introductions repeated between chapters, or calls to action. '
             f'Target {target} words per chapter. Evidence: {evidence}. '
             f'Title: {outline["title"]}. Assigned events: '+json.dumps(dict(zip(keys,scenes[begin:begin+5])),ensure_ascii=False)
@@ -138,10 +149,10 @@ def generate(dossier, previous, request=ask):
         print(json.dumps({'prepare_stage':'narration_batch_complete','chapters':f'{begin+1}-{begin+5}'}),flush=True)
     scenes[-1]['narration']+=CTA
     story={'format':FORMAT,'title':outline['title'],'scenes':scenes,'topic_id':dossier.get('topic_id'),
-        'tags':['সময় যাত্রী','বাংলা ইতিহাস','সময়ভ্রমণ']}
+        'tags':['সময় যাত্রী','বাংলা ইতিহাস','ঐতিহাসিক তথ্যচিত্র']}
     validate(story,dossier)
     # Publishing metadata follows complete narration, as in the reference.
-    package=publishing_metadata('Create accurate Bangla YouTube packaging for this sourced time-travel episode. '
+    package=publishing_metadata('Create accurate Bangla YouTube packaging for this sourced historical documentary. '
         'Return title (max 90 characters), thumbnail_text (a complementary 2–5 word Bangla question answered by the episode), '
         'and description (two short Bangla sentences about the subject and evidence). No sensational or unsupported promises. '
         f'Evidence: {evidence}. Title: {story["title"]}. Chapter outline: '
@@ -159,7 +170,7 @@ def revise(story,dossier,ratio,direction,indices,request=ask):
         targets={key:max(35,min(180,round(len(text.split())*ratio))) for key,text in original.items()}
         schema=obj({key:text_schema(max(25,n-max(3,round(n*.05))),n+max(3,round(n*.05))) for key,n in targets.items()})
         values=request(f'Revise only these Bangla historical chapters to {direction} their narration. '
-            'Preserve chapter order, meaning, factual anchors and uncertainty. No invented historical details or calls to action. '
+            'Use objective third-person documentary narration; no first-person host or time travel. Preserve chapter order, meaning, factual anchors and uncertainty. No invented historical details or calls to action. '
             f'Target words: {targets}. Evidence: '+json.dumps(dossier['facts'],ensure_ascii=False)
             +'. Chapter text: '+json.dumps(original,ensure_ascii=False),6000,schema,.35)
         if set(values)!=set(original):raise ValueError('Duration revision omitted a selected chapter')
