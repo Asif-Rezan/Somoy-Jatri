@@ -4,7 +4,7 @@ on:
     inputs:
       component:
         type: choice
-        options: [tts-test, image-test, music-test, hf-voice-audition]
+        options: [tts-test, image-test, music-test, hf-voice-audition, mio-voice-audition]
         default: tts-test
       mode:
         type: choice
@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   component:
-    runs-on: ${{ inputs.component == 'hf-voice-audition' && 'ubuntu-22.04' || 'ubuntu-24.04' }}
+    runs-on: ${{ (inputs.component == 'hf-voice-audition' || inputs.component == 'mio-voice-audition') && 'ubuntu-22.04' || 'ubuntu-24.04' }}
     timeout-minutes: 180
     env:
       CPU_THREADS: '4'
@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ inputs.component == 'mio-voice-audition' && '3.12' || '3.11' }}
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg fontconfig
       - run: pip install -e .
       - if: inputs.mode == 'production' && inputs.component == 'tts-test'
@@ -48,7 +48,17 @@ jobs:
         env:
           TORCH_FORCE_WEIGHTS_ONLY_LOAD: '1'
         run: python -u scripts/audition_hf_bangla.py
-      - if: inputs.component != 'hf-voice-audition'
+      - name: Install free Indic-Mio audition runtime
+        if: inputs.component == 'mio-voice-audition'
+        run: |
+          pip install torch==2.7.1+cpu torchaudio==2.7.1+cpu --index-url https://download.pytorch.org/whl/cpu
+          pip install 'transformers>=4.51,<5' soundfile 'miocodec @ git+https://github.com/Aratako/MioCodec@77473544375d57e96cbdfd5d7d257e8f280fa8e3'
+      - name: Audition Indic-Mio with one fixed female preset
+        if: inputs.component == 'mio-voice-audition'
+        env:
+          HF_TOKEN: ''
+        run: python -u scripts/audition_mio_bangla.py
+      - if: inputs.component != 'hf-voice-audition' && inputs.component != 'mio-voice-audition'
         run: python -m somoy_jatri.cli "$COMPONENT" --mode "$MODE" --run-id component
       - uses: actions/upload-artifact@v4
         if: always()
@@ -57,4 +67,5 @@ jobs:
           path: |
             output/component/*
             output/hf-voice-audition/*
+            output/mio-voice-audition/*
           retention-days: 7
