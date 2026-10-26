@@ -20,5 +20,5 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg fonts-dejavu-core
           pip install -r requirements.txt
-          python -m unittest -v
+          CONTENT_TYPE=islamic-documentary python -m unittest -v
       - run: node --test test_music_retry.cjs

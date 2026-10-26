@@ -15,12 +15,12 @@ CTA = (" Which topic should Somoy Jatri explore next? "
 
 
 def story_fixture():
-    scenes = [{'summary': f'Event {i}', 'image_prompt': 'A tense room',
-               'narration': ' '.join([f'chapter{i}'] * 84)} for i in range(20)]
-    scenes[-1]['narration'] += CTA
-    return {'title': 'The Locked Letter', 'description': 'A fictional story.', 'tags': ['fiction'],
-            'thumbnail_text': 'THE LETTER', 'thumbnail_prompt': 'A locked letter',
-            'character_description': 'Maya in a blue coat', 'scenes': scenes}
+    story = json.loads(Path(__file__).with_name('sample-story.json').read_text())
+    for i, scene in enumerate(story['scenes']):
+        scene['narration'] = ' '.join([f'chapter{i}'] * 84)
+    story['scenes'][-1]['narration'] += CTA
+    return story
+
 
 
 class DurationDecisionTests(unittest.TestCase):
@@ -191,6 +191,9 @@ class StoryRevisionTests(unittest.TestCase):
         story = story_fixture()
         prompts = []
         def response(endpoint, payload):
+            if payload['response_format']['json_schema']['name'] == 'source_review':
+                return {'choices': [{'finish_reason': 'stop', 'message': {
+                    'content': json.dumps({'passed': True, 'issues': []})}}]}
             prompts.append(payload['messages'][0]['content'])
             keys = payload['response_format']['json_schema']['schema']['required']
             for key in keys:
@@ -204,6 +207,7 @@ class StoryRevisionTests(unittest.TestCase):
         self.assertIn('chapter2', prompts[0])
         self.assertIn('chapter5', prompts[0])
         self.assertEqual(len(revised['scenes']), 20)
+        self.assertTrue(revised['grounding_review']['passed'])
 
     def test_failed_qwen_revision_does_not_mutate_story(self):
         story = story_fixture()

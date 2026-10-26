@@ -555,9 +555,18 @@ def stage_story():
             raise RuntimeError('Fresh daily stories cannot use STORY_FILE')
         if store.load(f'runs/{run_id()}/state.json', {}).get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private', 'verified_public'):
             raise RuntimeError('Run already uploaded; use cleanup-only recovery')
-        history = store.load('history.json', [])
-        story = w.make_story(dt.datetime.now(ZoneInfo('Asia/Dhaka')).date().isoformat(), history[-30:])
-        validate_engagement(story)
+        checkpoint = f'runs/{run_id()}/staged-story.json'
+        story = store.load(checkpoint, None)
+        if story is None:
+            history = store.load('history.json', [])
+            story = w.make_story(dt.datetime.now(ZoneInfo('Asia/Dhaka')).date().isoformat(), history[-30:])
+            w.validate_story(story)
+            validate_engagement(story)
+            store.save(checkpoint, story)
+        else:
+            w.validate_story(story)
+            validate_engagement(story)
+            print(json.dumps({'check': 'Resume saved sourced story', 'passed': True}), flush=True)
         (ROOT/'story.json').write_text(json.dumps(story, indent=2))
         print(json.dumps({'fresh_story_ready': True, 'title': story['title'],
             'words': sum(len(s['narration'].split()) for s in story['scenes'])}), flush=True)

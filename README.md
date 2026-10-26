@@ -92,3 +92,5 @@ Thumbnails omit channel branding and use a specific, evidence-supported curiosit
 Ambient scores render at 48 kHz with slow pad swells and diffuse stereo space. Each new video receives fresh melody and arrangement seeds, varying tempo, key, phrasing and stereo placement within the same historical exploration style. Saved seeds reproduce the arrangement during recovery.
 
 The soft ambient arrangement uses a restrained low-register pentatonic melody and rounded sustained pads, without piercing flute doubling, noisy strings or percussion attacks. It keeps lower mastering peaks and smooth high-frequency roll-off.
+
+Daily generation validates the full test suite under production content settings before downloading models. A validated generated story is immediately checkpointed in the run’s private Drive state and reused on a retry of that run. Invalid checkpoints still fail validation; upload ambiguity still requires reconciliation to avoid duplicates.

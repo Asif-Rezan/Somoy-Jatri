@@ -307,9 +307,7 @@ class Checks(unittest.TestCase):
             store.check_private('folder')
 
     def test_story_validation(self):
-        story = dict(title='The Last Step', description='An original fictional story.', tags=['motivation'],
-                     thumbnail_text='ONE MORE STEP', thumbnail_prompt='A determined runner',
-                     scenes=[dict(narration=' '.join(['word']*450), image_prompt='cinematic road') for _ in range(4)])
+        story = json.loads(Path(__file__).with_name('sample-story.json').read_text())
         self.assertEqual(w.validate_story(story), story)
         story['title'] = 'x'*101
         with self.assertRaises(ValueError):
