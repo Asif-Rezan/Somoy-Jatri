@@ -1,4 +1,4 @@
-"""Render MusicRNN notes as a restrained documentary bed, with modal plucks, airy flute and soft percussion."""
+"""Render MusicRNN notes as a restrained documentary bed, with sustained strings, airy flute and soft frame drums."""
 import json
 import math
 from pathlib import Path
@@ -29,7 +29,7 @@ def render_sequence(sequence, path):
         drum = (.7 * np.sin(2*np.pi*(110*t - 25*t*t)) + .12*rng.normal(size=len(t)))
         audio[start:start+len(t)] += (drum * np.exp(-t*24) * .018)[:, None]
     for index, note in enumerate(sequence['notes']):
-        if index % 2:
+        if index % 8:
             continue
         start = int(int(note['quantizedStartStep']) * step * rate)
         if not 0 <= start < len(audio):
@@ -41,15 +41,20 @@ def render_sequence(sequence, path):
         count = min(6 * rate, len(audio) - start)
         t = np.arange(count, dtype=np.float32) / rate
         hz = 440 * 2 ** ((pitch - 69) / 12)
-        envelope = np.minimum(t / .008, 1) * np.exp(-t / .75)
-        tone = sum((1 / harmonic**1.5) * np.sin(2*np.pi*hz*harmonic*t)
-                   * np.exp(-t*harmonic*.45) for harmonic in range(1, 6))
-        # A breathy, gently moving upper response every fourth selected phrase.
-        if index % 8 == 0:
-            breath = rng.normal(0, .035, count)
-            flute = np.sin(2*np.pi*hz*2*t + .025*np.sin(2*np.pi*4.5*t)) + breath
-            tone += flute * np.minimum(t/.35, 1) * .45
-        signal = tone * envelope * .12
+        # Bowed/wind phrases swell in and release slowly: no struck-key or pluck envelope.
+        length = count / rate
+        envelope = np.sin(np.pi * np.clip(t / length, 0, 1)) ** 1.4
+        vibrato = .035 * np.sin(2*np.pi*4.2*t)
+        strings = sum((1 / harmonic**1.7) * (
+            np.sin(2*np.pi*hz*harmonic*t + vibrato*harmonic) +
+            .45*np.sin(2*np.pi*hz*harmonic*1.0015*t + .3))
+            for harmonic in range(1, 8))
+        # A sustained breathy flute response, with air smoothed to avoid a hiss.
+        breath = rng.normal(0, 1, count)
+        breath = np.convolve(breath, np.ones(24)/24, mode='same')
+        flute = (np.sin(2*np.pi*hz*2*t + vibrato) +
+                 .12*np.sin(2*np.pi*hz*4*t) + .07*breath)
+        signal = (strings * .045 + flute * .025) * envelope
         pan = .35 + .3 * (index % 3) / 2
         audio[start:start+count, 0] += signal * (1-pan)
         audio[start:start+count, 1] += signal * pan
