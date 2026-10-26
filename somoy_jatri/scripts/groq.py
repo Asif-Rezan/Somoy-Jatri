@@ -118,7 +118,6 @@ class Groq:
 
 def generate(dossier, target, previous, feedback=''):
     import re
-    from somoy_jatri.narration.text import EMOTIONS, emotion
     from somoy_jatri.storyboard.timeline import MOTIONS
     from somoy_jatri.research.evidence import indexed_dossier
 
@@ -189,20 +188,17 @@ def generate(dossier, target, previous, feedback=''):
             visual = str(raw.get('visual') or subject).strip()
             if not subject or not visual:
                 raise ValueError(f'Chapter {chapter} lacks a visual subject')
-            raw_emotion = str(raw.get('emotion', '')).lower()
-            try: intensity = float(raw.get('intensity', .5))
-            except (TypeError, ValueError): intensity = .5
             try: pause = int(raw.get('pause_after_ms', 300))
             except (TypeError, ValueError): pause = 300
             ids = raw.get('fact_ids', [])
             if not isinstance(ids, list) or any(not isinstance(i, int) or i < 0 or i >= len(dossier['facts']) for i in ids):
                 raise ValueError(f'Chapter {chapter} has an invalid fact citation')
             segments.append({'text': raw['text'].strip(), 'subject': subject, 'visual': visual,
-                'fact_ids': ids, 'emotion': raw_emotion if raw_emotion in EMOTIONS else emotion(raw['text']),
-                'intensity': max(0., min(1., intensity)), 'pause_after_ms': max(0, min(1500, pause)),
+                'fact_ids': ids, 'emotion': 'neutral',
+                'intensity': .5, 'pause_after_ms': max(0, min(1500, pause)),
                 'chapter': chapter, 'scene': chapter, 'anchors': [subject],
                 'motion': raw.get('motion') if raw.get('motion') in MOTIONS else 'stable',
-                'mood': raw_emotion if raw_emotion in EMOTIONS else 'neutral',
+                'mood': 'neutral',
                 'ambient': raw.get('ambient') or 'wind'})
         print(json.dumps({'story_stage': 'chapter_complete', 'chapter': chapter,
                           'segments': len(chapter_segments)}), flush=True)
