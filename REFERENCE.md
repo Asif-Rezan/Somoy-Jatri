@@ -17,3 +17,7 @@ and replacement smoke fixtures. Music generation also retries sparse output.
 The original repository and its accounts are not modified. Old Bangla checkpoints
 must not be reused with this implementation. A successful schema/source check is
 not proof of historical accuracy or a scholarly hadith assessment.
+
+One-off cleanup/input/story-generation helpers are manual dispatch only. Copied
+reference run IDs and push bootstrap triggers are removed so merging cannot clean
+or overwrite an unrelated saved run. Model readiness and component CI remain automatic.

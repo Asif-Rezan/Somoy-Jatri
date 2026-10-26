@@ -1,8 +1,5 @@
 name: Check private long-story access
 on:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/private-story-check.yml']
   workflow_dispatch:
 permissions:
   contents: read
