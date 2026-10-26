@@ -1,0 +1,497 @@
+[
+  {
+    "id": "samarra",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "What Samarra preserves of the Abbasid world",
+    "search_phrase": "Abbasid Samarra",
+    "thumbnail_anchor": "spiral minaret",
+    "thumbnail_visual_story": "A surviving spiral minaret rises above unoccupied brick ruins on the right in warm daylight",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://whc.unesco.org/en/list/276/"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://whc.unesco.org/en/list/276/",
+        "title": "UNESCO: Samarra Archaeological City"
+      }
+    ],
+    "facts": [
+      "Samarra served as an Abbasid capital from 836 to 892.",
+      "It was the second Abbasid capital after Baghdad.",
+      "Its surviving plan helps researchers study an early Islamic capital.",
+      "The archaeological city preserves mosque and palace remains.",
+      "The Al-Malwiya and Abu Dulaf mosques form part of the site.",
+      "Carved stucco associated with Samarra influenced decoration elsewhere.",
+      "Early abandonment helped preserve the ancient city plan.",
+      "The remains are evidence of Abbasid architecture rather than a complete surviving city."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Samarra served as an Abbasid capital from 836 to 892.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "It was the second Abbasid capital after Baghdad.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "Its surviving plan helps researchers study an early Islamic capital.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "The archaeological city preserves mosque and palace remains.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "The Al-Malwiya and Abu Dulaf mosques form part of the site.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "Carved stucco associated with Samarra influenced decoration elsewhere.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c7",
+        "text": "Early abandonment helped preserve the ancient city plan.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c8",
+        "text": "The remains are evidence of Abbasid architecture rather than a complete surviving city.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ]
+  },
+  {
+    "id": "historic-cairo",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "Reading the layers of Islamic Cairo",
+    "search_phrase": "Historic Cairo",
+    "thumbnail_anchor": "stone gateway",
+    "thumbnail_visual_story": "An unoccupied historic stone gateway frames a quiet courtyard on the right in clear daylight",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://whc.unesco.org/en/list/89/"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://whc.unesco.org/en/list/89/",
+        "title": "UNESCO: Historic Cairo"
+      }
+    ],
+    "facts": [
+      "Cairo was founded as a Fatimid capital in 969.",
+      "Its historic fabric includes mosques, madrasas, baths and fountains.",
+      "The city expanded during the Mamluk period from 1250 to 1517.",
+      "Older settlements including Fustat became part of the wider urban fabric.",
+      "The Fatimid city forms a core of Historic Cairo.",
+      "The surviving gates include Bab Zuwayla, Bab al-Nasr and Bab al-Futuh.",
+      "The Ibn Tulun mosque dates from 876 to 879.",
+      "Historic Cairo was inscribed on the World Heritage List in 1979."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Cairo was founded as a Fatimid capital in 969.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "Its historic fabric includes mosques, madrasas, baths and fountains.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "The city expanded during the Mamluk period from 1250 to 1517.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "Older settlements including Fustat became part of the wider urban fabric.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "The Fatimid city forms a core of Historic Cairo.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "The surviving gates include Bab Zuwayla, Bab al-Nasr and Bab al-Futuh.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c7",
+        "text": "The Ibn Tulun mosque dates from 876 to 879.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c8",
+        "text": "Historic Cairo was inscribed on the World Heritage List in 1979.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ]
+  },
+  {
+    "id": "abbasid-baghdad",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "Why Baghdad mattered to Abbasid culture",
+    "search_phrase": "Abbasid Baghdad",
+    "thumbnail_anchor": "brick archway",
+    "thumbnail_visual_story": "An empty brick archway opens onto an illustrative riverside cityscape on the right in soft daylight",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://www.metmuseum.org/essays/the-art-of-the-abbasid-period-750-1258"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://www.metmuseum.org/essays/the-art-of-the-abbasid-period-750-1258",
+        "title": "The Metropolitan Museum of Art: The Art of the Abbasid Period"
+      }
+    ],
+    "facts": [
+      "The Abbasid dynasty succeeded the Umayyads in 750.",
+      "Abbasid political and cultural activity shifted eastward from Syria to Iraq.",
+      "Baghdad was founded in 762 as a new capital.",
+      "The circular city was known as the City of Peace.",
+      "Samarra later became an important Abbasid capital.",
+      "Little survives of the early Abbasid architecture of Baghdad.",
+      "Samarra therefore provides important surviving architectural evidence.",
+      "Abbasid art and architecture are studied through surviving objects as well as buildings."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "The Abbasid dynasty succeeded the Umayyads in 750.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "Abbasid political and cultural activity shifted eastward from Syria to Iraq.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "Baghdad was founded in 762 as a new capital.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "The circular city was known as the City of Peace.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "Samarra later became an important Abbasid capital.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "Little survives of the early Abbasid architecture of Baghdad.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c7",
+        "text": "Samarra therefore provides important surviving architectural evidence.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c8",
+        "text": "Abbasid art and architecture are studied through surviving objects as well as buildings.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ]
+  },
+  {
+    "id": "intentions",
+    "kind": "hadith",
+    "category": "Hadith lessons",
+    "title_angle": "Understanding the teaching on intentions",
+    "search_phrase": "Hadith on intentions",
+    "thumbnail_anchor": "closed book",
+    "thumbnail_visual_story": "A closed book and a simple writing reed rest on a wooden desk on the right with calm natural light",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://sunnah.com/bukhari:1"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://sunnah.com/bukhari:1",
+        "title": "Sahih al-Bukhari 1"
+      }
+    ],
+    "facts": [
+      "Sahih al-Bukhari 1 relates the importance of intentions in deeds.",
+      "The report is narrated by Umar ibn al-Khattab.",
+      "Its example concerns migration undertaken for differing purposes.",
+      "The narration distinguishes outward action from the purpose behind it.",
+      "The report is placed at the beginning of Sahih al-Bukhari.",
+      "An explanation can distinguish its reported teaching from a modern illustrative example."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Sahih al-Bukhari 1 relates the importance of intentions in deeds.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "The report is narrated by Umar ibn al-Khattab.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "Its example concerns migration undertaken for differing purposes.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "The narration distinguishes outward action from the purpose behind it.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "The report is placed at the beginning of Sahih al-Bukhari.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "An explanation can distinguish its reported teaching from a modern illustrative example.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [
+      {
+        "reference": "Sahih al-Bukhari 1",
+        "collection": "Sahih al-Bukhari",
+        "classification": "Sahih collection",
+        "source_id": "s1",
+        "meaning": "Sahih al-Bukhari 1 relates the importance of intentions in deeds.",
+        "quotation_mode": "paraphrase_only"
+      }
+    ],
+    "uncertainties": [
+      "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ]
+  },
+  {
+    "id": "speech-and-neighbors",
+    "kind": "hadith",
+    "category": "Hadith lessons",
+    "title_angle": "Good speech and care for neighbors",
+    "search_phrase": "Hadith on good speech",
+    "thumbnail_anchor": "clay water jug",
+    "thumbnail_visual_story": "A clay water jug and simple guest cups rest beside an empty doorway on the right in warm daylight",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://sunnah.com/bukhari:6018"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://sunnah.com/bukhari:6018",
+        "title": "Sahih al-Bukhari 6018"
+      }
+    ],
+    "facts": [
+      "Sahih al-Bukhari 6018 connects faith with conduct toward neighbors and guests and with speech.",
+      "The report is narrated by Abu Huraira.",
+      "It teaches avoidance of harm to a neighbor.",
+      "It teaches generous hospitality toward a guest.",
+      "It teaches good speech or silence.",
+      "The report appears in the collection section on good manners.",
+      "Modern applications should be identified as illustrations rather than additional prophetic statements."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Sahih al-Bukhari 6018 connects faith with conduct toward neighbors and guests and with speech.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "The report is narrated by Abu Huraira.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "It teaches avoidance of harm to a neighbor.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "It teaches generous hospitality toward a guest.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "It teaches good speech or silence.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "The report appears in the collection section on good manners.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c7",
+        "text": "Modern applications should be identified as illustrations rather than additional prophetic statements.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [
+      {
+        "reference": "Sahih al-Bukhari 6018",
+        "collection": "Sahih al-Bukhari",
+        "classification": "Sahih collection",
+        "source_id": "s1",
+        "meaning": "Sahih al-Bukhari 6018 connects faith with conduct toward neighbors and guests and with speech.",
+        "quotation_mode": "paraphrase_only"
+      }
+    ],
+    "uncertainties": [
+      "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ]
+  },
+  {
+    "id": "care-for-others",
+    "kind": "hadith",
+    "category": "Hadith lessons",
+    "title_angle": "Understanding concern for others",
+    "search_phrase": "Hadith on brotherhood",
+    "thumbnail_anchor": "shared bread",
+    "thumbnail_visual_story": "shared bread and two simple bowls sit on an empty wooden table on the right in gentle daylight",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://sunnah.com/bukhari:13"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://sunnah.com/bukhari:13",
+        "title": "Sahih al-Bukhari 13"
+      }
+    ],
+    "facts": [
+      "Sahih al-Bukhari 13 relates a teaching about wishing good for a brother as for oneself.",
+      "The report is narrated by Anas.",
+      "It appears in the collection section on belief.",
+      "The teaching concerns the relationship between faith and regard for another person.",
+      "A contemporary example can illustrate reciprocity without being attributed to the Prophet.",
+      "The report does not provide a detailed story about a named contemporary person."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Sahih al-Bukhari 13 relates a teaching about wishing good for a brother as for oneself.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "The report is narrated by Anas.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "It appears in the collection section on belief.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "The teaching concerns the relationship between faith and regard for another person.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "A contemporary example can illustrate reciprocity without being attributed to the Prophet.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "The report does not provide a detailed story about a named contemporary person.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [
+      {
+        "reference": "Sahih al-Bukhari 13",
+        "collection": "Sahih al-Bukhari",
+        "classification": "Sahih collection",
+        "source_id": "s1",
+        "meaning": "Sahih al-Bukhari 13 relates a teaching about wishing good for a brother as for oneself.",
+        "quotation_mode": "paraphrase_only"
+      }
+    ],
+    "uncertainties": [
+      "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ]
+  }
+]

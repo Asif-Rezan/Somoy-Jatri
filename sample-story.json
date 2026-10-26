@@ -1,0 +1,271 @@
+{
+  "title": "Abbasid Samarra: Pipeline Validation Sample",
+  "format": "islamic-documentary",
+  "fictional": false,
+  "topic_id": "samarra",
+  "category": "Islamic history",
+  "evidence": {
+    "id": "samarra",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "What Samarra preserves of the Abbasid world",
+    "search_phrase": "Abbasid Samarra",
+    "thumbnail_anchor": "spiral minaret",
+    "thumbnail_visual_story": "A surviving spiral minaret rises above unoccupied brick ruins on the right in warm daylight",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://whc.unesco.org/en/list/276/"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://whc.unesco.org/en/list/276/",
+        "title": "UNESCO: Samarra Archaeological City"
+      }
+    ],
+    "facts": [
+      "Samarra served as an Abbasid capital from 836 to 892.",
+      "It was the second Abbasid capital after Baghdad.",
+      "Its surviving plan helps researchers study an early Islamic capital.",
+      "The archaeological city preserves mosque and palace remains.",
+      "The Al-Malwiya and Abu Dulaf mosques form part of the site.",
+      "Carved stucco associated with Samarra influenced decoration elsewhere.",
+      "Early abandonment helped preserve the ancient city plan.",
+      "The remains are evidence of Abbasid architecture rather than a complete surviving city."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Samarra served as an Abbasid capital from 836 to 892.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "It was the second Abbasid capital after Baghdad.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "Its surviving plan helps researchers study an early Islamic capital.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "The archaeological city preserves mosque and palace remains.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "The Al-Malwiya and Abu Dulaf mosques form part of the site.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "Carved stucco associated with Samarra influenced decoration elsewhere.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c7",
+        "text": "Early abandonment helped preserve the ancient city plan.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c8",
+        "text": "The remains are evidence of Abbasid architecture rather than a complete surviving city.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ]
+  },
+  "story_seeds": [
+    "Samarra served as an Abbasid capital from 836 to 892.",
+    "It was the second Abbasid capital after Baghdad.",
+    "Its surviving plan helps researchers study an early Islamic capital.",
+    "The archaeological city preserves mosque and palace remains.",
+    "The Al-Malwiya and Abu Dulaf mosques form part of the site.",
+    "Carved stucco associated with Samarra influenced decoration elsewhere.",
+    "Early abandonment helped preserve the ancient city plan.",
+    "The remains are evidence of Abbasid architecture rather than a complete surviving city."
+  ],
+  "character_description": "Object and architecture only: empty courtyards, period buildings, landscapes, books and everyday objects. No people, portraits, prophets, companions, angels, divine figures, invented Arabic lettering or legible sacred text. An illustrative reconstruction is not evidence of a specific historical scene.",
+  "protagonist_name": "",
+  "scenes": [
+    {
+      "summary": "Samarra served as an Abbasid capital from 836 to 892.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Samarra served as an Abbasid capital from 836 to 892. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c1"
+      ]
+    },
+    {
+      "summary": "It was the second Abbasid capital after Baghdad.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "It was the second Abbasid capital after Baghdad. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c2"
+      ]
+    },
+    {
+      "summary": "Its surviving plan helps researchers study an early Islamic capital.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Its surviving plan helps researchers study an early Islamic capital. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c3"
+      ]
+    },
+    {
+      "summary": "The archaeological city preserves mosque and palace remains.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "The archaeological city preserves mosque and palace remains. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c4"
+      ]
+    },
+    {
+      "summary": "The Al-Malwiya and Abu Dulaf mosques form part of the site.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "The Al-Malwiya and Abu Dulaf mosques form part of the site. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c5"
+      ]
+    },
+    {
+      "summary": "Carved stucco associated with Samarra influenced decoration elsewhere.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Carved stucco associated with Samarra influenced decoration elsewhere. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c6"
+      ]
+    },
+    {
+      "summary": "Early abandonment helped preserve the ancient city plan.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Early abandonment helped preserve the ancient city plan. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c7"
+      ]
+    },
+    {
+      "summary": "The remains are evidence of Abbasid architecture rather than a complete surviving city.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "The remains are evidence of Abbasid architecture rather than a complete surviving city. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c8"
+      ]
+    },
+    {
+      "summary": "Samarra served as an Abbasid capital from 836 to 892.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Samarra served as an Abbasid capital from 836 to 892. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c1"
+      ]
+    },
+    {
+      "summary": "It was the second Abbasid capital after Baghdad.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "It was the second Abbasid capital after Baghdad. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c2"
+      ]
+    },
+    {
+      "summary": "Its surviving plan helps researchers study an early Islamic capital.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Its surviving plan helps researchers study an early Islamic capital. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c3"
+      ]
+    },
+    {
+      "summary": "The archaeological city preserves mosque and palace remains.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "The archaeological city preserves mosque and palace remains. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c4"
+      ]
+    },
+    {
+      "summary": "The Al-Malwiya and Abu Dulaf mosques form part of the site.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "The Al-Malwiya and Abu Dulaf mosques form part of the site. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c5"
+      ]
+    },
+    {
+      "summary": "Carved stucco associated with Samarra influenced decoration elsewhere.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Carved stucco associated with Samarra influenced decoration elsewhere. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c6"
+      ]
+    },
+    {
+      "summary": "Early abandonment helped preserve the ancient city plan.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Early abandonment helped preserve the ancient city plan. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c7"
+      ]
+    },
+    {
+      "summary": "The remains are evidence of Abbasid architecture rather than a complete surviving city.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "The remains are evidence of Abbasid architecture rather than a complete surviving city. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c8"
+      ]
+    },
+    {
+      "summary": "Samarra served as an Abbasid capital from 836 to 892.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Samarra served as an Abbasid capital from 836 to 892. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c1"
+      ]
+    },
+    {
+      "summary": "It was the second Abbasid capital after Baghdad.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "It was the second Abbasid capital after Baghdad. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c2"
+      ]
+    },
+    {
+      "summary": "Its surviving plan helps researchers study an early Islamic capital.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "Its surviving plan helps researchers study an early Islamic capital. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience.",
+      "claim_ids": [
+        "c3"
+      ]
+    },
+    {
+      "summary": "The archaeological city preserves mosque and palace remains.",
+      "image_prompt": "Empty Abbasid brick courtyard and surviving spiral minaret in natural daylight",
+      "narration": "The archaeological city preserves mosque and palace remains. This technical sample distinguishes surviving evidence from illustrative reconstruction. Architecture can help explain how a place is studied, but an illustration does not establish the appearance of a particular moment. The source reference accompanies this chapter so that the audience can examine the underlying description. Details not present in the evidence remain unknown here. The narration adds no dialogue, personal experience or unrecorded event. This sample is deliberately structured for technical validation. Repeated explanatory passages make the audio duration and captions measurable, while each chapter retains a source reference. It is not a finished documentary intended for an audience. Which topic should Somoy Jatri explore next? Leave a comment, like this video, and subscribe to Somoy Jatri for more Islamic history and hadith lessons.",
+      "claim_ids": [
+        "c4"
+      ]
+    }
+  ],
+  "tags": [
+    "Islamic history",
+    "Abbasid Samarra"
+  ],
+  "description": "Technical validation sample, not a finished episode.\nSources and report references:\nUNESCO: Samarra Archaeological City: https://whc.unesco.org/en/list/276/\n\nHadith meanings are English paraphrases, not verbatim translations or new authenticity assessments. AI-assisted narration and illustrations; visual reconstructions are illustrative. Educational discussion, not a personal religious ruling.",
+  "thumbnail_text": "WHY THIS MINARET?",
+  "thumbnail_prompt": "A surviving spiral minaret rises above unoccupied brick ruins on the right in warm daylight"
+}
