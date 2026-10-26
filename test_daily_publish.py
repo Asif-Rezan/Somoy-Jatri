@@ -130,7 +130,7 @@ class RecoveryTests(unittest.TestCase):
             self.assertNotIn('disposable', body['appProperties'])
 
 class PrivateVisibilityTests(unittest.TestCase):
-    def run_private_verification(self, privacy):
+    def run_private_verification(self, privacy, target=None):
         import daily_publish
         from unittest.mock import patch
         state = {'phase': 'complete', 'video_id': 'v', 'thumbnail_uploaded': True,
@@ -138,6 +138,8 @@ class PrivateVisibilityTests(unittest.TestCase):
         video = {'id': 'v', 'snippet': {'channelId': 'c', 'title': 'T', 'description': 'Fiction', 'tags': []},
             'status': {'privacyStatus': privacy, 'uploadStatus': 'processed'},
             'processingDetails': {'processingStatus': 'succeeded'}, 'contentDetails': {'definition': 'hd'}}
+        if target:
+            state['target_privacy'] = target
         store, client = MagicMock(), MagicMock()
         store.load.side_effect = [state, []]
         client.videos().list().execute.return_value = {'items': [video]}
@@ -147,12 +149,12 @@ class PrivateVisibilityTests(unittest.TestCase):
                  'google.oauth2.credentials': MagicMock(),
                  'googleapiclient.discovery': MagicMock(build=MagicMock(return_value=client))}), \
              patch('daily_publish.cleanup') as clean:
-            if privacy == 'private':
+            if privacy == (target or 'private'):
                 daily_publish.main()
-                self.assertEqual(state['phase'], 'verified_private')
+                self.assertEqual(state['phase'], f"verified_{target or 'private'}")
                 clean.assert_called_once_with(store, 'daily-123', state)
             else:
-                with self.assertRaisesRegex(RuntimeError, 'remain private'):
+                with self.assertRaisesRegex(RuntimeError, f"remain {target or 'private'}"):
                     daily_publish.main()
                 clean.assert_not_called()
             client.videos().update.assert_not_called()
@@ -164,3 +166,9 @@ class PrivateVisibilityTests(unittest.TestCase):
     def test_public_or_unlisted_video_preserves_media(self):
         for privacy in ('public', 'unlisted'):
             self.run_private_verification(privacy)
+
+    def test_new_public_upload_is_verified_without_reupload(self):
+        self.run_private_verification('public', target='public')
+
+    def test_new_upload_still_private_preserves_media(self):
+        self.run_private_verification('private', target='public')

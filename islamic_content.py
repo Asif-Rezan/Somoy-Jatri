@@ -79,7 +79,7 @@ def source_notes(topic):
     rows = [f"{s['title']}: {s['url']}" for s in topic['source_records']]
     return ('Sources and report references:\n'+'\n'.join(rows)+'\n\n'
         'Hadith meanings are English paraphrases, not verbatim translations or new authenticity assessments. '
-        'AI-assisted narration and illustrations; visual reconstructions are illustrative. '
+        'Visual reconstructions are illustrative. '
         'Educational discussion, not a personal religious ruling.')
 
 

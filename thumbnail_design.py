@@ -18,7 +18,7 @@ def hook_layout(text):
     if not 2 <= len(words) <= 5 or len(text) > 30 or not text.endswith('?'):
         raise ValueError('Thumbnail hook must be a short documentary question')
     measure = ImageDraw.Draw(Image.new('RGB', (1, 1)))
-    for size in range(96, 55, -4):
+    for size in range(112, 63, -4):
         font = _font(size)
         for count in (1, 2, 3):
             for breaks in combinations(range(1, len(words)), count - 1):
@@ -35,9 +35,9 @@ def render_thumbnail(source, text, target, category='Islamic'):
     with Image.open(source) as original:
         image = ImageOps.fit(original.convert('RGB'), (1280, 720), method=Image.Resampling.LANCZOS)
     # Build a photographic focal point from the generated artwork itself: one lit
-    # ominous detail on the right, with its surroundings falling into shadow.
+    # architectural or object detail on the right, with its surroundings falling into shadow.
     image = ImageEnhance.Contrast(image).enhance(1.12)
-    dimmed = ImageEnhance.Brightness(image).enhance(0.69)
+    dimmed = ImageEnhance.Brightness(image).enhance(0.85)
     focus = Image.new('L', image.size, 0)
     focus_draw = ImageDraw.Draw(focus)
     focus_draw.ellipse((610, 80, 1290, 650), fill=210)
@@ -51,12 +51,12 @@ def render_thumbnail(source, text, target, category='Islamic'):
         stripe.rectangle((x, 0, x+3, 720), fill=(4, 13, 20, opacity))
     image = Image.alpha_composite(image.convert('RGBA'), overlay)
     draw = ImageDraw.Draw(image)
-    cream, gold = (250, 247, 235, 255), (235, 69, 69, 255)
+    cream, gold = (250, 247, 235, 255), (245, 193, 84, 255)
     label = 'SOMOY JATRI'
     label_font = _font(23)
     label_width = draw.textbbox((0, 0), label, font=label_font)[2]
-    draw.rounded_rectangle((60, 72, 95+label_width, 124), radius=9, fill=(190, 38, 45, 255))
-    draw.text((78, 83), label, font=label_font, fill=(13, 24, 29, 255))
+    draw.rounded_rectangle((60, 72, 95+label_width, 124), radius=9, fill=(19, 85, 65, 255))
+    draw.text((78, 83), label, font=label_font, fill=(250, 247, 235, 255))
     # The same layout was checked when the package was selected.
     font = _font(size)
     y = 310 if len(lines) == 1 else (260 if len(lines) == 2 else 210)
@@ -64,7 +64,7 @@ def render_thumbnail(source, text, target, category='Islamic'):
         draw.text((61, y + index*(size+18)), line, font=font,
                   fill=cream if index == 0 else gold, stroke_width=3,
                   stroke_fill=(4, 13, 20, 255))
-    draw.rectangle((64, 652, 390, 660), fill=gold)
+    draw.rectangle((64, 625, 245, 633), fill=gold)
     output = Path(target)
     output.parent.mkdir(parents=True, exist_ok=True)
     image.convert('RGB').save(output, quality=89, optimize=True)

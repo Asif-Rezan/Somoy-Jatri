@@ -613,7 +613,7 @@ def load_music(store, root):
     if os.getenv('MUSIC_BACKEND', 'magenta') == 'magenta':
         from music_cpu import generate
         generate(root/'music.audio')
-        return 'Background music: original Magenta MusicRNN composition with synthesized documentary drones, sparse minor-key chimes and subtle pulses.'
+        return ''
     # Only free sources. vidIQ-generated assets are not accepted.
     manifest = store.load('music-manifest.json', None)
     if not manifest or manifest.get('source') not in ('YouTube Audio Library', 'AI-generated (free local model)'):
@@ -628,7 +628,7 @@ def load_music(store, root):
     return manifest.get('attribution', '')
 
 
-def upload_private(video, thumbnail, story, state, store, key, music_credit=''):
+def upload_video(video, thumbnail, story, state, store, key, music_credit=''):
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
@@ -639,13 +639,14 @@ def upload_private(video, thumbnail, story, state, store, key, music_credit=''):
         raise RuntimeError('OAuth account is not the expected YouTube channel')
     # Persist before insert. An interrupted/ambiguous upload requires manual reconciliation.
     # Never silently retry videos.insert and risk duplicate videos.
-    state['upload_description'] = story['description'] + '\n\n' + music_credit
+    state['upload_description'] = story['description'] + ('\n\n' + music_credit if music_credit.strip() else '')
+    state['target_privacy'] = 'public'
     state['thumbnail_uploaded'] = False
     state['phase'] = 'upload_started'
     store.save(key, state)
     request = client.videos().insert(part='snippet,status', notifySubscribers=False,
         body={'snippet': {'title': story['title'], 'description': state['upload_description'], 'tags': story['tags'], 'categoryId': '27',
-             'defaultLanguage': 'en'}, 'status': {'privacyStatus': 'private', 'selfDeclaredMadeForKids': False}},
+             'defaultLanguage': 'en'}, 'status': {'privacyStatus': state['target_privacy'], 'selfDeclaredMadeForKids': False}},
         media_body=MediaFileUpload(str(video), chunksize=8*1024*1024, resumable=True))
     result = None
     while result is None:
@@ -661,15 +662,16 @@ def upload_private(video, thumbnail, story, state, store, key, music_credit=''):
         if not items:
             raise RuntimeError('Uploaded video is not accessible for verification')
         remote = items[0]
-        assert remote['status']['privacyStatus'] == 'private', 'Upload privacy validation failed'
+        if remote['status']['privacyStatus'] != state['target_privacy']:
+            raise RuntimeError('Public upload visibility validation failed')
         processing = remote.get('processingDetails', {}).get('processingStatus')
         upload_status = remote['status'].get('uploadStatus')
         if processing in ('failed', 'terminated') or upload_status in ('failed', 'rejected', 'deleted'):
-            raise RuntimeError('YouTube rejected or failed to process the private video')
+            raise RuntimeError('YouTube rejected or failed to process the video')
         if processing == 'succeeded' and upload_status == 'processed':
             break
         if time.monotonic() >= deadline:
-            raise RuntimeError('YouTube processing is still pending; private test is not passed')
+            raise RuntimeError('YouTube processing is still pending; upload verification is not passed')
         print(json.dumps({'check': 'YouTube processing', 'status': processing}), flush=True)
         time.sleep(20)
     state['processing_status'] = 'succeeded'
@@ -720,7 +722,7 @@ def run(daily=False):
     if daily and (not test_record.get('passed') or not test_record.get('remote_verification', {}).get('private_test_passed') or test_record.get('validation', {}).get('image_interval_seconds') != 10 or not test_record.get('validation', {}).get('storyboard_verified') or test_record.get('validation', {}).get('style') != 'islamic-documentary'):
         raise RuntimeError('No fully verified private HD upload test is recorded')
     state = store.load(key, {})
-    if state.get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private'):
+    if state.get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private', 'verified_public'):
         raise RuntimeError('Run already uploaded or needs upload reconciliation; inspect state before continuing')
     music_credit = load_music(store, root)
     history = store.load('history.json', [])
@@ -741,7 +743,7 @@ def run(daily=False):
     state['phase'] = 'rendered'
     store.save(key, state)
     if os.getenv('UPLOAD_ENABLED') == 'true':
-        upload_private(video, thumb, story, state, store, key, music_credit)
+        upload_video(video, thumb, story, state, store, key, music_credit)
     if state['phase'] == 'complete':
         history.append({'title': story['title'], 'hash': digest, 'run': run_id,
             'format': story.get('format'), 'topic_id': story.get('topic_id'),

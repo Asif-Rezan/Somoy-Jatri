@@ -553,7 +553,7 @@ def stage_story():
     if os.getenv('GENERATE_FRESH_STORY') == 'true':
         if os.getenv('STORY_FILE'):
             raise RuntimeError('Fresh daily stories cannot use STORY_FILE')
-        if store.load(f'runs/{run_id()}/state.json', {}).get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private'):
+        if store.load(f'runs/{run_id()}/state.json', {}).get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private', 'verified_public'):
             raise RuntimeError('Run already uploaded; use cleanup-only recovery')
         history = store.load('history.json', [])
         story = w.make_story(dt.datetime.now(ZoneInfo('Asia/Dhaka')).date().isoformat(), history[-30:])
@@ -574,7 +574,7 @@ def stage_story():
 def save_preparation():
     store = w.Store()
     key = f'runs/{run_id()}/state.json'
-    if store.load(key, {}).get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private'):
+    if store.load(key, {}).get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private', 'verified_public'):
         raise RuntimeError('Existing upload requires reconciliation; refusing duplicate')
     verify_preparation(ROOT)
     for name in ASSETS:
@@ -683,7 +683,7 @@ def upload():
         raise RuntimeError('New-format render has not passed validation')
     w.check_video(ROOT/'video.mp4')
     store, key = w.Store(), f'runs/{run_id()}/state.json'
-    if store.load(key, {}).get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private'):
+    if store.load(key, {}).get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private', 'verified_public'):
         raise RuntimeError('Existing upload requires reconciliation; refusing duplicate insertion')
     verify_preparation(ROOT)
     story = json.loads((ROOT/'story.json').read_text())
@@ -695,8 +695,8 @@ def upload():
     for name in ('video.mp4', 'thumbnail.jpg', 'captions.srt', 'story.json', 'plan.json', 'music.audio', 'validation.json'):
         store.upload(ROOT/name, f'runs/{run_id()}/{name}')
     store.save(key, state)
-    w.upload_private(ROOT/'video.mp4', ROOT/'thumbnail.jpg', story, state, store, key,
-        'Background music: original Magenta MusicRNN composition with synthesized documentary drones, sparse minor-key chimes and subtle pulses.')
+    w.upload_video(ROOT/'video.mp4', ROOT/'thumbnail.jpg', story, state, store, key,
+        '')
     history.append({'title': story['title'], 'hash': digest, 'run': run_id(),
         'video_id': state['video_id'], 'format': story.get('format'), 'topic_id': story.get('topic_id'),
         'plot': ' '.join(scene.get('summary', '') for scene in story['scenes'])})

@@ -1,4 +1,4 @@
-"""Render MusicRNN notes as a restrained documentary bed, with drones and sparse chimes."""
+"""Render MusicRNN notes as a restrained documentary bed, with modal plucks, airy flute and soft percussion."""
 import json
 import math
 from pathlib import Path
@@ -6,42 +6,50 @@ import subprocess
 import wave
 import numpy as np
 
-MUSIC_CREDIT = 'Background music: original Magenta MusicRNN composition with synthesized documentary drones, sparse minor-key chimes and subtle pulses.'
+MUSIC_CREDIT = ''
 
 
 def render_sequence(sequence, path):
-    rate, step = 24000, 60 / 52 / 4
+    rate, step = 24000, 60 / 76 / 4
     seconds = float(sequence['totalQuantizedSteps']) * step + 5
     if not 5 < seconds <= 600 or not sequence.get('notes'):
         raise ValueError('Music sequence must contain notes and a bounded duration')
     audio = np.zeros((math.ceil(seconds * rate), 2), dtype=np.float32)
     timeline = np.arange(len(audio), dtype=np.float32) / rate
-    # Low A/E foundation, slight detuning and slow swells; no sudden stingers.
-    swell = .65 + .35 * np.sin(2 * np.pi * .035 * timeline) ** 2
-    for frequency, gain in ((55, .045), (55.18, .025), (82.41, .018), (110, .012)):
-        drone = np.sin(2 * np.pi * frequency * timeline) * swell * gain
-        audio[:, 0] += drone
-        audio[:, 1] += np.sin(2 * np.pi * frequency * timeline + .18) * swell * gain
-    pulse = np.exp(-((timeline % 2.8) / .24) ** 2)
-    audio += (np.sin(2 * np.pi * 65.41 * timeline) * pulse * .022)[:, None]
-    # Revoice model notes into A natural minor, leaving space between events.
-    scale = (0, 2, 3, 5, 7, 8, 10)
+    # Hijaz-inspired D mode, instrumental only; warm texture rather than sub-bass drones.
+    # This is a synthesized documentary arrangement, not a claim of traditional performance.
+    scale = (0, 1, 4, 5, 7, 8, 10)
+    for frequency, gain in ((146.83, .012), (220, .008)):
+        bed = np.sin(2 * np.pi * frequency * timeline) * (.7 + .3 * np.sin(timeline * .2)**2)
+        audio += (bed * gain)[:, None]
+    rng = np.random.default_rng(76)
+    for onset in np.arange(0, seconds - 2, 60 / 76 * 2):
+        start = int(onset * rate)
+        t = np.arange(min(rate // 3, len(audio)-start), dtype=np.float32) / rate
+        drum = (.7 * np.sin(2*np.pi*(110*t - 25*t*t)) + .12*rng.normal(size=len(t)))
+        audio[start:start+len(t)] += (drum * np.exp(-t*24) * .018)[:, None]
     for index, note in enumerate(sequence['notes']):
-        if index % 4:
+        if index % 2:
             continue
         start = int(int(note['quantizedStartStep']) * step * rate)
         if not 0 <= start < len(audio):
             raise ValueError('Music note outside timeline')
         pitch = int(note['pitch'])
-        relative = (pitch - 57) % 12
+        relative = (pitch - 62) % 12
         degree = min(scale, key=lambda value: abs(value - relative))
-        pitch = 57 + degree + (12 if pitch >= 72 else 0)
+        pitch = 62 + degree
         count = min(6 * rate, len(audio) - start)
         t = np.arange(count, dtype=np.float32) / rate
         hz = 440 * 2 ** ((pitch - 69) / 12)
-        envelope = np.minimum(t / .12, 1) * np.exp(-t / 1.8)
-        tone = (np.sin(2 * np.pi * hz * t) + .12 * np.sin(2 * np.pi * hz * 2.01 * t))
-        signal = tone * envelope * .035
+        envelope = np.minimum(t / .008, 1) * np.exp(-t / .75)
+        tone = sum((1 / harmonic**1.5) * np.sin(2*np.pi*hz*harmonic*t)
+                   * np.exp(-t*harmonic*.45) for harmonic in range(1, 6))
+        # A breathy, gently moving upper response every fourth selected phrase.
+        if index % 8 == 0:
+            breath = rng.normal(0, .035, count)
+            flute = np.sin(2*np.pi*hz*2*t + .025*np.sin(2*np.pi*4.5*t)) + breath
+            tone += flute * np.minimum(t/.35, 1) * .45
+        signal = tone * envelope * .12
         pan = .35 + .3 * (index % 3) / 2
         audio[start:start+count, 0] += signal * (1-pan)
         audio[start:start+count, 1] += signal * pan

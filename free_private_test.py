@@ -80,8 +80,8 @@ def upload():
     for name in ('video.mp4', 'thumbnail.jpg', 'captions.srt', 'story.json', 'music.audio', 'validation.json'):
         store.upload(ROOT/name, f'runs/{run_id}/{name}')
     store.save(key, state)
-    w.upload_private(ROOT/'video.mp4', ROOT/'thumbnail.jpg', story, state, store, key,
-        'Background music: original Magenta MusicRNN melody with synthesized ambient piano.')
+    w.upload_video(ROOT/'video.mp4', ROOT/'thumbnail.jpg', story, state, store, key,
+        '')
     history = store.load('history.json', [])
     history.append({'title': story['title'], 'hash': digest, 'run': run_id})
     store.save('history.json', history)

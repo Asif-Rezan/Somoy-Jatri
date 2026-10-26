@@ -6,7 +6,7 @@ import numpy as np
 from music_cpu import render_sequence
 
 class IslamicMusicTests(unittest.TestCase):
-    def test_documentary_bed_is_finite_faded_stereo_and_has_low_drone(self):
+    def test_documentary_bed_is_finite_faded_stereo_and_avoids_sub_bass_drone(self):
         sequence={'totalQuantizedSteps':64,'notes':[
             {'pitch':60+i,'quantizedStartStep':i*4,'quantizedEndStep':i*4+2} for i in range(16)]}
         with tempfile.TemporaryDirectory() as directory:
@@ -22,7 +22,7 @@ class IslamicMusicTests(unittest.TestCase):
             section=audio[5*24000:9*24000,0]
             power=np.abs(np.fft.rfft(section))**2
             frequency=np.fft.rfftfreq(len(section),1/24000)
-            self.assertGreater(power[frequency<150].sum()/power.sum(),.5)
+            self.assertLess(power[frequency<150].sum()/power.sum(),.4)
 
     def test_empty_sequence_is_rejected(self):
         with self.assertRaises(ValueError):

@@ -1,4 +1,4 @@
-"""Read back the actual uploaded private video, without model-generation credentials."""
+"""Read back the actual uploaded video, without model-generation credentials."""
 import json
 import os
 import time
@@ -23,8 +23,8 @@ def main():
         video = items[0]
         if video['snippet']['channelId'] != required('EXPECTED_CHANNEL_ID'):
             raise RuntimeError('Uploaded video is on a different channel')
-        if video['status']['privacyStatus'] != 'private':
-            raise RuntimeError('Uploaded video is not private')
+        if video['status']['privacyStatus'] != expected.get('target_privacy', 'private'):
+            raise RuntimeError('Uploaded visibility differs from the recorded target')
         if video['snippet']['title'] != expected['story']['title']:
             raise RuntimeError('Uploaded title differs from the generated title')
         if set(video['snippet'].get('tags', [])) != set(expected['story']['tags']):

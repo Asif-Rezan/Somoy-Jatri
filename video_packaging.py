@@ -6,6 +6,7 @@ from thumbnail_design import hook_layout
 
 CLICKBAIT = re.compile(r'\b(?:shocking|unbelievable|exposed|proof|finally revealed|they hid|you won.t believe)\b', re.I)
 VAGUE_HOOK = re.compile(r'^(?:WHAT HAPPENED|THE HIDDEN TRUTH|WHAT IS THIS|WHAT\'S INSIDE)\?$', re.I)
+PRODUCTION_DETAILS = re.compile(r'\b(?:music\s*rnn|magenta|kokoro|qwen|whisper|ffmpeg|hugging\s*face|text.to.speech|AI.generated|AI.assisted|generated (?:music|audio|images|narration)|synthesized|production pipeline)\b', re.I)
 QUESTION_OPENERS = {'HOW', 'WHY', 'WHAT', 'WHO', 'WHERE'}
 # Enforce the mechanical question format during local Qwen decoding, not just
 # after spending several minutes generating each complete package.
@@ -41,11 +42,11 @@ def description_parts(payload, topic):
     # Sensational claims must be rejected, even if another constraint also fails.
     if CLICKBAIT.search(intro) or CLICKBAIT.search(details):
         raise ValueError('Description contains prohibited clickbait')
-    if (not 80 <= len(intro) <= 400 or keyword.casefold() not in
+    if (PRODUCTION_DETAILS.search(intro) or not 80 <= len(intro) <= 400 or keyword.casefold() not in
             re.split(r'(?<=[.!?])\s', intro, maxsplit=1)[0].casefold()):
         intro = (f'{keyword}: a sourced English documentary exploring evidence and meaning, '
                  'historical context and careful reflection from Somoy Jatri.')
-    if not 80 <= len(details) <= 800:
+    if PRODUCTION_DETAILS.search(details) or not 80 <= len(details) <= 800:
         facts = [_plain(fact) for fact in topic.get('facts', []) if _plain(fact)]
         if not facts:
             raise ValueError('Description fallback requires curated story seeds')
@@ -115,7 +116,7 @@ def choose_package(story, topic, payload):
     relevant_text = ' '.join([keyword, topic['category']] + topic.get('facts', []))
     relevant_stems = {word[:5] for word in re.findall(r'[a-z]{5,}', relevant_text.casefold())
                       if word not in {'history', 'ancient', 'historical', 'documentary', 'archaeology'}}
-    base_tags = [keyword, topic['category'], 'documentary stories', 'Somoy Jatri']
+    base_tags = [keyword, topic['category'], 'Islamic history' if topic.get('kind') == 'history' else 'hadith explained', 'Islamic documentary', 'Somoy Jatri']
     if 'archaeolog' in topic['category'].casefold() or 'ancient structure' in topic['category'].casefold():
         base_tags.append('archaeology')
     tags = []
@@ -134,7 +135,7 @@ def choose_package(story, topic, payload):
         notes = source_notes(topic)
     else:
         notes = 'Sources: ' + ' '.join(topic.get('sources', []))
-    description = f'{intro}\n\n{details}\n\nEnglish Islamic documentary from Somoy Jatri.\n\n{notes}'
+    description = f'{intro}\n\n{details}\n\nExplore Islamic history and hadith with Somoy Jatri. Subscribe for more sourced documentaries.\n\n{notes}'
     if len(description) > 4500:
         raise ValueError('Video description exceeds upload budget')
     story.update(best, description=description, tags=tags, search_phrase=keyword,
@@ -164,14 +165,19 @@ Sourced claims: {json.dumps(topic['facts'])}
 Episode outline: {json.dumps(outline)}
 Existing title: {story['title']}
 Return three DISTINCT title-thumbnail pairs (option_a, option_b, option_c).
+Make the three angles distinct: historical significance, a concrete question, and a clear learning benefit.
+Prefer concise titles of 45-65 characters; avoid branding or repeated keywords.
 Each title: 35-75 characters, put the exact search subject phrase in the first 52 characters,
 accurately describe the documented subject and its significance, use normal capitalization.
 Avoid generic "mystery revealed" wording, sensational certainty, false true-story claims and misleading clickbait.
+Prefer 2-4 words on the thumbnail. Use one large subject on the right, strong separation
+from an uncluttered background and empty dark space on the left. Warm stone, emerald and gold;
+no collages, fake sacred text, arrows or invented dramatic events.
 Thumbnail text: a SPECIFIC unresolved question with a curiosity gap, 2-5 short words,
 maximum 30 characters, ending in ?. Use UPPERCASE words with single spaces.
 Start with HOW, WHY, WHAT, WHO or WHERE. Each following word is at most 12 characters.
 The question must be addressed in this episode. Avoid vague
-vague questions such as WHAT HAPPENED? or promises of secret religious knowledge.
+questions such as WHAT HAPPENED? or promises of secret religious knowledge.
 Complement the title without repeating its phrasing. It must be legible on a phone.
 Thumbnail's illustrative visual anchor: {topic['thumbnail_anchor']}.
 The image must tell this illustrative visual story: {topic['thumbnail_visual_story']}.
@@ -186,6 +192,8 @@ graphic gore or sexual imagery.
 Description intro: 80-400 characters, put the exact subject phrase naturally in the FIRST sentence
 and introduce the sourced subject clearly. Description details: 80-800 characters, unique to this episode,
 describe the evidence and its limits. Never invent hadith, quotations, dates or claims. No legal rulings.
+Descriptions must discuss only the subject and viewer learning value, with a specific opening
+that answers search intent. No internal tool names, AI generation, production methods or music credits.
 Tags: 4-8 concise specific search variants, including sensible spelling variants if useful;
 no unrelated trend tags, hashtags, or keyword stuffing. Return only the requested JSON.'''
     feedback = ''

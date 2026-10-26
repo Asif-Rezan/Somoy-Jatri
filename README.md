@@ -7,7 +7,7 @@ experiments and workflows are replaced. The reference repository is unchanged.
 The reference's CPU production structure is retained: one twenty-chapter outline,
 four batches of five English narrations, measured 15–20 minute duration with bounded
 corrections, word-timed English captions, a new image every ten seconds, twenty
-image workers, 1080p rendering, thumbnails, private YouTube upload verification,
+image workers, 1080p rendering, thumbnails, public YouTube upload verification,
 and private Drive checkpoints with upload-only recovery and verified cleanup.
 
 ## Content
@@ -57,7 +57,7 @@ OAuth tokens or storage folder. `setup_drive_folder.py` can create a correctly
 marked dedicated folder if needed. No credentials are stored in source control.
 
 Run **Google OAuth check** to verify the existing credentials. The daily workflow
-is `.github/workflows/daily-upload.yml`, with private uploads and the reference's
+is `.github/workflows/daily-upload.yml`, with public uploads and the reference's
 00:00 Asia/Dhaka daily start. A manual dispatch can start a fresh episode; the
 `cleanup_run` input only verifies/cleans an already completed run. Old Bangla or
 fictional-story checkpoints are incompatible: start a fresh English Islamic run.
@@ -82,3 +82,7 @@ credentials. **Cloud component checks** runs the offline suite on pull requests.
 creates fresh sourced scripts instead of publishing that fixture.
 
 See `docs/error-recovery.md` for the retained Drive/shard recovery process.
+
+New uploads publish publicly and must pass visibility, HD, channel, thumbnail and metadata checks before media cleanup. Existing private runs retain their recorded visibility.
+
+The background score uses warm modal plucked strings, airy flute-like phrases and soft frame-drum pulses, without vocals. Packaging uses distinct title/thumbnail candidates, prominent subject keywords, readable gold/emerald hooks and source-linked descriptions without production-tool details.
