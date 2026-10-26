@@ -19,7 +19,7 @@ def render_sequence(sequence, path):
     # Hijaz-inspired D mode, instrumental only; warm texture rather than sub-bass drones.
     # This is a synthesized documentary arrangement, not a claim of traditional performance.
     scale = (0, 1, 4, 5, 7, 8, 10)
-    for frequency, gain in ((146.83, .012), (220, .008)):
+    for frequency, gain in ((146.83, .004), (220, .008)):
         bed = np.sin(2 * np.pi * frequency * timeline) * (.7 + .3 * np.sin(timeline * .2)**2)
         audio += (bed * gain)[:, None]
     rng = np.random.default_rng(76)
