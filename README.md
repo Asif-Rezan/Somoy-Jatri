@@ -1,114 +1,84 @@
-# Somoy Jatri — বাংলা সময়ভ্রমণ
+# Somoy Jatri — English Islamic history and hadith documentaries
 
-**ইতিহাস শুধু শুনব না, নিজের চোখে দেখব!**
+Rebuilt from `Asif-Rezan/Rezan-After-Dark` at commit
+`cfc864f8265a4cdde2c34e6343c4c8ef800e295e`. The previous Bangla package, voice
+experiments and workflows are replaced. The reference repository is unchanged.
 
-A Bangla historical time-travel video pipeline. Preparation now follows
-`Asif-Rezan/Rezan-After-Dark` at `d6dcde3`; that repository is unchanged.
-See [reference comparison](docs/reference-analysis.md).
+The reference's CPU production structure is retained: one twenty-chapter outline,
+four batches of five English narrations, measured 15–20 minute duration with bounded
+corrections, word-timed English captions, a new image every ten seconds, twenty
+image workers, 1080p rendering, thumbnails, private YouTube upload verification,
+and private Drive checkpoints with upload-only recovery and verified cleanup.
 
-## Production pipeline
+## Content
 
-1. Install the reference's pinned local **Qwen3-4B-Instruct-2507 Q4_K_M** CPU
-   Python wheel and verify real grammar-constrained Bengali generation. No
-   llama.cpp server build or hosted text API is needed.
-2. Verify the Bengali production voice before full generation.
-3. **Stage story:** select curated sourced historical anchors, generate one
-   concise twenty-chapter outline, then four batches of five Bangla narrations,
-   followed by publishing metadata. Chapter word counts have bounded grammar
-   constraints and at most three retries. No repeated semantic-repair loop runs.
-4. **Prepare:** cache one audio asset per chapter. Bengali Parler internally
-   splits bounded text to avoid truncation. Measure actual duration and rewrite
-   only selected chapters if needed; resynthesize only changed chapters. Tempo
-   correction is capped at 4%, and there are at most three duration corrections.
-5. Cache multilingual Bengali Whisper word timestamps by audio/text hashes.
-   Derive the seven-second visual windows from the measured narration.
-6. **Storyboard:** request eight exact timed image prompts per batch, checkpoint
-   each batch and reuse completed work. **Refine plan:** verify coverage and bind
-   story, audio, captions and timeline with checksums.
-7. Twenty CPU workers generate SSD-1B images at 1024×576, 16 steps/guidance 9.
-   The final H.264/AAC video includes Bengali captions, packaging and a continuous
-   MusicRNN soundtrack with fades and speech ducking. Music does not switch at
-   chapter boundaries.
-8. QC, private Drive checkpoints, guarded private YouTube uploads and verified
-   cleanup retain their account identity and duplicate-upload protections.
+`islamic_topics.json` starts with six source packets: Abbasid Samarra, Historic
+Cairo, Abbasid Baghdad, intentions, good speech and neighbors, and concern for
+others. History packets cite UNESCO or The Metropolitan Museum of Art. Hadith
+packets use specific Sahih al-Bukhari report references on Sunnah.com. Each chapter
+must retain valid claim identifiers; sources and report references appear in the
+description. Expand the catalog by adding sourced claims and the same source schema.
 
-The duration stays 600–900 seconds and images change every seven seconds.
-The preparation job allows **240 minutes** for the Bengali speech adapter; the
-English reference allows 150. This is a failure deadline, not a generation target
-or speed control. The same bounded preparation sequence runs; Bengali CPU speech
-can still be slow.
+Scripts use objective English educational narration. They must distinguish
+reported teachings from explicitly labelled reflection or modern examples. They
+must not invent religious quotations, hadith, narrator chains, authenticity grades,
+miracles, dates or personal religious rulings. Hadith meanings are paraphrased,
+not presented as exact translations. A model-based evidence review rejects
+unsupported drafts before narration and runs again after duration revisions.
+This is a same-model consistency check, not independent scholarly verification.
 
-[Model details](docs/models.md). Structural/schema validation is not a claim of
-historical accuracy or semantic agreement. The reference process does not run
-an independent model review for every utterance. Review private output before
-wider release; curated automatically selected research remains private-only.
+Visuals use objects, landscapes and empty architecture. They do not depict people,
+prophets, companions, angels or divine figures. Reconstructions are illustrative,
+not documentary evidence of a specific scene. Metadata uses Education category 27.
 
-## Local preview
+## Models and pacing
 
-Use Python 3.11+, FFmpeg/ffprobe with libx264 and libass, fontconfig and Pillow
-with RAQM/HarfBuzz. Noto Sans Bengali is bundled under SIL OFL.
+- Text: `Qwen/Qwen3-4B-Instruct-2507`, pinned Q4_K_M conversion, local CPU,
+  SHA-256 verified by `story_cpu.py`; no text API key.
+- English voice: the reference's Kokoro `am_michael`, speed `0.82`, pitch `-2`
+  semitones with duration-preserving processing. No voice or emotion switching.
+- Images: `segmind/SSD-1B`, CPU, 1024×576, 16 steps, safety checker retained.
+- Alignment: Faster-Whisper `base.en`, measured English word timestamps.
+- Background score: the reference's free Magenta MusicRNN engine, restrained
+  synthesized documentary bed with narration ducking. Sparse outputs retry up to
+  five times; no silence or loop is substituted for failed generation.
 
-```bash
-pip install -e '.[test]'
-python -m pytest -q
-python -m somoy_jatri.cli preview --run-id preview
+These models run without paid inference APIs. GitHub Actions runtime/storage and
+Google service quotas still apply. No paid service is configured.
+
+## Somoy Jatri account setup
+
+Use only this repository's existing Somoy Jatri credentials:
+`YOUTUBE_TOKEN_JSON`, `DRIVE_TOKEN_JSON`, and `DRIVE_FOLDER_ID`.
+The expected YouTube channel is `UCoqbUdZG8anRCCW9eK4snZA`; upload checks reject
+another channel. Drive must be owner-only and carry the existing
+`somoy_jatri_root=v1` folder marker. Never copy Rezan-After-Dark's channel identity,
+OAuth tokens or storage folder. `setup_drive_folder.py` can create a correctly
+marked dedicated folder if needed. No credentials are stored in source control.
+
+Run **Google OAuth check** to verify the existing credentials. The daily workflow
+is `.github/workflows/daily-upload.yml`, with private uploads and the reference's
+00:00 Asia/Dhaka daily start. A manual dispatch can start a fresh episode; the
+`cleanup_run` input only verifies/cleans an already completed run. Old Bangla or
+fictional-story checkpoints are incompatible: start a fresh English Islamic run.
+Do not rerun an old workflow revision expecting this implementation.
+
+## Checks
+
+Use Python 3.12 and FFmpeg with libx264/libass, plus espeak-ng for Kokoro:
+
+```sh
+pip install -r requirements.txt
+python -m unittest -v
+node --test test_music_retry.cjs
 ```
 
-The short preview uses labelled mock images and tone fixtures, and cannot upload.
-Review `output/preview/video.mp4`, `thumbnail.jpg`, `captions.srt` and `qc.json`.
+`requirements-story.txt` supplies the reference's pinned Linux CPU Qwen wheel.
+`requirements-cpu.txt` supplies its pinned Kokoro/tokenizer/image stack.
+The **Qwen CPU script generation check** and **Kokoro CPU narration check**
+exercise real model downloads and generation without publishing or Google
+credentials. **Cloud component checks** runs the offline suite on pull requests.
+`sample-story.json` is an explicitly labelled technical fixture; daily generation
+creates fresh sourced scripts instead of publishing that fixture.
 
-## Setup and Actions
-
-Keep these repository-specific secrets: `DRIVE_TOKEN_JSON`, `DRIVE_FOLDER_ID`
-and `YOUTUBE_TOKEN_JSON`. Configure `EXPECTED_CHANNEL_ID` and
-`EXPECTED_DRIVE_EMAIL` as repository variables. The private Drive root must carry
-the `somoy_jatri_root=v1` marker. Do not copy reference-project credentials or
-channel/folder IDs. Optional Hugging Face authentication uses `HF_TOKEN`.
-
-1. Run **Verify Google connections** to verify account identity, private storage
-   and a checkpoint write/read round trip.
-2. Run **Verify local Qwen Bangla generation** and production **Model component
-   test** for voice, image and music.
-3. Run **Generate episode and optional private upload**, using production mode,
-   `dossier=auto`, target 720, workers 20 and `preview_only=true` to review output.
-4. Set `preview_only=false` for a private upload. The existing daily schedule
-   requests private generation at **06:00 Asia/Dhaka**.
-
-Automatic research selects curated factual anchors and source links from eleven
-topics, avoiding the last ten reserved topics. Source IDs and schemas are checked;
-these anchors are not represented as a new live source extraction or human review. Automatically sourced
-episodes cannot upload publicly or unlisted. Human-reviewed research and explicit
-public opt-in are required for public upload.
-
-Local production preparation also needs `pip install -r requirements-tts.txt`,
-`pip install -r requirements-story.txt`. The same local Python model is reused
-within each process; downloaded weights are reused by the runner's cache.
-Image workers need `pip install -e '.[images]'`; final rendering needs
-`npm install --ignore-scripts --no-audit --no-fund @magenta/music@1.23.1`.
-Export settings explicitly: `.env` is not loaded automatically.
-
-Groq and Gemini are optional legacy diagnostic backends. They are not required
-for daily text generation or Google readiness. Deliberately select a legacy
-backend with `TEXT_BACKEND=groq`; use `STORY_PROVIDER=gemini` for Gemini.
-Multilingual local alignment is the default when alignment is requested.
-
-## Recovery
-
-Use **Resume prepared episode and upload privately** for completed narration,
-**Recover, verify upload or clean a saved episode → prepare** for interrupted
-chapter preparation, or
-**Recover, verify upload or clean a saved episode** for saved checkpoints. Always
-keep the original episode run ID. For older utterance-format runs, use **Resume voice in parallel and upload privately**.
-Preparation and per-shard checkpoints have
-separate names; restore them into that same run. Actions artifacts last 14 days.
-
-An ambiguous YouTube insertion must be reconciled with the real video ID before
-retrying; it cannot silently insert another video. **Resume verified private
-Drive cleanup** only verifies an existing private HD upload and removes tagged
-run media. It never generates or inserts a video. Scripts, research, timing,
-captions, metadata and upload journals are retained.
-
-Large CPU models can exhaust runner memory or time. Use retained checkpoints
-rather than discarding successful work. Source websites can change and must
-remain verifiable. No automated check proves historical image accuracy or voice
-quality; full private upload verification is distinct from offline tests.
+See `docs/error-recovery.md` for the retained Drive/shard recovery process.
