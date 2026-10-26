@@ -86,3 +86,5 @@ See `docs/error-recovery.md` for the retained Drive/shard recovery process.
 New uploads publish publicly and must pass visibility, HD, channel, thumbnail and metadata checks before media cleanup. Existing private runs retain their recorded visibility.
 
 The background score uses warm modal plucked strings, airy flute-like phrases and soft frame-drum pulses, without vocals. Packaging uses distinct title/thumbnail candidates, prominent subject keywords, readable gold/emerald hooks and source-linked descriptions without production-tool details.
+
+Thumbnails omit channel branding and use a specific, evidence-supported curiosity question that the episode answers.

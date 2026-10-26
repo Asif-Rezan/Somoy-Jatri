@@ -72,6 +72,9 @@ def choose_package(story, topic, payload):
         if not 35 <= len(title) <= 75 or keyword.casefold() not in title[:52].casefold():
             rejected.append(f'{name}: title must be 35-75 characters and contain the exact subject within its first 52 characters')
             continue
+        if 'somoy' in text.casefold() or 'jatri' in text.casefold():
+            rejected.append(f'{name}: thumbnail text must not include channel branding')
+            continue
         if CLICKBAIT.search(title) or CLICKBAIT.search(text):
             rejected.append(f'{name}: title or thumbnail question uses prohibited clickbait')
             continue
@@ -178,7 +181,13 @@ maximum 30 characters, ending in ?. Use UPPERCASE words with single spaces.
 Start with HOW, WHY, WHAT, WHO or WHERE. Each following word is at most 12 characters.
 The question must be addressed in this episode. Avoid vague
 questions such as WHAT HAPPENED? or promises of secret religious knowledge.
+Create a concrete curiosity gap: the title identifies the subject and the hook raises one
+specific unanswered question about a visible detail, documented change or historical consequence.
+Reveal enough context to make the question meaningful, but leave its answer for the video.
+The script must actually answer it; never imply suppressed evidence or secret religious knowledge.
 Complement the title without repeating its phrasing. It must be legible on a phone.
+Do not include SOMOY JATRI, channel names, logos or branding anywhere in the thumbnail.
+Use the entire text area for the curiosity hook.
 Thumbnail's illustrative visual anchor: {topic['thumbnail_anchor']}.
 The image must tell this illustrative visual story: {topic['thumbnail_visual_story']}.
 Do not mention or depict these elements in thumbnail artwork: {json.dumps(topic.get('thumbnail_forbidden_terms', []))}.

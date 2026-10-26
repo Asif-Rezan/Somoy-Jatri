@@ -49,6 +49,12 @@ class PackagingTests(unittest.TestCase):
             self.assertNotIn(name, result['description'])
         self.assertIn(self.topic['search_phrase'], result['description'].splitlines()[0])
 
+    def test_thumbnail_channel_branding_is_rejected(self):
+        for key in ('option_a', 'option_b', 'option_c'):
+            self.payload[key]['thumbnail_text'] = 'WHY SOMOY JATRI?'
+        with self.assertRaisesRegex(ValueError, 'branding'):
+            choose_package(self.story, self.topic, self.payload)
+
     def test_rejects_unrelated_title_and_bad_opening(self):
         self.payload['option_a']['title'] = 'A Hidden Secret Nobody Wants You to Discover Today'
         self.payload['option_c']['title'] = 'An Unrelated Story About Ancient Sites and Objects'

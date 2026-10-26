@@ -52,11 +52,6 @@ def render_thumbnail(source, text, target, category='Islamic'):
     image = Image.alpha_composite(image.convert('RGBA'), overlay)
     draw = ImageDraw.Draw(image)
     cream, gold = (250, 247, 235, 255), (245, 193, 84, 255)
-    label = 'SOMOY JATRI'
-    label_font = _font(23)
-    label_width = draw.textbbox((0, 0), label, font=label_font)[2]
-    draw.rounded_rectangle((60, 72, 95+label_width, 124), radius=9, fill=(19, 85, 65, 255))
-    draw.text((78, 83), label, font=label_font, fill=(250, 247, 235, 255))
     # The same layout was checked when the package was selected.
     font = _font(size)
     y = 310 if len(lines) == 1 else (260 if len(lines) == 2 else 210)
