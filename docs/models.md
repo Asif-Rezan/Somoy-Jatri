@@ -8,7 +8,7 @@
 | Runtime | 16,384-token context, at most four CPU threads, reused per process; no external text API |
 | Illustration | segmind/SSD-1B, CPU float32, 1024×576, 16 steps, guidance 9 |
 | Music | Magenta MusicRNN basic_rnn, @magenta/music 1.23.1, CPU |
-| Bangla voice | Microsoft Edge online bn-BD-PradeepNeural, fixed rate -8%, neutral pitch, cached per chapter |
+| Bangla voice | Microsoft Edge online bn-BD-NabanitaNeural, fixed rate -8%, neutral pitch, cached per chapter |
 | Word alignment | faster-whisper 1.2.1, multilingual base, CPU int8, language bn, two threads, beam size 3 |
 
 The first four rows follow the chapter preparation process from
@@ -28,7 +28,7 @@ quality, pronunciation and historical reconstruction accuracy need private
 listening/viewing review; a schema/audio check cannot establish those qualities.
 
 New narration is objective third-person history, with no first-person vlog host.
-Bangla speech uses Microsoft Edge's online `bn-BD-PradeepNeural` male narrator,
+Bangla speech uses Microsoft Edge's online `bn-BD-NabanitaNeural` female narrator,
 with fixed rate (-8%), pitch (+0 Hz), and volume (+0%). Install
 `requirements-voice.txt`. This sends narration text to the online service and
 requires network access, but no API key. Three failed service attempts stop

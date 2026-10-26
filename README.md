@@ -10,8 +10,8 @@ fictional time travel, or scene-dependent voice/emotion changes. New chapter sto
 `reference-chapters-documentary-v2`; start a fresh episode to replace older vlog scripts.
 Voice receipts include the delivery version so previous narration is regenerated.
 
-The production voice is Microsoft Edge's online **bn-BD-PradeepNeural** narrator,
-a fixed Bangladesh Bangla male voice at a slightly slower rate (-8%), neutral pitch,
+The production voice is Microsoft Edge's online **bn-BD-NabanitaNeural** narrator,
+a fixed Bangladesh Bangla female voice at a slightly slower rate (-8%), neutral pitch,
 and fixed volume. Install `requirements-voice.txt`. Narration text is sent to the
 online service; no API key is required. Service failures retry three times and
 stop clearly, with no automatic switch to a different voice. Audio is converted

@@ -23,7 +23,7 @@ def test_online_voice_is_default_and_fixed_despite_scene_controls(monkeypatch,tm
         voice.synthesize('প্রাচীন ইতিহাস।',mood,1,tmp_path/f'{mood}.wav')
         assert (tmp_path/f'{mood}.wav').exists()
     assert calls[0]==calls[1]
-    assert calls[0][1]==ONLINE_VOICE=='bn-BD-PradeepNeural'
+    assert calls[0][1]==ONLINE_VOICE=='bn-BD-NabanitaNeural'
     assert calls[0][2]['rate']=='-8%'
     assert not list(tmp_path.glob('somoy-online-voice-*'))
 

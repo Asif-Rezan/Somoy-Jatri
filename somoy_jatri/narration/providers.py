@@ -54,7 +54,7 @@ class IndicParlerTTS:
         write_wav(path, audio.cpu().numpy().squeeze(), self.model.config.sampling_rate)
 
 
-ONLINE_VOICE = 'bn-BD-PradeepNeural'
+ONLINE_VOICE = 'bn-BD-NabanitaNeural'
 ONLINE_RATE = '-8%'
 
 
