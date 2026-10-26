@@ -60,6 +60,15 @@ class ContentTests(unittest.TestCase):
         c.audit_narration(story,lambda *args:{'passed':True,'issues':[]})
         self.assertTrue(story['grounding_review']['not_independent_scholarly_verification'])
 
+    def test_rejected_review_exposes_feedback_and_clears_stale_approval(self):
+        story = self.fixture()
+        story['grounding_review'] = {'passed': True}
+        with self.assertRaises(c.SourceGroundingError) as failure:
+            c.audit_narration(story, lambda *args: {'passed': False, 'issues': ['Chapter 3: invented date']})
+        self.assertEqual(failure.exception.issues, ['Chapter 3: invented date'])
+        self.assertIn('invented date', str(failure.exception))
+        self.assertNotIn('grounding_review', story)
+
     def test_figures_are_replaced_by_object_composition(self):
         topic=c.catalog()[0]
         for prompt in ['The Prophet teaching a crowd','A caliph and a scholar','An angel in the sky']:

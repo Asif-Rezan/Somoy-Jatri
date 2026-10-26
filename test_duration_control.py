@@ -209,6 +209,41 @@ class StoryRevisionTests(unittest.TestCase):
         self.assertEqual(len(revised['scenes']), 20)
         self.assertTrue(revised['grounding_review']['passed'])
 
+    def test_source_rejection_repairs_from_original_with_feedback(self):
+        story = story_fixture()
+        before = copy.deepcopy(story)
+        prompts, reviews = [], []
+        def response(endpoint, payload):
+            spec = payload['response_format']['json_schema']
+            if spec['name'] == 'source_review':
+                reviews.append(True)
+                value = {'passed': len(reviews) > 1,
+                         'issues': [] if len(reviews) > 1 else ['Chapter 4: preserve attribution']}
+            else:
+                prompts.append(payload['messages'][0]['content'])
+                value = {key: ' '.join(['Evidence']*65) for key in spec['schema']['required']}
+            return {'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(value)}}]}
+        with patch('workflow.request_story', side_effect=response):
+            revised = w.revise_story_duration(story, .78, 'shorten', [3])
+        self.assertEqual(len(reviews), 2)
+        self.assertIn('Chapter 4: preserve attribution', prompts[1])
+        self.assertEqual(story, before)
+        self.assertEqual(revised['scenes'][2], story['scenes'][2])
+        self.assertTrue(revised['scenes'][-1]['narration'].endswith(CTA))
+        self.assertTrue(revised['grounding_review']['passed'])
+
+    def test_repeated_source_rejection_is_bounded_and_preserves_original(self):
+        from islamic_content import SourceGroundingError
+        story = story_fixture()
+        before = copy.deepcopy(story)
+        with patch('workflow.audit_story_content', side_effect=SourceGroundingError(['unsupported'])) as audit, \
+             patch('workflow.request_story', return_value={'choices': [{'finish_reason': 'stop',
+                 'message': {'content': json.dumps({'chapter_04': ' '.join(['Evidence']*65)})}}]}):
+            with self.assertRaisesRegex(SourceGroundingError, 'unsupported'):
+                w.revise_story_duration(story, .78, 'shorten', [3])
+        self.assertEqual(audit.call_count, 3)
+        self.assertEqual(story, before)
+
     def test_failed_qwen_revision_does_not_mutate_story(self):
         story = story_fixture()
         before = json.dumps(story)

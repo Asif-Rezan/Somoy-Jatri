@@ -90,17 +90,28 @@ def safe_visual(action, topic, fallback=None):
     return action
 
 
+class SourceGroundingError(ValueError):
+    """Review feedback that can be used for a bounded, re-audited repair."""
+    def __init__(self, issues):
+        self.issues = issues
+        super().__init__('Source-grounding review rejected narration; no media will be generated: '
+                         + json.dumps(issues, ensure_ascii=True))
+
+
 def audit_narration(story, ask):
+    story.pop('grounding_review', None)
     schema = {'type':'object','properties':{'passed':{'type':'boolean'},
         'issues':{'type':'array','items':{'type':'string'}}},'required':['passed','issues'],'additionalProperties':False}
     result = ask('Check every sentence of this English Islamic documentary against ONLY its supplied evidence. '
         'Reject invented historical or religious assertions, quotations, narrator chains, authenticity grades, '
         'unlabelled hypothetical examples, certainty beyond the sources, and fatwas. '
         'Reflections are allowed only when explicitly distinguished from a reported teaching. '
+        'Identify the chapter number and specific unsupported assertion in each issue. '
+        'The closing viewer question and like/comment/subscribe request are channel engagement, not historical claims. '
         'Return passed=true only when all narration is supported or clearly labelled reflection. '
         + json.dumps({'evidence':story['evidence'],'chapters':[
             {'narration':s['narration'],'claim_ids':s['claim_ids']} for s in story['scenes']]}),1600,schema)
     if result.get('passed') is not True or result.get('issues'):
-        raise ValueError('Source-grounding review rejected narration; no media will be generated')
+        raise SourceGroundingError(result.get('issues') or ['Review did not explicitly pass'])
     story['grounding_review'] = {'passed':True,'method':'same-model-evidence-review',
         'not_independent_scholarly_verification':True}

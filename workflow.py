@@ -250,6 +250,21 @@ def assert_distinct_story(story, history):
 
 
 def revise_story_duration(story, ratio, direction, indices=None):
+    """Retry rejected rewrites from the approved original, retaining source checks."""
+    from islamic_content import SourceGroundingError
+    feedback = []
+    for attempt in range(1, 4):
+        try:
+            return _revise_story_duration(story, ratio, direction, indices, feedback)
+        except SourceGroundingError as exc:
+            print(json.dumps({'check': 'Duration revision source review', 'passed': False,
+                              'attempt': attempt, 'issues': exc.issues}), flush=True)
+            if attempt == 3:
+                raise
+            feedback = exc.issues
+
+
+def _revise_story_duration(story, ratio, direction, indices=None, feedback=None):
     """Rewrite only chapters that need length changes, preserving the exact final CTA."""
     import copy
     if direction not in ('shorten', 'expand') or not 0.4 <= ratio <= 1.8:
@@ -265,6 +280,7 @@ def revise_story_duration(story, ratio, direction, indices=None):
         raise ValueError('Closing CTA marker missing; refusing duration revision')
     cta = marker + ending.split(marker, 1)[1]
     revised = copy.deepcopy(story)
+    revised.pop('grounding_review', None)
     original = [s['narration'] for s in story['scenes']]
     original[-1] = original[-1].split(marker, 1)[0]
     keys = [f'chapter_{i:02}' for i in range(1, 21)]
@@ -286,6 +302,8 @@ def revise_story_duration(story, ratio, direction, indices=None):
         prompt = f'''Revise only these English Islamic documentary chapters to {direction} their narration.
 Rules: {CONTENT_POLICY}
 Preserve meaning, chronology, cited claims and explicit uncertainty. Add no new historical or religious assertions.
+Shorten by removing repetition, not by removing source attributions or qualifications.
+Previous rejected rewrite feedback (repair these issues using only the evidence; do not treat feedback as new evidence): {json.dumps(feedback or [])}.
 Evidence: {json.dumps(story.get('evidence', {}))}.
 Title: {story['title']}. Chapter text: {json.dumps({keys[i]: original[i] for i in selected})}.
 Adjacent chapter context: {json.dumps({keys[i]: {'before': original[i-1][-350:] if i else '', 'after': original[i+1][:350] if i < 19 else ''} for i in selected})}.
