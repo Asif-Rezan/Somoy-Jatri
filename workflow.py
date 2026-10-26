@@ -322,13 +322,7 @@ def make_image(prompt, path):
         from image_cpu import generate
         produce_file(path, lambda candidate: generate(prompt + ', no text, no watermark', candidate), 'Image generation')
         return
-    if os.getenv('IMAGE_BACKEND') != 'hf':
-        raise ValueError('IMAGE_BACKEND must be cpu or hf')
-    from huggingface_hub import InferenceClient
-    image = retry_local(lambda: InferenceClient(api_key=required('HF_TOKEN')).text_to_image(
-        prompt=prompt + ', cinematic lighting, landscape composition, no text or watermarks',
-        model=required('IMAGE_MODEL'), width=1024, height=576), 'Hosted image generation')
-    produce_file(path, image.save, 'Image save')
+    raise ValueError('IMAGE_BACKEND must be cpu; hosted image inference is disabled')
 
 
 def speech_chunks(text, limit=200):

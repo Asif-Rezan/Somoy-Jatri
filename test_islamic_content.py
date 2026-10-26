@@ -42,6 +42,12 @@ class ContentTests(unittest.TestCase):
         with patch.dict('os.environ',{'CONTENT_TYPE':'islamic-documentary'}):
             with self.assertRaises(ValueError):w.validate_story(story)
 
+    def test_hosted_images_cannot_use_paid_inference(self):
+        with patch.dict('os.environ',{'IMAGE_BACKEND':'hf'}),patch('huggingface_hub.InferenceClient') as remote:
+            with self.assertRaisesRegex(ValueError,'hosted image inference is disabled'):
+                w.make_image('An empty courtyard',Path('unused.png'))
+            remote.assert_not_called()
+
     def test_missing_hadith_reference_is_rejected(self):
         topic=next(t for t in c.catalog() if t['kind']=='hadith')
         topic['hadith'][0].pop('reference')
