@@ -17,12 +17,13 @@ class IslamicMusicTests(unittest.TestCase):
                 audio=np.frombuffer(source.readframes(source.getnframes()),dtype='<i2').reshape(-1,2)/32768
             self.assertAlmostEqual(len(audio)/48000,seconds,places=3)
             self.assertTrue(np.isfinite(audio).all())
-            self.assertLess(np.max(np.abs(audio)),.56)
+            self.assertLess(np.max(np.abs(audio)),.25)
             self.assertLess(np.max(np.abs(audio[[0,-1]])),.001)
             section=audio[5*48000:9*48000,0]
             power=np.abs(np.fft.rfft(section))**2
             frequency=np.fft.rfftfreq(len(section),1/48000)
             self.assertLess(power[frequency<150].sum()/power.sum(),.4)
+            self.assertLess(power[frequency>1500].sum()/power.sum(),.001)
 
     def test_fresh_arrangements_differ_and_saved_seed_reproduces_audio(self):
         sequence = {'totalQuantizedSteps': 64, 'notes': [

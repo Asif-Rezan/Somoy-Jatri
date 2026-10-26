@@ -85,8 +85,10 @@ See `docs/error-recovery.md` for the retained Drive/shard recovery process.
 
 New uploads publish publicly and must pass visibility, HD, channel, thumbnail and metadata checks before media cleanup. Existing private runs retain their recorded visibility.
 
-The background score uses slowly swelling modal strings, sustained airy flute-like phrases and soft frame-drum pulses, without piano, plucked-key melodies or vocals. Packaging uses distinct title/thumbnail candidates, prominent subject keywords, readable gold/emerald hooks and source-linked descriptions without production-tool details.
+The background score uses mellow sustained pads and a gentle low-register melody, without piano, plucked-key melodies or vocals. Packaging uses distinct title/thumbnail candidates, prominent subject keywords, readable gold/emerald hooks and source-linked descriptions without production-tool details.
 
 Thumbnails omit channel branding and use a specific, evidence-supported curiosity question that the episode answers.
 
-Ambient scores render at 48 kHz with slow string/flute swells and diffuse stereo space. Each new video receives fresh melody and arrangement seeds, varying tempo, key, phrasing and stereo placement within the same historical exploration style. Saved seeds reproduce the arrangement during recovery.
+Ambient scores render at 48 kHz with slow pad swells and diffuse stereo space. Each new video receives fresh melody and arrangement seeds, varying tempo, key, phrasing and stereo placement within the same historical exploration style. Saved seeds reproduce the arrangement during recovery.
+
+The soft ambient arrangement uses a restrained low-register pentatonic melody and rounded sustained pads, without piercing flute doubling, noisy strings or percussion attacks. It keeps lower mastering peaks and smooth high-frequency roll-off.

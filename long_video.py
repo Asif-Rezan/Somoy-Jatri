@@ -454,7 +454,7 @@ def mix_audio(voice, music, target, seconds):
     w.shell('ffmpeg', '-y', '-i', str(voice), '-stream_loop', '-1', '-i', str(music),
         '-filter_complex',
         '[0:a]loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,asplit=2[voice][side];'
-        '[1:a]loudnorm=I=-27:TP=-3:LRA=7,aresample=48000[music];'
+        '[1:a]loudnorm=I=-30:TP=-6:LRA=5,aresample=48000[music];'
         '[music][side]sidechaincompress=threshold=0.08:ratio=2:attack=100:release=700:mix=0.35,asplit=2[bed][check];'
         '[voice][bed]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95:level=0[a]',
         '-map', '[a]', '-t', str(seconds), '-ac', '2', '-c:a', 'pcm_s16le', str(target),

@@ -1,4 +1,4 @@
-"""Render MusicRNN notes as a restrained documentary bed, with sustained strings, airy flute and soft frame drums."""
+"""Render MusicRNN notes as a restrained documentary bed, with mellow sustained pads and gentle, low-register melody."""
 import json
 import math
 import secrets
@@ -14,26 +14,21 @@ def render_sequence(sequence, path, seed=None):
     # A saved seed keeps recovery reproducible; a new video gets new entropy.
     seed = int(sequence.get('arrangement_seed', secrets.randbits(63)) if seed is None else seed)
     rng = np.random.default_rng(seed)
-    tempo = float(rng.uniform(70, 80))
-    root = int(rng.choice([60, 62, 64]))
+    tempo = float(rng.uniform(58, 66))
+    root = int(rng.choice([57, 59, 60]))
     rate, step = 48000, 60 / tempo / 4
     seconds = float(sequence['totalQuantizedSteps']) * step + 5
     if not 5 < seconds <= 600 or not sequence.get('notes'):
         raise ValueError('Music sequence must contain notes and a bounded duration')
     audio = np.zeros((math.ceil(seconds * rate), 2), dtype=np.float32)
     timeline = np.arange(len(audio), dtype=np.float32) / rate
-    # Hijaz-inspired D mode, instrumental only; warm texture rather than sub-bass drones.
+    # Gentle minor-pentatonic phrases avoid close semitone clashes and piercing lead tones.
     # This is a synthesized documentary arrangement, not a claim of traditional performance.
-    scale = (0, 1, 4, 5, 7, 8, 10)
+    scale = (0, 3, 5, 7, 10)
     tonic = 440 * 2 ** ((root - 81) / 12)
     for frequency, gain in ((tonic, .003), (tonic * 1.5, .006)):
         bed = np.sin(2 * np.pi * frequency * timeline) * (.7 + .3 * np.sin(timeline * .2)**2)
         audio += (bed * gain)[:, None]
-    for onset in np.arange(0, seconds - 2, 60 / tempo * 2):
-        start = int(onset * rate)
-        t = np.arange(min(rate // 3, len(audio)-start), dtype=np.float32) / rate
-        drum = (.7 * np.sin(2*np.pi*(110*t - 25*t*t)) + .12*rng.normal(size=len(t)))
-        audio[start:start+len(t)] += (drum * np.exp(-t*24) * .018)[:, None]
     for index, note in enumerate(sequence['notes']):
         if index % 8:
             continue
@@ -50,18 +45,12 @@ def render_sequence(sequence, path, seed=None):
         # Bowed/wind phrases swell in and release slowly: no struck-key or pluck envelope.
         length = count / rate
         envelope = np.sin(np.pi * np.clip(t / length, 0, 1)) ** 1.4
-        vibrato = .025 * np.sin(2*np.pi*rng.uniform(3.8, 4.5)*t + rng.uniform(0, 6.28))
-        strings = sum((1 / harmonic**1.7) * (
-            np.sin(2*np.pi*hz*harmonic*t + vibrato*harmonic) +
-            .45*np.sin(2*np.pi*hz*harmonic*1.0015*t + .3))
-            for harmonic in range(1, 8))
-        # A sustained breathy flute response, with air smoothed to avoid a hiss.
-        breath = rng.normal(0, 1, count)
-        breath = np.convolve(breath, np.ones(24)/24, mode='same')
-        flute = (np.sin(2*np.pi*hz*2*t + vibrato) +
-                 .12*np.sin(2*np.pi*hz*4*t) + .07*breath)
-        signal = (strings * .045 + flute * .025) * envelope
-        pan = float(rng.uniform(.3, .7))
+        # A rounded fundamental with very quiet overtones, without sharp bow noise,
+        # breath hiss, high flute doubling, vibrato or percussion transients.
+        phase = 2*np.pi*hz*t
+        tone = (np.sin(phase) + .12*np.sin(2*phase) + .025*np.sin(3*phase))
+        signal = tone * envelope * .04
+        pan = float(rng.uniform(.42, .58))
         audio[start:start+count, 0] += signal * np.sqrt(1-pan)
         audio[start:start+count, 1] += signal * np.sqrt(pan)
     # Diffuse stereo reflections from the dry signal, not repeated feedback echoes.
@@ -72,14 +61,19 @@ def render_sequence(sequence, path, seed=None):
         reflected = dry[:-shift, ::-1]
         audio[shift:] += reflected * gain
     # Gentle saturation rounds occasional percussion peaks before final headroom.
-    audio = np.tanh(audio * 1.4) / 1.4
+    # Smooth residual high frequencies before mastering. A short symmetric window
+    # avoids filter ringing and retains the warm fundamental melody.
+    kernel = np.hanning(97)
+    kernel /= kernel.sum()
+    for channel in range(2):
+        audio[:, channel] = np.convolve(audio[:, channel], kernel, mode='same')
     fade = min(5 * rate, len(audio)//2)
     audio[:fade] *= np.linspace(0, 1, fade)[:, None]
     audio[-fade:] *= np.linspace(1, 0, fade)[:, None]
     peak = float(np.max(np.abs(audio)))
     if not np.isfinite(audio).all() or peak < .001:
         raise RuntimeError('Generated music is silent or invalid')
-    audio *= .55 / peak
+    audio *= .24 / peak
     with wave.open(str(path), 'wb') as out:
         out.setnchannels(2)
         out.setsampwidth(2)
@@ -93,7 +87,7 @@ def generate(path):
     subprocess.run(['node', str(Path(__file__).with_name('music_rnn.cjs')), str(notes_path)], check=True)
     sequence = json.loads(notes_path.read_text())
     sequence['arrangement_seed'] = secrets.randbits(63)
-    sequence['arrangement_style'] = 'historical-exploration-ambient-v2'
+    sequence['arrangement_style'] = 'soft-historical-ambient-v3'
     notes_path.write_text(json.dumps(sequence))
     seconds = render_sequence(sequence, path)
     print(json.dumps({'check': 'Generated documentary music audio', 'passed': True,
