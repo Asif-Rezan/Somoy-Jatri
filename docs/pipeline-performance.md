@@ -9,7 +9,7 @@ Compared on 2026-10-27:
 
 Somoy Jatri failed during stage-story, before narration preparation, images, rendering, or upload. The outline, four narration batches, and ten-token source review completed. The next stage is YouTube packaging; its three JSON attempts failed. Existing logs do not retain the validation reason, so the exact rejected field cannot be recovered from this run.
 
-The reference run took about seven hours, from 22:24 UTC to 05:26 UTC. Preparation took 63 minutes. Image generation generally took roughly 7–8 minutes per image, and several shards waited for runners. Both repositories used Qwen3-4B Q4_K_M and SSD-1B at 1024x576 with 16 steps and twenty image shards. The reference is therefore not evidence of a fast full-video CPU run.
+The reference run took 5 hours 2 minutes, from 22:24 UTC to 03:26 UTC. Preparation took 63 minutes. Image generation generally took roughly 7–8 minutes per image, and several shards waited for runners. Both repositories used Qwen3-4B Q4_K_M and SSD-1B at 1024x576 with 16 steps and twenty image shards. The reference is therefore not evidence of a fast full-video CPU run.
 
 ## Changes
 
