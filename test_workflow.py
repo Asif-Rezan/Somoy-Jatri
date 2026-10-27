@@ -9,6 +9,30 @@ import workflow as w
 
 class Checks(unittest.TestCase):
 
+    def test_image_initialization_preserves_sdpa_and_quality_settings(self):
+        import sys
+        import types
+        import image_cpu
+        for slicing in ('false', 'true'):
+            with self.subTest(slicing=slicing), tempfile.TemporaryDirectory() as temp:
+                pipeline = MagicMock()
+                pipeline.return_value = types.SimpleNamespace(
+                    nsfw_content_detected=[False], images=[Image.new('RGB', (1024, 576))])
+                factory = MagicMock()
+                factory.from_pretrained.return_value = pipeline
+                torch = MagicMock(float32='float32')
+                diffusers = types.SimpleNamespace(DiffusionPipeline=factory,
+                    DPMSolverMultistepScheduler=MagicMock())
+                with patch.object(image_cpu, '_pipeline', None), \
+                     patch.dict(sys.modules, {'torch': torch, 'diffusers': diffusers}), \
+                     patch.dict('os.environ', {'CPU_IMAGE_ATTENTION_SLICING': slicing,
+                         'CPU_IMAGE_WIDTH': '1024', 'CPU_IMAGE_HEIGHT': '576', 'CPU_IMAGE_STEPS': '16'}):
+                    image_cpu.generate('Empty stone courtyard', Path(temp)/'image.png')
+                self.assertEqual(pipeline.enable_attention_slicing.call_count, slicing == 'true')
+                self.assertEqual(pipeline.call_args.kwargs['num_inference_steps'], 16)
+                self.assertEqual(pipeline.call_args.kwargs['width'], 1024)
+                pipeline.enable_vae_slicing.assert_called_once()
+
     def test_safety_blocked_image_uses_non_graphic_retry_without_disabling_checker(self):
         import sys
         import types
