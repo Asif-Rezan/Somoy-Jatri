@@ -106,3 +106,21 @@ class SystemDependencyTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'Ubuntu release'):
                 with deps.alternate_sources():
                     self.fail('Invalid release accepted')
+
+    def test_download_stall_switches_sources_before_installing_any_package(self):
+        installed = False
+        calls = []
+        def apt(arguments, seconds, options=()):
+            nonlocal installed
+            calls.append((arguments, options))
+            if '--download-only' in arguments and not options:
+                raise subprocess.TimeoutExpired('primary-download', seconds)
+            if '--no-download' in arguments:
+                installed = True
+        with patch.object(deps, 'available', side_effect=lambda _: installed), \
+             patch.object(deps, 'apt', side_effect=apt), patch.object(deps.time, 'sleep'):
+            deps.install(['ffmpeg'])
+        installs = [(arguments, options) for arguments, options in calls if '--no-download' in arguments]
+        self.assertEqual(len(installs), 1)
+        self.assertIn('Dir::Etc::sourceparts=-', installs[0][1])
+        self.assertEqual(len([arguments for arguments, _ in calls if '--download-only' in arguments]), 2)

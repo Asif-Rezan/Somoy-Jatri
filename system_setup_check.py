@@ -24,8 +24,12 @@ def check(force_failover=False):
     def apt(arguments, seconds, options=()):
         nonlocal failed_primary
         if force_failover and not failed_primary:
+            # Reproduce the incident's package-download stall specifically.
+            # Leave the real signed-repository update/download/install to fallback.
+            if arguments == ['update']:
+                return
             failed_primary = True
-            raise subprocess.TimeoutExpired('simulated-primary-mirror', seconds)
+            raise subprocess.TimeoutExpired('simulated-primary-download', seconds)
         return real_apt(arguments, seconds, options)
 
     with patch.object(deps, 'available', side_effect=require_install), \
