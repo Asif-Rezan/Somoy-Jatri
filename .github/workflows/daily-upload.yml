@@ -49,6 +49,8 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'requirements*.txt'
       - name: Check production settings before downloading generation models
         run: |
           sudo apt-get update
@@ -68,6 +70,8 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'requirements*.txt'
       - name: Install local Qwen CPU runtime
         run: pip install -r requirements.txt -r requirements-story.txt
       - name: Verify local Qwen script generation before video setup
@@ -119,6 +123,8 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'requirements*.txt'
       - name: Install CPU illustration model dependencies
         run: |
           sudo apt-get update
@@ -170,6 +176,8 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'requirements*.txt'
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22'
@@ -209,6 +217,8 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'requirements*.txt'
       - run: pip install -r requirements.txt
       - name: Verify public HD upload and metadata, then clean this run only
         env:

@@ -141,7 +141,7 @@ class PackagingTests(unittest.TestCase):
         scenes = copy.deepcopy(self.story['scenes'])
         result = request_package(self.story, self.topic, ask, pause=pauses.append)
         self.assertEqual(len(prompts), 2)
-        self.assertEqual(pauses, [60])
+        self.assertEqual(pauses, [1])
         self.assertIn('forbidden visual element', prompts[1])
         self.assertEqual(result['scenes'], scenes)
         self.assertNotIn('pyramid', result['thumbnail_prompt'].lower())
@@ -155,7 +155,7 @@ class PackagingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'prohibited clickbait'):
             request_package(self.story, self.topic, ask, pause=pauses.append)
         self.assertEqual(len(attempts), 3)
-        self.assertEqual(pauses, [60, 60])
+        self.assertEqual(pauses, [1, 1])
         self.assertEqual(self.story, original)
 
     def test_description_failures_recover_without_regenerating_story(self):
@@ -202,6 +202,19 @@ class PackagingTests(unittest.TestCase):
             return self.payload
         request_package(self.story, self.topic, ask,
                         pause=lambda _: self.fail('Unnecessary retry'))
+
+    def test_hook_pattern_alone_enforces_length_without_decoder_maxlength(self):
+        # The pinned llama.cpp grammar ignores maxLength when pattern exists.
+        from video_packaging import HOOK_SCHEMA
+        import re
+        pattern = HOOK_SCHEMA['pattern']
+        self.assertIsNone(re.fullmatch(pattern, 'WHERE ABCDEFGHIJKL ABCDEFGHIJKL ABCDEFGHIJKL?'))
+        for hook in ('WHERE ABCDEFGHIJK ABCDEFGHIJK?',
+                     'WHERE ABCDEFG ABCDEFG ABCDEFG?',
+                     'WHERE ABCDEFGH ABCD ABCD ABCD?',
+                     'WHAT IS BEHIND THE DOOR?'):
+            self.assertIsNotNone(re.fullmatch(pattern, hook), hook)
+            self.assertLessEqual(len(hook), 30)
 
     def test_successful_metadata_does_not_retry(self):
         calls = []

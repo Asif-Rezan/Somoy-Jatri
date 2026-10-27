@@ -10,11 +10,20 @@ PRODUCTION_DETAILS = re.compile(r'\b(?:music\s*rnn|magenta|kokoro|qwen|whisper|f
 QUESTION_OPENERS = {'HOW', 'WHY', 'WHAT', 'WHO', 'WHERE'}
 # Enforce the mechanical question format during local Qwen decoding, not just
 # after spending several minutes generating each complete package.
-HOOK_SCHEMA = {
-    'type': 'string',
-    'maxLength': 30,
-    'pattern': r"^(HOW|WHY|WHAT|WHO|WHERE)( [A-Z][A-Z0-9'-]{0,11}){1,4}\?$",
-}
+def hook_pattern():
+    # llama.cpp selects `pattern` before `maxLength`, rather than intersecting
+    # them. Bound the grammar itself to 30 characters, including spaces and ?.
+    def word(limit):
+        return r" [A-Z][A-Z0-9'-]{0," + str(limit - 1) + "}"
+    endings = [word(12), word(11) * 2, word(7) * 3]
+    # Five-word questions may have one longer subject word, e.g. BEHIND.
+    endings += [''.join(word(8 if i == long else 4) for i in range(4))
+                for long in range(4)]
+    return r"^(HOW|WHY|WHAT|WHO|WHERE)(" + '|'.join(endings) + r")\?$"
+
+
+HOOK_SCHEMA = {'type': 'string', 'maxLength': 30, 'pattern': hook_pattern()}
+
 
 
 def _plain(value):
@@ -148,14 +157,17 @@ def choose_package(story, topic, payload):
 
 def request_package(story, topic, ask, pause=None):
     pause = pause or time.sleep
-    text = {'type': 'string'}
+    text = {'type': 'string', 'maxLength': 220}
     option = {'type': 'object', 'properties': {
-              'title': text, 'thumbnail_text': HOOK_SCHEMA, 'thumbnail_prompt': text},
+              'title': {'type': 'string', 'minLength': 35, 'maxLength': 75},
+              'thumbnail_text': HOOK_SCHEMA, 'thumbnail_prompt': text},
               'required': ['title', 'thumbnail_text', 'thumbnail_prompt'], 'additionalProperties': False}
     schema = {'type': 'object', 'properties': {
         'option_a': option, 'option_b': option, 'option_c': option,
-        'description_intro': text, 'description_details': text,
-        'tags': {'type': 'array', 'items': text}},
+        'description_intro': {'type': 'string', 'maxLength': 400},
+        'description_details': {'type': 'string', 'maxLength': 800},
+        'tags': {'type': 'array', 'minItems': 4, 'maxItems': 8,
+                 'items': {'type': 'string', 'maxLength': 40}}},
         'required': ['option_a', 'option_b', 'option_c', 'description_intro', 'description_details', 'tags'],
         'additionalProperties': False}
     outline = [scene.get('summary', '') for scene in story['scenes']]
@@ -208,7 +220,7 @@ no unrelated trend tags, hashtags, or keyword stuffing. Return only the requeste
     feedback = ''
     for attempt in range(3):
         if attempt:
-            pause(60)  # Respect the free provider's request/token budget.
+            pause(1)  # Local CPU inference has no hosted-provider rate limit.
         result = ask(prompt + feedback, 2600, schema)
         try:
             return choose_package(story, topic, result)

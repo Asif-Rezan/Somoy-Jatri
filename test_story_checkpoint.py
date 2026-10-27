@@ -46,3 +46,46 @@ class StoryCheckpointTests(unittest.TestCase):
             lv.stage_story()
             self.assertTrue(store.save.call_args.args[0].endswith('/staged-story.json'))
             self.assertEqual(store.save.call_args.args[1], story)
+
+    def test_packaging_failure_resumes_generated_chapters_from_private_cache(self):
+        import workflow as w
+        import islamic_content as c
+        from unittest.mock import Mock
+        story = json.loads(Path('sample-story.json').read_text())
+        topic = story['evidence']
+        saved = {}
+        cache = Mock()
+        cache.load.side_effect = lambda key, default: copy.deepcopy(saved.get(key, default))
+        cache.save.side_effect = lambda key, value: saved.update({key: copy.deepcopy(value)})
+
+        def request(endpoint, payload):
+            properties = payload['response_format']['json_schema']['schema']['properties']
+            if 'scenes' in properties:
+                value = {key: story[key] for key in ('title', 'protagonist_name', 'character_description')}
+                value['scenes'] = {f'chapter_{i:02}': {
+                    key: scene[key] for key in ('summary', 'image_prompt', 'claim_ids')}
+                    for i, scene in enumerate(story['scenes'], 1)}
+            elif 'narrations' in properties:
+                text = ' '.join(['Evidence'] * 109) + ' remains.'
+                value = {'narrations': {key: text for key in properties['narrations']['properties']}}
+            else:
+                value = {'passed': True, 'issues': []}
+            return {'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(value)}}]}
+
+        def package(outline, topic, ask):
+            for key in ('title', 'description', 'tags', 'thumbnail_text', 'thumbnail_prompt'):
+                outline[key] = story[key]
+
+        with patch('islamic_content.catalog', return_value=[topic]), \
+             patch.object(w, 'request_story', side_effect=request) as generate, \
+             patch('video_packaging.request_package', side_effect=RuntimeError('packaging failed')):
+            with self.assertRaisesRegex(RuntimeError, 'packaging failed'):
+                w.make_story('2026-10-27', [], checkpoint=cache)
+            self.assertEqual(generate.call_count, 6)
+        with patch('islamic_content.catalog', return_value=[topic]), \
+             patch.object(w, 'request_story', side_effect=AssertionError('Must resume')) as generate, \
+             patch('video_packaging.request_package', side_effect=package):
+            result = w.make_story('2026-10-27', [], checkpoint=cache)
+            self.assertEqual(len(result['scenes']), 20)
+            self.assertTrue(result['grounding_review']['passed'])
+            generate.assert_not_called()

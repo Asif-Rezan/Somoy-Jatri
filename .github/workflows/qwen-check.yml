@@ -2,10 +2,10 @@ name: Qwen CPU script generation check
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/qwen-check.yml', 'story_cpu.py', 'story_check.py', 'requirements-story.txt']
+    paths: ['.github/workflows/qwen-check.yml', 'story_cpu.py', 'story_check.py', 'requirements-story.txt', 'video_packaging.py', 'workflow.py']
   pull_request:
     branches: [main]
-    paths: ['story_cpu.py', 'story_check.py', 'requirements-story.txt', 'workflow.py']
+    paths: ['story_cpu.py', 'story_check.py', 'requirements-story.txt', 'workflow.py', 'video_packaging.py']
   workflow_dispatch:
 permissions:
   contents: read

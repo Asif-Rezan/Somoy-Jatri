@@ -60,7 +60,11 @@ def generate(prompt, path):
         _pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
             _pipeline.scheduler.config, algorithm_type='dpmsolver++', use_karras_sigmas=True)
         _pipeline.to('cpu')
-        _pipeline.enable_attention_slicing()
+        # PyTorch 2.x uses SDPA by default. Attention slicing replaces that
+        # efficient processor with sequential work; reserve it for low RAM.
+        # https://huggingface.co/docs/diffusers/api/diffusion_pipeline
+        if os.getenv('CPU_IMAGE_ATTENTION_SLICING', 'false').lower() == 'true':
+            _pipeline.enable_attention_slicing()
         _pipeline.enable_vae_slicing()
     width = int(os.getenv('CPU_IMAGE_WIDTH', '1024'))
     height = int(os.getenv('CPU_IMAGE_HEIGHT', '576'))

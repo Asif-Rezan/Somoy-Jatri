@@ -559,7 +559,15 @@ def stage_story():
         story = store.load(checkpoint, None)
         if story is None:
             history = store.load('history.json', [])
-            story = w.make_story(dt.datetime.now(ZoneInfo('Asia/Dhaka')).date().isoformat(), history[-30:])
+            class StoryResponses:
+                def load(self, key, default):
+                    return store.load(f'runs/{run_id()}/' + key, default)
+
+                def save(self, key, value):
+                    store.save(f'runs/{run_id()}/' + key, value)
+
+            story = w.make_story(dt.datetime.now(ZoneInfo('Asia/Dhaka')).date().isoformat(),
+                                 history[-30:], checkpoint=StoryResponses())
             w.validate_story(story)
             validate_engagement(story)
             store.save(checkpoint, story)

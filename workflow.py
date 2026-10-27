@@ -139,7 +139,7 @@ def narration_batch(prompt, keys, target, ask):
     raise RuntimeError('Qwen narration missed measured chapter word targets after three attempts')
 
 
-def make_story(day, previous):
+def make_story(day, previous, checkpoint=None):
     if os.getenv('STORY_FILE'):
         # Explicit original test story only; daily jobs must generate fresh stories.
         from islamic_content import validate_content
@@ -147,15 +147,31 @@ def make_story(day, previous):
     model = os.getenv('STORY_MODEL', 'Qwen/Qwen3-4B-Instruct-2507')
     chapter_keys = [f'chapter_{i:02}' for i in range(1, 21)]
     def ask(prompt, limit, schema):
-        result = request_story('chat/completions', {'model': model,
+        payload = {'model': model,
             'messages': [{'role': 'user', 'content': prompt}],
             'response_format': {'type': 'json_schema', 'json_schema': {'name': 'story_payload',
                 'strict': True, 'schema': schema}},
-            'temperature': 0.8, 'max_completion_tokens': limit})
+            'temperature': 0.8, 'max_completion_tokens': limit}
+        # Cache each accepted response privately, so packaging/review failures do
+        # not discard the outline and twenty already generated chapters.
+        from jsonschema import Draft202012Validator
+        digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+        key = 'story-responses/' + digest + '.json'
+        if checkpoint is not None:
+            cached = checkpoint.load(key, None)
+            if cached is not None:
+                Draft202012Validator(schema).validate(cached)
+                print(json.dumps({'check': 'Resume validated story response', 'passed': True}), flush=True)
+                return cached
+        result = request_story('chat/completions', payload)
         choice = result['choices'][0]
         if choice.get('finish_reason') == 'length':
             raise RuntimeError('Story response was truncated; refusing incomplete script')
-        return json.loads(choice['message']['content'])
+        value = json.loads(choice['message']['content'])
+        Draft202012Validator(schema).validate(value)
+        if checkpoint is not None:
+            checkpoint.save(key, value)
+        return value
     from islamic_content import catalog, CONTENT_POLICY, VISUAL_POLICY, CTA
     topics = catalog()
     recent_ids = {item.get('topic_id') for item in previous[-10:] if isinstance(item, dict)}

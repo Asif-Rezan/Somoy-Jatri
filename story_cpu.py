@@ -85,23 +85,41 @@ def request_story(endpoint, payload):
                         for message in messages) + 32
     if prompt_tokens + limit > CONTEXT_TOKENS:
         raise StoryGenerationError('Qwen context budget exceeded; reduce recent-story context')
+    feedback = ''
     for attempt in range(3):
         started = time.monotonic()
+        attempt_messages = copy.deepcopy(messages)
+        if feedback:
+            if prompt_tokens + len(model.tokenize(feedback.encode(), add_bos=False)) + 16 + limit > CONTEXT_TOKENS:
+                raise StoryGenerationError('Qwen context budget exceeded; reduce recent-story context')
+            attempt_messages.append({'role': 'user', 'content': feedback})
         try:
-            result = model.create_chat_completion(messages=messages,
+            result = model.create_chat_completion(messages=attempt_messages,
                 response_format={'type': 'json_object', 'schema': schema},
                 max_tokens=limit, temperature=max(.2, float(payload.get('temperature', .7)) - .15 * attempt),
                 top_p=.8, top_k=20, repeat_penalty=1.05, seed=1700 + attempt)
         except Exception:
             # Runtime/configuration errors are not content errors; don't spin on them.
             raise StoryGenerationError('Qwen CPU generation failed; inspect runner memory and runtime compatibility') from None
+        choice = {}
         try:
             choice = result['choices'][0]
             if choice.get('finish_reason') != 'stop':
                 raise ValueError('Incomplete output')
             validator.validate(json.loads(choice['message']['content']))
-        except (ValueError, TypeError, KeyError, IndexError, ValidationError):
-            print(json.dumps({'check': 'Qwen JSON validation retry', 'attempt': attempt + 1}), flush=True)
+        except (ValueError, TypeError, KeyError, IndexError, ValidationError) as error:
+            # Log only schema locations and counters, never unpublished content.
+            path = '/'.join(str(part) for part in error.absolute_schema_path) if isinstance(error, ValidationError) else 'response'
+            reason = error.validator if isinstance(error, ValidationError) else type(error).__name__
+            print(json.dumps({'check': 'Qwen JSON validation retry', 'attempt': attempt + 1,
+                'schema_path': path, 'reason': reason,
+                'finish_reason': choice.get('finish_reason') if isinstance(choice, dict) else None,
+                'completion_tokens': result.get('usage', {}).get('completion_tokens'),
+                'seconds': round(time.monotonic() - started, 1)}), flush=True)
+            feedback = ('The previous response failed validation at schema path ' + path +
+                ' (' + str(reason) + '). Generate a fresh COMPLETE object. Keep every string concise. '
+                'Respect maxLength even for strings with a pattern; thumbnail questions must be at most 30 characters. '
+                'Do not repeat the invalid response or add commentary.')
             if attempt == 2:
                 raise StoryGenerationError('Qwen returned incomplete or invalid script JSON after three attempts') from None
             continue

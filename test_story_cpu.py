@@ -67,6 +67,19 @@ class QwenTests(unittest.TestCase):
             s.request_story('chat/completions', self.payload())
         self.assertEqual(model.create_chat_completion.call_count, 2)
 
+    def test_schema_retry_explains_failed_constraint_without_logging_content(self):
+        payload = self.payload()
+        payload['response_format']['json_schema']['schema']['properties'] = {
+            'ready': {'type': 'string', 'maxLength': 3}}
+        model = self.model(create_chat_completion=Mock(side_effect=[
+            self.result('{"ready":"private text too long"}'), self.result('{"ready":"yes"}')]))
+        with patch.object(s, 'load_model', return_value=model), patch('builtins.print') as output:
+            s.request_story('chat/completions', payload)
+        messages = model.create_chat_completion.call_args.kwargs['messages']
+        self.assertIn('maxLength', messages[-1]['content'])
+        self.assertIn('properties/ready/maxLength', str(output.call_args_list))
+        self.assertNotIn('private text', str(output.call_args_list))
+
     def test_context_overflow_stops_before_inference(self):
         model = self.model()
         model.tokenize.return_value = [1] * s.CONTEXT_TOKENS
@@ -161,7 +174,8 @@ class QwenTests(unittest.TestCase):
         import story_check
         words = 'Maya ' * 109 + 'waited.'
         result = {'choices': [{'message': {'content': json.dumps({'narrations': {'chapter_01': words}})}}]}
-        with patch('story_check.request_story', return_value=result) as generate:
+        hook = {'choices': [{'message': {'content': json.dumps({'thumbnail_text': 'WHY THIS MINARET?'})}}]}
+        with patch('story_check.request_story', side_effect=[result, hook]) as generate:
             self.assertEqual(story_check.check()['narration_words'], 110)
-        self.assertIn('pattern', generate.call_args.args[1]['response_format']['json_schema']['schema']
+        self.assertIn('pattern', generate.call_args_list[0].args[1]['response_format']['json_schema']['schema']
                       ['properties']['narrations']['properties']['chapter_01'])
