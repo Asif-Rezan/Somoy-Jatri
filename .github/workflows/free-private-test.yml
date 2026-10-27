@@ -22,8 +22,7 @@ jobs:
           node-version: '22'
       - name: Install free rendering models and tools (no Google credentials)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu-core espeak-ng
+          python system_dependencies.py ffmpeg fonts-dejavu-core espeak-ng
           pip install -r requirements.txt
           pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-cpu.txt
