@@ -24,8 +24,7 @@ jobs:
           python-version: '3.12'
       - name: Install upload dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          python system_dependencies.py ffmpeg
           pip install -r requirements.txt
       - name: Restore validated video and upload only to the intended channel
         env:

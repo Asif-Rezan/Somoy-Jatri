@@ -53,8 +53,7 @@ jobs:
           cache-dependency-path: 'requirements*.txt'
       - name: Check production settings before downloading generation models
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          python system_dependencies.py ffmpeg fonts-dejavu-core
           pip install -r requirements.txt
           python -m unittest -v
           node --test test_music_retry.cjs
@@ -78,8 +77,7 @@ jobs:
         run: python -u story_check.py
       - name: Install free narration and timing dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu-core espeak-ng
+          python system_dependencies.py ffmpeg fonts-dejavu-core espeak-ng
           pip install -r requirements.txt
           pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-cpu.txt
@@ -127,8 +125,7 @@ jobs:
           cache-dependency-path: 'requirements*.txt'
       - name: Install CPU illustration model dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          python system_dependencies.py ffmpeg
           pip install -r requirements.txt
           pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-cpu.txt
@@ -183,8 +180,7 @@ jobs:
           node-version: '22'
       - name: Install music, thumbnail and final rendering dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          python system_dependencies.py ffmpeg fonts-dejavu-core
           pip install -r requirements.txt
           pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-cpu.txt

@@ -21,8 +21,7 @@ jobs:
           python-version: '3.12'
       - name: Install strict decoding and Drive dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          python system_dependencies.py ffmpeg
           pip install -r requirements.txt
       - name: Read saved Drive assets and strictly decode the complete original MP4
         env:

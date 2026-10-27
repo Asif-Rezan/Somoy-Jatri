@@ -26,8 +26,7 @@ jobs:
           python-version: '3.12'
       - name: Install rendering dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu-core espeak-ng
+          python system_dependencies.py ffmpeg fonts-dejavu-core espeak-ng
           pip install -r requirements.txt -r requirements-story.txt
           pip install 'torch>=2.6,<3' --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-cpu.txt
