@@ -31,7 +31,7 @@ class Checks(unittest.TestCase):
                 self.assertEqual(pipeline.enable_attention_slicing.call_count, slicing == 'true')
                 self.assertEqual(pipeline.call_args.kwargs['num_inference_steps'], 16)
                 self.assertEqual(pipeline.call_args.kwargs['width'], 1024)
-                pipeline.enable_vae_slicing.assert_called_once()
+                pipeline.vae.enable_slicing.assert_called_once()
 
     def test_safety_blocked_image_uses_non_graphic_retry_without_disabling_checker(self):
         import sys

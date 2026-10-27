@@ -118,3 +118,19 @@ class ResilienceTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, 'unfinished shots'):
                     lv.generate_shard(0, root, count=1)
             self.assertEqual(generate.call_count, 3)
+
+    def test_quality_retry_does_not_reuse_clip_from_discarded_image(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'shot-000.png').write_bytes(b'old image')
+            (root/'shot-000.mp4').write_bytes(b'old clip')
+            shot = {'index': 0, 'seed': 42, 'prompt': 'An empty courtyard.', 'duration': 10}
+            def image(prompt, path):
+                path.write_bytes(b'new image')
+            def render(image, seconds, target):
+                target.write_bytes(b'new clip')
+            with patch('scene_check.check_scene', side_effect=[{'passed': False}, {'passed': True}]), \
+                 patch('workflow.make_image', side_effect=image), \
+                 patch('long_video.picture_clip', side_effect=render):
+                lv.generate_shot(shot, root, 0, 1)
+            self.assertEqual((root/'shot-000.mp4').read_bytes(), b'new clip')

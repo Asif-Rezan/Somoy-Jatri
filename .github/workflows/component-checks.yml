@@ -19,5 +19,33 @@ jobs:
       - run: |
           python system_dependencies.py ffmpeg fonts-dejavu-core
           pip install -r requirements.txt
-          CONTENT_TYPE=islamic-documentary python -m unittest -v
+          if CONTENT_TYPE=islamic-documentary python -m unittest -v > component-checks.log 2>&1; then
+            tail -n 5 component-checks.log
+          else
+            cat component-checks.log
+            exit 1
+          fi
       - run: node --test test_music_retry.cjs
+  system-setup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [primary, failover]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Exercise real system setup, subtitle encoding and speech dependency
+        env:
+          SETUP_MODE: ${{ matrix.mode }}
+        run: |
+          if [ "$SETUP_MODE" = failover ]; then
+            python -u system_setup_check.py --force-failover
+          else
+            python -u system_setup_check.py
+          fi

@@ -65,7 +65,7 @@ def generate(prompt, path):
         # https://huggingface.co/docs/diffusers/api/diffusion_pipeline
         if os.getenv('CPU_IMAGE_ATTENTION_SLICING', 'false').lower() == 'true':
             _pipeline.enable_attention_slicing()
-        _pipeline.enable_vae_slicing()
+        _pipeline.vae.enable_slicing()
     width = int(os.getenv('CPU_IMAGE_WIDTH', '1024'))
     height = int(os.getenv('CPU_IMAGE_HEIGHT', '576'))
     steps = int(os.getenv('CPU_IMAGE_STEPS', '16'))

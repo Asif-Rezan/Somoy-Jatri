@@ -426,6 +426,8 @@ def generate_shot(shot, root, shard, total):
                 'attempt': attempt+1, 'quality_warning': True}), flush=True)
             break
         image.unlink()
+        clip.unlink(missing_ok=True)
+        check.unlink(missing_ok=True)
         print(json.dumps({'shot': index, 'visual_check_passed': False, 'attempt': attempt+1}), flush=True)
     if not clip.exists():
         produce_file(clip, lambda candidate: picture_clip(image, shot['duration'], candidate), 'Shot rendering')
