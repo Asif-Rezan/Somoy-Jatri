@@ -413,7 +413,7 @@ def generate_shot(shot, root, shard, total):
             write_json(check, report)
             break
         if report['passed']:
-            check.write_text(json.dumps(report))
+            write_json(check, report)
             break
         # CLIP similarity is a heuristic, not a reliable hard failure gate.
         # Keep a real safety-approved image after the final attempt, recording
@@ -421,11 +421,13 @@ def generate_shot(shot, root, shard, total):
         if attempt == 2:
             report = dict(report, passed=False, advisory=True,
                           warning='CLIP scene match was inconclusive after three renders')
-            check.write_text(json.dumps(report))
+            write_json(check, report)
             print(json.dumps({'shot': index, 'visual_check_passed': False,
                 'attempt': attempt+1, 'quality_warning': True}), flush=True)
             break
         image.unlink()
+        clip.unlink(missing_ok=True)
+        check.unlink(missing_ok=True)
         print(json.dumps({'shot': index, 'visual_check_passed': False, 'attempt': attempt+1}), flush=True)
     if not clip.exists():
         produce_file(clip, lambda candidate: picture_clip(image, shot['duration'], candidate), 'Shot rendering')

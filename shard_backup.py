@@ -7,8 +7,6 @@ from pathlib import Path
 import re
 import sys
 import zipfile
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-import long_video as lv
 
 
 def key():
@@ -17,6 +15,8 @@ def key():
 
 
 def transfer(mode, shard, archive=Path('shard-backup.enc')):
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    import long_video as lv
     run = os.environ['SAVED_RUN_ID']
     if not re.fullmatch(r'daily-\d+', run) or not 0 <= shard < lv.SHARDS:
         raise ValueError('Explicit daily run and valid shard required')
@@ -50,5 +50,23 @@ def transfer(mode, shard, archive=Path('shard-backup.enc')):
         raise ValueError('Unknown backup operation')
 
 
+def main(argv=None):
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('mode', choices=['pack', 'unpack'])
+    parser.add_argument('shard', type=int, choices=range(20))
+    args = parser.parse_args(argv)
+    if not re.fullmatch(r'daily-\d+', os.getenv('SAVED_RUN_ID', '')):
+        parser.error('A daily run ID is required')
+    if args.mode == 'pack':
+        root = Path(os.getenv('OUTPUT_DIR', 'output/documentary-long-video'))
+        work = [*root.glob('shot-*.png'), *root.glob('shot-*.mp4'),
+                *(root/'.drive-upload-ids').glob('*.json')]
+        if not any(path.is_file() and path.stat().st_size for path in work):
+            print('No generated shard work to preserve; skipping encrypted backup.', flush=True)
+            return
+    transfer(args.mode, args.shard)
+
+
 if __name__ == '__main__':
-    transfer(sys.argv[1], int(sys.argv[2]))
+    main()

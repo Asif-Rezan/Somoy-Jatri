@@ -100,3 +100,25 @@ class ShardRecoveryTests(unittest.TestCase):
         for shard in (-1, 20):
             with self.assertRaises(ValueError):
                 lv.shard_names(shard, self.plan)
+
+    def test_setup_failure_backup_skips_without_any_third_party_libraries(self):
+        import subprocess
+        import sys
+        environment = dict(os.environ, OUTPUT_DIR=str(self.root/'empty'))
+        result = subprocess.run([sys.executable, '-S', str(Path(shard_backup.__file__).resolve()),
+                                 'pack', '9'], env=environment, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('No generated shard work', result.stdout)
+
+    def test_backup_skips_preparation_without_generated_assets(self):
+        with patch.dict(os.environ, {'OUTPUT_DIR': str(self.root)}), \
+             patch.object(shard_backup, 'transfer') as transfer:
+            shard_backup.main(['pack', '9'])
+        transfer.assert_not_called()
+
+    def test_backup_preserves_actual_work(self):
+        self.populate()
+        with patch.dict(os.environ, {'OUTPUT_DIR': str(self.root)}), \
+             patch.object(shard_backup, 'transfer') as transfer:
+            shard_backup.main(['pack', '9'])
+        transfer.assert_called_once_with('pack', 9)
