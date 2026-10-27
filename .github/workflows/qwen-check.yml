@@ -27,3 +27,5 @@ jobs:
       - run: pip install -r requirements.txt -r requirements-story.txt
       - name: Generate and validate fresh Qwen narration without API credentials
         run: python -u story_check.py
+      - name: Validate complete documentary packaging with the real CPU model
+        run: python -u story_check.py --packaging

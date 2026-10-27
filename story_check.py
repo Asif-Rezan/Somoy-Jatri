@@ -37,9 +37,27 @@ def check():
             'narration_words': len(parts[0].split())}
 
 
+def check_package():
+    """Exercise the complete previously failing stage using a public fixture."""
+    from video_packaging import request_package
+    story = json.loads(Path(__file__).with_name('sample-story.json').read_text())
+
+    def ask(prompt, limit, schema):
+        result = request_story('chat/completions', {'model': MODEL_ID,
+            'messages': [{'role': 'user', 'content': prompt}],
+            'response_format': {'type': 'json_schema', 'json_schema': {'schema': schema}},
+            'max_completion_tokens': limit, 'temperature': .8})
+        return json.loads(result['choices'][0]['message']['content'])
+
+    request_package(story, story['evidence'], ask)
+    return {'check': 'Qwen complete documentary packaging', 'passed': True,
+            'thumbnail_characters': len(story['thumbnail_text'])}
+
+
 if __name__ == '__main__':
     try:
-        print(json.dumps(check()), flush=True)
+        import sys
+        print(json.dumps(check_package() if '--packaging' in sys.argv else check()), flush=True)
     except (StoryGenerationError, ImportError) as error:
         reason = str(error) if isinstance(error, StoryGenerationError) else 'Install requirements-story.txt before running Qwen'
         print(json.dumps({'check': 'Qwen script generation readiness', 'passed': False, 'reason': reason}), flush=True)
