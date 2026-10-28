@@ -45,7 +45,7 @@ def recovery_prompt(prompt):
 MODEL = 'segmind/SSD-1B'
 REVISION = '60987f37e94cd59c36b1cba832b9f97b57395a10'
 _pipeline = None
-def generate(prompt, path):
+def generate(prompt, path, *, allow_text=False):
     global _pipeline
     import torch
     from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler
@@ -79,12 +79,14 @@ def generate(prompt, path):
     image = None
     initial_prompt = safer_prompt(prompt)
     rewritten = recovery_prompt(prompt)
+    negative = ('anime, cartoon, watercolor, flat colors, line art, cel shading, blurry, low detail, poor quality, 3D render, CGI, extra arms, extra legs, deformed hands, duplicate person, watermark, logo, ' +
+                ('' if allow_text else 'text, letters, ') + os.getenv('IMAGE_NEGATIVE_PROMPT', ''))
     for attempt in range(10):
         # Five seeds per composition; keep input sanitization and output checks.
         candidate = initial_prompt if attempt < 5 else rewritten
         if attempt == 5:
             print('Five safety rejections; switching to an environmental reconstruction.', flush=True)
-        result = pipeline(prompt=candidate, negative_prompt='anime, cartoon, watercolor, flat colors, line art, cel shading, blurry, low detail, poor quality, 3D render, CGI, extra arms, extra legs, deformed hands, duplicate person, text, letters, watermark, logo, ' + os.getenv('IMAGE_NEGATIVE_PROMPT', ''), width=width, height=height,
+        result = pipeline(prompt=candidate, negative_prompt=negative, width=width, height=height,
             num_inference_steps=steps, guidance_scale=9.0,
             generator=torch.Generator(device='cpu').manual_seed(seed + attempt * 10007))
         if any(getattr(result, 'nsfw_content_detected', None) or []):

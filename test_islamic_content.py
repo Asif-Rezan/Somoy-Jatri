@@ -123,3 +123,32 @@ class ContentTests(unittest.TestCase):
         self.assertIn('source',story['description'].lower())
         self.assertTrue(story['scenes'][-1]['narration'].endswith(c.CTA))
         c.validate_content(story)
+
+
+class TopicRotationTests(unittest.TestCase):
+    def test_recent_subjects_are_excluded_and_pillars_vary(self):
+        topics = c.catalog()
+        previous = [{'topic_id': topic['id']} for topic in topics[:3]]
+        chosen = c.select_topic(topics, previous, '2026-10-28')
+        self.assertNotIn(chosen['id'], {t['id'] for t in topics[:3]})
+        self.assertNotIn(chosen['content_pillar'], {t['content_pillar'] for t in topics[1:3]})
+
+    def test_exhaustion_uses_oldest_subject_instead_of_random_repeat(self):
+        topics = c.catalog()[:3]
+        previous = [{'topic_id': t['id']} for t in topics]
+        self.assertEqual(c.select_topic(topics, previous, '2026-10-28')['id'], topics[0]['id'])
+
+    def test_thumbnail_path_allows_text_and_scene_path_excludes_it(self):
+        import tempfile
+        def produce(path, create, label):
+            create(path)
+        with tempfile.TemporaryDirectory() as folder, patch('workflow.produce_file', side_effect=produce), patch('image_cpu.generate') as generate:
+            path = Path(folder)/'image.png'
+            w.make_image('A water tunnel', path, thumbnail_text='HOW DID WATER FLOW?')
+            prompt = generate.call_args.args[0]
+            self.assertIn('"HOW DID WATER FLOW?"', prompt)
+            self.assertNotIn('no text', prompt.lower())
+            self.assertTrue(generate.call_args.kwargs['allow_text'])
+            w.make_image('A water tunnel', path)
+            self.assertIn('No text', generate.call_args.args[0])
+            self.assertNotIn('allow_text', generate.call_args.kwargs)

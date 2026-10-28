@@ -115,3 +115,20 @@ def audit_narration(story, ask):
         raise SourceGroundingError(result.get('issues') or ['Review did not explicitly pass'])
     story['grounding_review'] = {'passed':True,'method':'same-model-evidence-review',
         'not_independent_scholarly_verification':True}
+
+
+def select_topic(topics, previous, day):
+    """Prefer least recently used subjects, then avoid the last two content pillars."""
+    import datetime
+    history = [item for item in previous if isinstance(item, dict)]
+    last_seen = {item.get('topic_id'): index for index, item in enumerate(history)}
+    recent = {item.get('topic_id') for item in history[-10:]}
+    available = [topic for topic in topics if topic['id'] not in recent]
+    if not available:
+        oldest = min(last_seen.get(topic['id'], -1) for topic in topics)
+        available = [topic for topic in topics if last_seen.get(topic['id'], -1) == oldest]
+    by_id = {topic['id']: topic for topic in topics}
+    pillars = {by_id.get(item.get('topic_id'), {}).get('content_pillar') for item in history[-2:]}
+    varied = [topic for topic in available if topic.get('content_pillar') not in pillars]
+    pool = varied or available
+    return pool[datetime.date.fromisoformat(day).toordinal() % len(pool)]

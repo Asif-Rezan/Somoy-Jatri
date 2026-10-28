@@ -18,7 +18,7 @@ SHARDS = 20
 ASSETS = ('story.json', 'plan.json', 'narration.wav', 'captions.srt', 'duration.json')
 from islamic_content import VISUAL_POLICY
 DOCUMENTARY_STYLE = ('Respectful Islamic history documentary illustration, realistic materials, '
-    'natural daylight, landscape composition, no typography. ' + VISUAL_POLICY)
+    'landscape composition, no typography. ' + VISUAL_POLICY)
 
 
 
@@ -99,6 +99,9 @@ Chapter text resolves context only. Do not invent a historical event or illustra
 Visual rules: {VISUAL_POLICY}
 Use architecture and objects to illustrate abstract hadith lessons; do not reenact prophetic speech.
 Every prompt must have 12-22 English words. One simple composition, no typography.
+Vary adjacent shots: macro material detail, overhead object study, interior, terrain, route and wide site view.
+Match each spoken clue to a distinct visible subject; avoid repeating gateways, books or courtyards.
+Use the topic visual_palette for subject ideas, not as permission to invent evidence.
 Evidence: {json.dumps(story.get('evidence', {}))}.
 Chapter context: {json.dumps(context)}
 Exact windows: {json.dumps([{'key': f"shot_{shot['index']:03}", 'spoken': shot['narration']} for shot in batch])}
@@ -357,7 +360,7 @@ def refine_visual_plan(root=ROOT):
         person = person or bool(protagonist and re.search(r'\b' + re.escape(protagonist) + r'\b', action, re.I))
         focus = 'group' if group else ('person' if person else 'object')
         framing = ('wide environmental view', 'medium view', 'low angle view',
-                   'over-the-shoulder view', 'close view of the narrated discovery')[shot['index'] % 5]
+                   'overhead object study', 'macro material detail')[shot['index'] % 5]
         shot['prompt'] = f'{action}. {framing}. {DOCUMENTARY_STYLE}'
         shot['focus'] = focus
         shot['negative_prompt'] = 'people, person, face, portrait, prophet, companion, angel, deity, sacred text, gore, nudity, text, watermark, repeated composition'
@@ -512,7 +515,8 @@ def finish(root=ROOT):
     story = json.loads((root/'story.json').read_text())
     os.environ['IMAGE_NEGATIVE_PROMPT'] = ''
     os.environ['IMAGE_SEED'] = '9931'
-    w.make_image(story['thumbnail_prompt'], root/'thumbnail-source.png')
+    w.make_image(story.get('evidence', {}).get('thumbnail_visual_story', story['thumbnail_prompt']),
+                 root/'thumbnail-source.png', thumbnail_text=story['thumbnail_text'])
     render_thumbnail(root/'thumbnail-source.png', story['thumbnail_text'], root/'thumbnail.jpg', story.get('category', 'Islamic'))
     scene_reports = [json.loads((root/f"shot-{s['index']:03}.qa.json").read_text()) for s in plan['shots']]
     advisory_shots = validate_scene_reports(plan, scene_reports)

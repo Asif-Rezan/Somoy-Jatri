@@ -174,9 +174,8 @@ def make_story(day, previous, checkpoint=None):
         return value
     from islamic_content import catalog, CONTENT_POLICY, VISUAL_POLICY, CTA
     topics = catalog()
-    recent_ids = {item.get('topic_id') for item in previous[-10:] if isinstance(item, dict)}
-    available = [topic for topic in topics if topic['id'] not in recent_ids] or topics
-    topic = available[dt.date.fromisoformat(day).toordinal() % len(available)]
+    from islamic_content import select_topic
+    topic = select_topic(topics, previous, day)
     theme = CONTENT_POLICY + ' Evidence packet: ' + json.dumps(topic)
     outline_schema = story_outline_schema(topic)
     recent_context = [{'title': str(item.get('title', ''))[:100],
@@ -185,7 +184,11 @@ def make_story(day, previous, checkpoint=None):
     outline = ask(f'''Plan an English Islamic documentary for Somoy Jatri for {day}.
     Direction: {theme}
     Avoid these recent titles and outlines: {json.dumps(recent_context)}.
-    Open with an accurate question, then develop context, evidence, meaning and limitations.
+    Open with the topic's investigation_question and a concrete surviving clue in the first chapter.
+    Build an investigation: question, competing interpretations only when sourced, evidence, answer and remaining limits.
+    Resolve the opening question before the closing chapter. Hidden means overlooked evidence, never invented conspiracies.
+    Alternate artifacts, material details, terrain, routes, interiors and site overviews relevant to each claim.
+    Avoid twenty variations of the same building or generic courtyard.
     Every chapter must contribute a distinct explanation supported by its claim_ids.
     Return title, empty protagonist_name, character_description describing objects only,
     scenes chapter_01 through chapter_20: summary (15-25 words), image_prompt (8-14 words),
@@ -349,15 +352,23 @@ Return exactly these chapter keys. Use plain ASCII punctuation and single spaces
     return validate_story(revised)
 
 
-def make_image(prompt, path):
+def make_image(prompt, path, *, thumbnail_text=None):
     from islamic_content import VISUAL_POLICY
-    prompt = ('Respectful Islamic history documentary illustration, natural daylight, landscape composition. '
-        + VISUAL_POLICY + ' ' + prompt)
+    if thumbnail_text is not None:
+        from video_packaging import thumbnail_generation_prompt
+        # Rebuild from the scene rather than trusting legacy no-text checkpoints.
+        prompt = thumbnail_generation_prompt(prompt, thumbnail_text)
+    else:
+        prompt += '. ' + VISUAL_POLICY + ' No text, no watermark.'
     if os.getenv('IMAGE_BACKEND', 'cpu') == 'cpu':
         from image_cpu import generate
-        produce_file(path, lambda candidate: generate(prompt + ', no text, no watermark', candidate), 'Image generation')
+        if thumbnail_text is None:
+            produce_file(path, lambda candidate: generate(prompt, candidate), 'Image generation')
+        else:
+            produce_file(path, lambda candidate: generate(prompt, candidate, allow_text=True), 'Thumbnail generation')
         return
     raise ValueError('IMAGE_BACKEND must be cpu; hosted image inference is disabled')
+
 
 
 def speech_chunks(text, limit=200):

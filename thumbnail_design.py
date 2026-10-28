@@ -1,6 +1,6 @@
-"""Readable 16:9 documentary story thumbnail layout."""
+"""Thumbnail hook validation and export of complete generated artwork."""
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont
 from itertools import combinations
 
 
@@ -31,35 +31,10 @@ def hook_layout(text):
 
 
 def render_thumbnail(source, text, target, category='Islamic'):
-    lines, size = hook_layout(text)
+    # Typography and composition are already part of the generated image.
+    # Only resize/encode for YouTube; never paint text over the artwork.
     with Image.open(source) as original:
-        image = ImageOps.fit(original.convert('RGB'), (1280, 720), method=Image.Resampling.LANCZOS)
-    # Build a photographic focal point from the generated artwork itself: one lit
-    # architectural or object detail on the right, with its surroundings falling into shadow.
-    image = ImageEnhance.Contrast(image).enhance(1.12)
-    dimmed = ImageEnhance.Brightness(image).enhance(0.85)
-    focus = Image.new('L', image.size, 0)
-    focus_draw = ImageDraw.Draw(focus)
-    focus_draw.ellipse((610, 80, 1290, 650), fill=210)
-    focus = focus.filter(ImageFilter.GaussianBlur(105))
-    image = Image.composite(image, dimmed, focus)
-    # Darken only the text side; preserve the main documentary subject on the right.
-    overlay = Image.new('RGBA', image.size, (0, 0, 0, 0))
-    stripe = ImageDraw.Draw(overlay)
-    for x in range(0, 650, 4):
-        opacity = round(225 * max(0, 1 - (x / 650) ** 1.9))
-        stripe.rectangle((x, 0, x+3, 720), fill=(4, 13, 20, opacity))
-    image = Image.alpha_composite(image.convert('RGBA'), overlay)
-    draw = ImageDraw.Draw(image)
-    cream, gold = (250, 247, 235, 255), (245, 193, 84, 255)
-    # The same layout was checked when the package was selected.
-    font = _font(size)
-    y = 310 if len(lines) == 1 else (260 if len(lines) == 2 else 210)
-    for index, line in enumerate(lines):
-        draw.text((61, y + index*(size+18)), line, font=font,
-                  fill=cream if index == 0 else gold, stroke_width=3,
-                  stroke_fill=(4, 13, 20, 255))
-    draw.rectangle((64, 625, 245, 633), fill=gold)
+        image = original.convert('RGB').resize((1280, 720), Image.Resampling.LANCZOS)
     output = Path(target)
     output.parent.mkdir(parents=True, exist_ok=True)
     image.convert('RGB').save(output, quality=89, optimize=True)

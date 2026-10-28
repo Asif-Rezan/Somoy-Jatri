@@ -38,8 +38,10 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(result['tags'][0], self.topic['search_phrase'])
         self.assertLessEqual(len(result['tags']), 12)
         self.assertNotIn('unrelated trending topic', result['tags'])
-        self.assertTrue(result['thumbnail_prompt'].startswith(self.topic['thumbnail_visual_story']))
-        self.assertLessEqual(len(result['thumbnail_prompt'].split()), 55)
+        self.assertIn(self.topic['thumbnail_visual_story'], result['thumbnail_prompt'])
+        self.assertIn('bold readable text', result['thumbnail_prompt'])
+        self.assertIn(result['thumbnail_text'], result['thumbnail_prompt'])
+        self.assertNotIn('no text', result['thumbnail_prompt'])
 
     def test_production_details_are_replaced_by_subject_facts(self):
         self.payload['description_intro'] += ' Narration made with Kokoro and Qwen.'
@@ -81,7 +83,7 @@ class PackagingTests(unittest.TestCase):
                 result = request_package(copy.deepcopy(self.story), self.topic, ask,
                     pause=lambda _: self.fail('Curated artwork should avoid retry'))
                 self.assertEqual(len(calls), 1)
-                self.assertTrue(result['thumbnail_prompt'].startswith(self.topic['thumbnail_visual_story']))
+                self.assertIn(self.topic['thumbnail_visual_story'], result['thumbnail_prompt'])
                 self.assertNotIn('generic desert', result['thumbnail_prompt'])
 
     def test_curated_artwork_still_rejects_forbidden_elements(self):
@@ -106,8 +108,9 @@ class PackagingTests(unittest.TestCase):
             render_thumbnail(source, 'HOW WAS IT BUILT?', target, 'Ancient Egypt and pyramids')
             with Image.open(target) as image:
                 self.assertEqual(image.size, (1280, 720))
-                self.assertLess(sum(image.getpixel((80, 590))), sum(image.getpixel((1200, 590))))
-                self.assertGreater(sum(image.getpixel((900, 360))), sum(image.getpixel((900, 20))))
+                # Export preserves the complete generated image without overlays.
+                for point in ((80, 590), (1200, 590), (900, 360)):
+                    self.assertLess(max(abs(a-b) for a,b in zip(image.getpixel(point), (194, 138, 69))), 4)
             self.assertLess(target.stat().st_size, 2*1024*1024)
 
     def test_long_valid_question_wraps_and_renders(self):

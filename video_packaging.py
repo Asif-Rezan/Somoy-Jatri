@@ -43,6 +43,15 @@ def artwork_candidate(prompt, topic):
     return curated if anchor.casefold() in curated.casefold() else f'{anchor}. {curated}'
 
 
+def thumbnail_generation_prompt(visual_story, text):
+    """Ask diffusion for the complete thumbnail, including its exact typography."""
+    return (f'YouTube thumbnail, bold readable text "{text}" on the left, '
+            f'{visual_story.strip().rstrip(".")}. '
+            'One large focal subject, dramatic plausible lighting, strong contrast, '
+            'uncluttered 16:9 composition. Exact English lettering, large bold type, '
+            'phone readable, safe margins. No additional words, logos or people.')
+
+
 def description_parts(payload, topic):
     """Repair mechanical description failures using only the curated topic facts."""
     keyword = topic['search_phrase']
@@ -113,12 +122,8 @@ def choose_package(story, topic, payload):
         score += 2 if len(hook_words) <= 4 else 0
         score += 1 if any(word in text.casefold() for word in topic['thumbnail_anchor'].casefold().split()) else 0
         visual_story = topic['thumbnail_visual_story'].strip().rstrip('.')
-        # Put the illustrative visual story first so diffusion's token limit preserves it.
-        # One concise composition, not several competing scene descriptions.
-        # Keep the anchor and its unresolved visual relationship ahead of style.
-        artwork_prompt = visual_story if prompt.rstrip('.') == visual_story else f'{visual_story}. {prompt}'
-        artwork_prompt = ' '.join(artwork_prompt.split()[:45])
-        artwork_prompt += '. Respectful documentary illustration, natural daylight, no people, no text.'
+        # Keep exact lettering and the curated visual anchor ahead of style instructions.
+        artwork_prompt = thumbnail_generation_prompt(visual_story, text)
         valid.append((score, {'title': title, 'thumbnail_text': text, 'thumbnail_prompt': artwork_prompt}))
     if not valid:
         raise ValueError('No accurate, readable YouTube title and thumbnail pair: ' + '; '.join(rejected))
@@ -186,7 +191,7 @@ Each title: 35-75 characters, put the exact search subject phrase in the first 5
 accurately describe the documented subject and its significance, use normal capitalization.
 Avoid generic "mystery revealed" wording, sensational certainty, false true-story claims and misleading clickbait.
 Prefer 2-4 words on the thumbnail. Use one large subject on the right, strong separation
-from an uncluttered background and empty dark space on the left. Warm stone, emerald and gold;
+from an uncluttered background and bold integrated typography on the left. Choose a palette suited to the subject;
 no collages, fake sacred text, arrows or invented dramatic events.
 Thumbnail text: a SPECIFIC unresolved question with a curiosity gap, 2-5 short words,
 maximum 30 characters, ending in ?. Use UPPERCASE words with single spaces.
@@ -208,7 +213,7 @@ Thumbnail prompt: 25-220 characters, include the exact visual-anchor phrase, and
 a specific scene composition that builds on the visual story. Make the historical artifact, architectural detail,
 landscape or object relationship the source of curiosity even with no words visible.
 Place the intriguing detail on the RIGHT and leave dark space on the LEFT for the question.
-Use dramatic but plausible light and depth. No embedded letters, labels, arrows, logos,
+Use dramatic but plausible light and depth. The image generator will render the exact thumbnail_text as integrated lettering. No extra labels, arrows, logos,
 graphic gore or sexual imagery.
 Description intro: 80-400 characters, put the exact subject phrase naturally in the FIRST sentence
 and introduce the sourced subject clearly. Description details: 80-800 characters, unique to this episode,

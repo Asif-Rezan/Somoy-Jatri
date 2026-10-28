@@ -3,7 +3,7 @@
     "id": "samarra",
     "kind": "history",
     "category": "Islamic history",
-    "title_angle": "What Samarra preserves of the Abbasid world",
+    "title_angle": "What can surviving ruins reveal about the Abbasid capital?",
     "search_phrase": "Abbasid Samarra",
     "thumbnail_anchor": "spiral minaret",
     "thumbnail_visual_story": "A surviving spiral minaret rises above unoccupied brick ruins on the right in warm daylight",
@@ -80,13 +80,20 @@
     "hadith": [],
     "uncertainties": [
       "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ],
+    "content_pillar": "lost-capitals",
+    "investigation_question": "What can surviving ruins reveal about the Abbasid capital?",
+    "visual_palette": [
+      "city plan",
+      "carved stucco",
+      "brick ruins"
     ]
   },
   {
     "id": "historic-cairo",
     "kind": "history",
     "category": "Islamic history",
-    "title_angle": "Reading the layers of Islamic Cairo",
+    "title_angle": "How do Cairo’s gates reveal the layers of its history?",
     "search_phrase": "Historic Cairo",
     "thumbnail_anchor": "stone gateway",
     "thumbnail_visual_story": "An unoccupied historic stone gateway frames a quiet courtyard on the right in clear daylight",
@@ -163,13 +170,20 @@
     "hadith": [],
     "uncertainties": [
       "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ],
+    "content_pillar": "urban-layers",
+    "investigation_question": "How do Cairo’s gates reveal the layers of its history?",
+    "visual_palette": [
+      "stone gates",
+      "fountain",
+      "street fabric"
     ]
   },
   {
     "id": "abbasid-baghdad",
     "kind": "history",
     "category": "Islamic history",
-    "title_angle": "Why Baghdad mattered to Abbasid culture",
+    "title_angle": "What survives of Baghdad’s circular City of Peace?",
     "search_phrase": "Abbasid Baghdad",
     "thumbnail_anchor": "brick archway",
     "thumbnail_visual_story": "An empty brick archway opens onto an illustrative riverside cityscape on the right in soft daylight",
@@ -246,13 +260,20 @@
     "hadith": [],
     "uncertainties": [
       "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ],
+    "content_pillar": "lost-capitals",
+    "investigation_question": "What survives of Baghdad’s circular City of Peace?",
+    "visual_palette": [
+      "circular city model",
+      "riverbank",
+      "surviving objects"
     ]
   },
   {
     "id": "intentions",
     "kind": "hadith",
     "category": "Hadith lessons",
-    "title_angle": "Understanding the teaching on intentions",
+    "title_angle": "Why can the same outward action have different purposes?",
     "search_phrase": "Hadith on intentions",
     "thumbnail_anchor": "closed book",
     "thumbnail_visual_story": "A closed book and a simple writing reed rest on a wooden desk on the right with calm natural light",
@@ -326,13 +347,20 @@
     ],
     "uncertainties": [
       "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ],
+    "content_pillar": "hadith-ethics",
+    "investigation_question": "Why can the same outward action have different purposes?",
+    "visual_palette": [
+      "travel belongings",
+      "writing reed",
+      "closed book"
     ]
   },
   {
     "id": "speech-and-neighbors",
     "kind": "hadith",
     "category": "Hadith lessons",
-    "title_angle": "Good speech and care for neighbors",
+    "title_angle": "How does one teaching connect speech, guests and neighbors?",
     "search_phrase": "Hadith on good speech",
     "thumbnail_anchor": "clay water jug",
     "thumbnail_visual_story": "A clay water jug and simple guest cups rest beside an empty doorway on the right in warm daylight",
@@ -412,13 +440,20 @@
     ],
     "uncertainties": [
       "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ],
+    "content_pillar": "hadith-ethics",
+    "investigation_question": "How does one teaching connect speech, guests and neighbors?",
+    "visual_palette": [
+      "guest cups",
+      "doorway",
+      "water jug"
     ]
   },
   {
     "id": "care-for-others",
     "kind": "hadith",
     "category": "Hadith lessons",
-    "title_angle": "Understanding concern for others",
+    "title_angle": "What does wishing good for others mean in this report?",
     "search_phrase": "Hadith on brotherhood",
     "thumbnail_anchor": "shared bread",
     "thumbnail_visual_story": "shared bread and two simple bowls sit on an empty wooden table on the right in gentle daylight",
@@ -492,6 +527,442 @@
     ],
     "uncertainties": [
       "Artistic backgrounds are illustrative; they are not records of a specific historical scene."
+    ],
+    "content_pillar": "hadith-ethics",
+    "investigation_question": "What does wishing good for others mean in this report?",
+    "visual_palette": [
+      "shared bowls",
+      "bread",
+      "table"
+    ]
+  },
+  {
+    "id": "persian-qanat",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "How did hidden water tunnels sustain desert settlements?",
+    "search_phrase": "Persian Qanat",
+    "content_pillar": "underground-engineering",
+    "investigation_question": "How did hidden water tunnels sustain desert settlements?",
+    "visual_palette": [
+      "tunnel channel",
+      "desert shafts",
+      "reservoir",
+      "irrigated garden",
+      "mill"
+    ],
+    "thumbnail_anchor": "water tunnel",
+    "thumbnail_visual_story": "An illuminated water tunnel carries a narrow stream beneath dry desert terrain on the right",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://whc.unesco.org/en/list/1506/"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://whc.unesco.org/en/list/1506/",
+        "title": "UNESCO: The Persian Qanat"
+      }
+    ],
+    "facts": [
+      "Qanats collect and carry water over long distances using gravity.",
+      "The listed property consists of eleven qanats in Iran.",
+      "The systems supported settlement and farming in dry regions.",
+      "Associated structures include reservoirs, mills, gardens and irrigation works.",
+      "The eleven listed qanats still carry water.",
+      "Traditional communal management helps maintain these systems."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Qanats collect and carry water over long distances using gravity.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "The listed property consists of eleven qanats in Iran.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "The systems supported settlement and farming in dry regions.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "Associated structures include reservoirs, mills, gardens and irrigation works.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "The eleven listed qanats still carry water.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "Traditional communal management helps maintain these systems.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Illustrative reconstructions are not photographs of historical events.",
+      "Do not infer secret chambers, conspiracies or undocumented technical details from these claims."
+    ]
+  },
+  {
+    "id": "oman-aflaj",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "How was scarce water shared using the sky?",
+    "search_phrase": "Oman Aflaj",
+    "content_pillar": "water-sharing",
+    "investigation_question": "How was scarce water shared using the sky?",
+    "visual_palette": [
+      "channel junction",
+      "oasis fields",
+      "watchtower",
+      "water source",
+      "sunlit channel"
+    ],
+    "thumbnail_anchor": "irrigation channel",
+    "thumbnail_visual_story": "A branching irrigation channel catches sharp sunlight beside an empty oasis garden on the right",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://whc.unesco.org/en/list/1207/"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://whc.unesco.org/en/list/1207/",
+        "title": "UNESCO: Aflaj Irrigation Systems of Oman"
+      }
+    ],
+    "facts": [
+      "Five aflaj systems form the listed property in Oman.",
+      "They represent thousands of systems still functioning in Oman.",
+      "Gravity carries water from underground sources or springs.",
+      "Water supports both farming and domestic needs.",
+      "Communal water sharing is guided by astronomical observations.",
+      "Watchtowers were built to defend water systems.",
+      "Declining groundwater levels threaten the aflaj."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Five aflaj systems form the listed property in Oman.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "They represent thousands of systems still functioning in Oman.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "Gravity carries water from underground sources or springs.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "Water supports both farming and domestic needs.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "Communal water sharing is guided by astronomical observations.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "Watchtowers were built to defend water systems.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c7",
+        "text": "Declining groundwater levels threaten the aflaj.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Illustrative reconstructions are not photographs of historical events.",
+      "Do not infer secret chambers, conspiracies or undocumented technical details from these claims."
+    ]
+  },
+  {
+    "id": "samarkand-observatory",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "What does an observatory reveal about Timurid Samarkand?",
+    "search_phrase": "Samarkand Observatory",
+    "content_pillar": "science-heritage",
+    "investigation_question": "What does an observatory reveal about Timurid Samarkand?",
+    "visual_palette": [
+      "observatory remains",
+      "urban model",
+      "tile detail",
+      "madrasa exterior",
+      "night sky"
+    ],
+    "thumbnail_anchor": "observatory remains",
+    "thumbnail_visual_story": "An illustrative view of observatory remains beneath a deep blue twilight sky dominates the right",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://whc.unesco.org/en/list/603/"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://whc.unesco.org/en/list/603/",
+        "title": "UNESCO: Samarkand – Crossroad of Cultures"
+      }
+    ],
+    "facts": [
+      "Samarkand developed at a meeting point of different cultures.",
+      "Its ancient settlement was known as Afrasiab.",
+      "The city was founded in the seventh century BCE.",
+      "Its most significant development occurred in the Timurid period.",
+      "That Timurid development spanned the fourteenth and fifteenth centuries.",
+      "Ulugh-Beg’s Observatory is among its major monuments.",
+      "The Registan includes a mosque and madrasas.",
+      "The Bibi-Khanum Mosque is another major monument."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Samarkand developed at a meeting point of different cultures.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "Its ancient settlement was known as Afrasiab.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "The city was founded in the seventh century BCE.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "Its most significant development occurred in the Timurid period.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "That Timurid development spanned the fourteenth and fifteenth centuries.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "Ulugh-Beg’s Observatory is among its major monuments.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c7",
+        "text": "The Registan includes a mosque and madrasas.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c8",
+        "text": "The Bibi-Khanum Mosque is another major monument.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Illustrative reconstructions are not photographs of historical events.",
+      "Do not infer secret chambers, conspiracies or undocumented technical details from these claims."
+    ]
+  },
+  {
+    "id": "sanaa-towers",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "What makes Sana’a’s old skyline unlike a modern city?",
+    "search_phrase": "Sanaa Tower Houses",
+    "content_pillar": "vertical-cities",
+    "investigation_question": "What makes Sana’a’s old skyline unlike a modern city?",
+    "visual_palette": [
+      "earthen wall texture",
+      "tower skyline",
+      "geometric window",
+      "mountain valley",
+      "empty street"
+    ],
+    "thumbnail_anchor": "tower houses",
+    "thumbnail_visual_story": "Tall earthen tower houses with pale geometric trim rise on the right against rugged mountains",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://whc.unesco.org/en/list/385/"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://whc.unesco.org/en/list/385/",
+        "title": "UNESCO: Old City of Sana'a"
+      }
+    ],
+    "facts": [
+      "Sana’a stands in a mountain valley at an altitude of 2,200 metres.",
+      "The city has been inhabited for more than 2,500 years.",
+      "It became an important centre for spreading Islam in the seventh and eighth centuries.",
+      "Its heritage includes mosques, hammams and houses.",
+      "Its many-storeyed tower houses are built of rammed earth.",
+      "The city preserves evidence of religious and political history."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Sana’a stands in a mountain valley at an altitude of 2,200 metres.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "The city has been inhabited for more than 2,500 years.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "It became an important centre for spreading Islam in the seventh and eighth centuries.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "Its heritage includes mosques, hammams and houses.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "Its many-storeyed tower houses are built of rammed earth.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "The city preserves evidence of religious and political history.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Illustrative reconstructions are not photographs of historical events.",
+      "Do not infer secret chambers, conspiracies or undocumented technical details from these claims."
+    ]
+  },
+  {
+    "id": "fez-medina",
+    "kind": "history",
+    "category": "Islamic history",
+    "title_angle": "How did Fez remain a cultural centre after losing capital status?",
+    "search_phrase": "Fez Medina",
+    "content_pillar": "living-heritage",
+    "investigation_question": "How did Fez remain a cultural centre after losing capital status?",
+    "visual_palette": [
+      "geometric tiles",
+      "fountain basin",
+      "madrasa detail",
+      "urban fabric",
+      "empty passage"
+    ],
+    "thumbnail_anchor": "carved fountain",
+    "thumbnail_visual_story": "A carved fountain with intricate geometric tilework fills the right foreground of an empty medina courtyard",
+    "thumbnail_forbidden_terms": [
+      "person",
+      "people",
+      "portrait",
+      "face",
+      "prophet",
+      "angel"
+    ],
+    "sources": [
+      "https://whc.unesco.org/en/list/170/"
+    ],
+    "source_records": [
+      {
+        "id": "s1",
+        "url": "https://whc.unesco.org/en/list/170/",
+        "title": "UNESCO: Medina of Fez"
+      }
+    ],
+    "facts": [
+      "Fez was founded in the ninth century.",
+      "It reached its height under the Marinids in the thirteenth and fourteenth centuries.",
+      "It replaced Marrakesh as the capital of the kingdom.",
+      "Its urban fabric includes madrasas, fondouks, residences, mosques and fountains.",
+      "Its principal monuments date from this period of growth.",
+      "Morocco’s political capital transferred to Rabat in 1912.",
+      "Fez retained its cultural and spiritual importance."
+    ],
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Fez was founded in the ninth century.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c2",
+        "text": "It reached its height under the Marinids in the thirteenth and fourteenth centuries.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c3",
+        "text": "It replaced Marrakesh as the capital of the kingdom.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c4",
+        "text": "Its urban fabric includes madrasas, fondouks, residences, mosques and fountains.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c5",
+        "text": "Its principal monuments date from this period of growth.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c6",
+        "text": "Morocco’s political capital transferred to Rabat in 1912.",
+        "source_id": "s1"
+      },
+      {
+        "id": "c7",
+        "text": "Fez retained its cultural and spiritual importance.",
+        "source_id": "s1"
+      }
+    ],
+    "hadith": [],
+    "uncertainties": [
+      "Illustrative reconstructions are not photographs of historical events.",
+      "Do not infer secret chambers, conspiracies or undocumented technical details from these claims."
     ]
   }
 ]

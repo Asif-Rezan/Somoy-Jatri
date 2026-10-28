@@ -12,7 +12,7 @@ and private Drive checkpoints with upload-only recovery and verified cleanup.
 
 ## Content
 
-`islamic_topics.json` starts with six source packets: Abbasid Samarra, Historic
+`islamic_topics.json` contains eleven source packets, including Persian qanats, Oman aflaj, Samarkand’s observatory, Sana’a tower houses and Fez, alongside Abbasid Samarra, Historic
 Cairo, Abbasid Baghdad, intentions, good speech and neighbors, and concern for
 others. History packets cite UNESCO or The Metropolitan Museum of Art. Hadith
 packets use specific Sahih al-Bukhari report references on Sunnah.com. Each chapter
@@ -96,3 +96,19 @@ The soft ambient arrangement uses a restrained low-register pentatonic melody an
 Daily generation validates the full test suite under production content settings before downloading models. A validated generated story is immediately checkpointed in the run’s private Drive state and reused on a retry of that run. Invalid checkpoints still fail validation; upload ambiguity still requires reconciliation to avoid duplicates.
 
 Outline chapters own independent schemas, including their claim references. Regression tests validate all topic-enriched schemas and every generated-stage schema, and Qwen readiness checks production outline schemas before loading the model. Invalid-schema errors identify the failing schema path instead of hiding the cause behind a generic exception type.
+
+
+Topic selection excludes the last ten subjects when possible, favors a different
+content pillar from the last two episodes, and falls back to the least recently
+used subject when the catalog is exhausted. Investigation questions drive the
+opening and payoff, with sourced clues and explicit limits instead of invented
+hidden chambers or conspiracies. Shot prompts alternate material details, objects,
+interiors, landscapes and site views; subjects lead the prompt before style rules.
+
+Thumbnails are generated as complete artwork with the exact short hook included
+in the image prompt. The thumbnail path permits generated lettering; ordinary
+video images still exclude text. Export only resizes and compresses the generated
+image, without adding text, gradients or branding afterward. SSD-1B remains the
+free CPU default and does not guarantee correct spelling or high CTR. Review real
+outputs for lettering quality; SEO metadata is subject-specific, not a guarantee
+of search traffic. Existing checkpointed scripts keep their topic until a fresh run.
