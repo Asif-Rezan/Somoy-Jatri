@@ -45,11 +45,13 @@ def artwork_candidate(prompt, topic):
 
 def thumbnail_generation_prompt(visual_story, text):
     """Ask diffusion for the complete thumbnail, including its exact typography."""
-    return (f'YouTube thumbnail, bold readable text "{text}" on the left, '
+    return (f'Bright colorful YouTube thumbnail, bold readable text "{text}" with a dark outline on the left, '
+            'vivid turquoise and warm gold accents, bright even illumination, rich natural colors, '
             f'{visual_story.strip().rstrip(".")}. '
-            'One large focal subject, dramatic plausible lighting, strong contrast, '
+            'One large well-lit focal subject, clear shadow detail, strong color contrast, '
             'uncluttered 16:9 composition. Exact English lettering, large bold type, '
-            'phone readable, safe margins. No additional words, logos or people.')
+            'phone readable, safe margins. No dim lighting, heavy vignette, muddy colors, '
+            'additional words, logos or people.')
 
 
 def description_parts(payload, topic):
@@ -114,8 +116,15 @@ def choose_package(story, topic, payload):
             rejected.append(f'{name}: artwork prompt contains a forbidden visual element, even if phrased as a negative instruction')
             continue
         if text.casefold() in title.casefold():
-            rejected.append(f'{name}: thumbnail question repeats the title')
-            continue
+            # Local decoding can keep copying the hook into every title even
+            # after feedback. Repair only this presentation conflict, after
+            # all content/visual checks, without inventing a new claim or hook.
+            title = f'{keyword}: Sources, Context and Meaning'
+            if (not 35 <= len(title) <= 75
+                    or keyword.casefold() not in title[:52].casefold()
+                    or CLICKBAIT.search(title) or text.casefold() in title.casefold()):
+                rejected.append(f'{name}: thumbnail question repeats the title and curated title cannot satisfy constraints')
+                continue
         score = 5 if title.casefold().startswith(keyword.casefold()) else 0
         score += 2 if 45 <= len(title) <= 65 else 0
         score += 1 if '?' in title else 0
@@ -191,7 +200,8 @@ Each title: 35-75 characters, put the exact search subject phrase in the first 5
 accurately describe the documented subject and its significance, use normal capitalization.
 Avoid generic "mystery revealed" wording, sensational certainty, false true-story claims and misleading clickbait.
 Prefer 2-4 words on the thumbnail. Use one large subject on the right, strong separation
-from an uncluttered background and bold integrated typography on the left. Choose a palette suited to the subject;
+from a bright uncluttered background and bold integrated typography on the left.
+Use vivid natural colors with turquoise and warm gold accents suited to the subject;
 no collages, fake sacred text, arrows or invented dramatic events.
 Thumbnail text: a SPECIFIC unresolved question with a curiosity gap, 2-5 short words,
 maximum 30 characters, ending in ?. Use UPPERCASE words with single spaces.
@@ -203,6 +213,8 @@ specific unanswered question about a visible detail, documented change or histor
 Reveal enough context to make the question meaningful, but leave its answer for the video.
 The script must actually answer it; never imply suppressed evidence or secret religious knowledge.
 Complement the title without repeating its phrasing. It must be legible on a phone.
+Never copy the thumbnail question into its title. Keep the title declarative and
+use the thumbnail alone for the complementary question.
 Do not include SOMOY JATRI, channel names, logos or branding anywhere in the thumbnail.
 Use the entire text area for the curiosity hook.
 Thumbnail's illustrative visual anchor: {topic['thumbnail_anchor']}.
@@ -212,8 +224,10 @@ Omit forbidden words entirely, including negative phrases such as "no gore"; the
 Thumbnail prompt: 25-220 characters, include the exact visual-anchor phrase, and add
 a specific scene composition that builds on the visual story. Make the historical artifact, architectural detail,
 landscape or object relationship the source of curiosity even with no words visible.
-Place the intriguing detail on the RIGHT and leave dark space on the LEFT for the question.
-Use dramatic but plausible light and depth. The image generator will render the exact thumbnail_text as integrated lettering. No extra labels, arrows, logos,
+Place the well-lit intriguing detail on the RIGHT and leave bright uncluttered space on the LEFT for the question.
+Use bright even illumination, clear shadow detail and strong color contrast. Keep the whole image
+bright and colorful, without dim lighting, heavy vignettes or muddy colors. Give the lettering a dark outline
+for readability rather than darkening the background. The image generator will render the exact thumbnail_text as integrated lettering. No extra labels, arrows, logos,
 graphic gore or sexual imagery.
 Description intro: 80-400 characters, put the exact subject phrase naturally in the FIRST sentence
 and introduce the sourced subject clearly. Description details: 80-800 characters, unique to this episode,
