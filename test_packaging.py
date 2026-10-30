@@ -227,6 +227,51 @@ class PackagingTests(unittest.TestCase):
         request_package(self.story, self.topic, ask, pause=lambda _: self.fail('Unnecessary pause'))
         self.assertEqual(len(calls), 1)
 
+    def test_all_repeated_hooks_recover_without_retry_or_story_changes(self):
+        payload = copy.deepcopy(self.payload)
+        for key in ('option_a', 'option_b', 'option_c'):
+            payload[key] = copy.deepcopy(payload['option_a'])
+            payload[key]['title'] = 'Great Pyramid of Giza: HOW WAS IT BUILT?'
+        original = copy.deepcopy(payload)
+        scenes = copy.deepcopy(self.story['scenes'])
+        calls = []
+        def ask(*args):
+            calls.append(args)
+            return payload
+        result = request_package(self.story, self.topic, ask,
+                                 pause=lambda _: self.fail('Repeated hooks must not require regeneration'))
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(result['title'], 'Great Pyramid of Giza: Sources, Context and Meaning')
+        self.assertEqual(result['thumbnail_text'], 'HOW WAS IT BUILT?')
+        self.assertEqual(result['scenes'], scenes)
+        self.assertEqual(payload, original)
+
+    def test_repeat_repair_does_not_bypass_clickbait_or_visual_checks(self):
+        for bad_field, bad_value, reason in (
+                ('title', 'Great Pyramid of Giza: Shocking HOW WAS IT BUILT?', 'clickbait'),
+                ('thumbnail_prompt', 'Limestone blocks beside a pyramid with dramatic lighting.', 'forbidden visual')):
+            with self.subTest(field=bad_field):
+                payload = copy.deepcopy(self.payload)
+                for key in ('option_a', 'option_b', 'option_c'):
+                    payload[key] = copy.deepcopy(payload['option_a'])
+                    payload[key]['title'] = 'Great Pyramid of Giza: HOW WAS IT BUILT?'
+                    payload[key][bad_field] = bad_value
+                with self.assertRaisesRegex(ValueError, reason):
+                    choose_package(self.story, self.topic, payload)
+
+    def test_repeat_repair_covers_every_curated_subject(self):
+        import json
+        for topic in json.loads(Path('islamic_topics.json').read_text()):
+            with self.subTest(topic=topic['id']):
+                payload = copy.deepcopy(self.payload)
+                for key in ('option_a', 'option_b', 'option_c'):
+                    payload[key] = {'title': 'Exploring ' + topic['search_phrase'] + ': WHY THIS DETAIL?',
+                                    'thumbnail_text': 'WHY THIS DETAIL?', 'thumbnail_prompt': ''}
+                result = choose_package(copy.deepcopy(self.story), topic, payload)
+                self.assertTrue(35 <= len(result['title']) <= 75)
+                self.assertIn(topic['search_phrase'], result['title'][:52])
+                self.assertNotIn(result['thumbnail_text'].casefold(), result['title'].casefold())
+
 
 if __name__ == '__main__':
     unittest.main()

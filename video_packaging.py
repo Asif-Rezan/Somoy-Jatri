@@ -114,8 +114,15 @@ def choose_package(story, topic, payload):
             rejected.append(f'{name}: artwork prompt contains a forbidden visual element, even if phrased as a negative instruction')
             continue
         if text.casefold() in title.casefold():
-            rejected.append(f'{name}: thumbnail question repeats the title')
-            continue
+            # Local decoding can keep copying the hook into every title even
+            # after feedback. Repair only this presentation conflict, after
+            # all content/visual checks, without inventing a new claim or hook.
+            title = f'{keyword}: Sources, Context and Meaning'
+            if (not 35 <= len(title) <= 75
+                    or keyword.casefold() not in title[:52].casefold()
+                    or CLICKBAIT.search(title) or text.casefold() in title.casefold()):
+                rejected.append(f'{name}: thumbnail question repeats the title and curated title cannot satisfy constraints')
+                continue
         score = 5 if title.casefold().startswith(keyword.casefold()) else 0
         score += 2 if 45 <= len(title) <= 65 else 0
         score += 1 if '?' in title else 0
@@ -203,6 +210,8 @@ specific unanswered question about a visible detail, documented change or histor
 Reveal enough context to make the question meaningful, but leave its answer for the video.
 The script must actually answer it; never imply suppressed evidence or secret religious knowledge.
 Complement the title without repeating its phrasing. It must be legible on a phone.
+Never copy the thumbnail question into its title. Keep the title declarative and
+use the thumbnail alone for the complementary question.
 Do not include SOMOY JATRI, channel names, logos or branding anywhere in the thumbnail.
 Use the entire text area for the curiosity hook.
 Thumbnail's illustrative visual anchor: {topic['thumbnail_anchor']}.
