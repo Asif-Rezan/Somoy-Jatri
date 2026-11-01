@@ -95,6 +95,19 @@ The soft ambient arrangement uses a restrained low-register pentatonic melody an
 
 Daily generation validates the full test suite under production content settings before downloading models. A validated generated story is immediately checkpointed in the run’s private Drive state and reused on a retry of that run. Invalid checkpoints still fail validation; upload ambiguity still requires reconciliation to avoid duplicates.
 
+Run `41135792871` finished writing its narration but failed because all three
+packaging titles missed the exact subject/length rules. Its third repair reused
+a cached invalid response. Title schemas now require the exact subject prefix
+and enforce the 35–75-character budget inside the decoding pattern itself.
+Mechanical title failures can recover from the curated topic question (or a
+neutral subject-and-context title) without rewriting any narration. Sensational
+titles, invalid hooks, forbidden visuals and unsafe descriptions still undergo
+the existing rejection checks. Repair attempts carry distinct identifiers so
+an unchanged failed response cannot be replayed from the same cache key.
+Regression coverage checks every catalog topic, preserved narration, bounded
+retries and cached invalid metadata. A later run `41242672827` already completed
+successfully; this fix is for subsequent runs and does not trigger another upload.
+
 Outline chapters own independent schemas, including their claim references. Regression tests validate all topic-enriched schemas and every generated-stage schema, and Qwen readiness checks production outline schemas before loading the model. Invalid-schema errors identify the failing schema path instead of hiding the cause behind a generic exception type.
 
 

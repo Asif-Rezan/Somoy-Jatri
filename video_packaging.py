@@ -1,5 +1,6 @@
 """Story-aware YouTube packaging for sourced Islamic documentary."""
 import json
+import copy
 import re
 import time
 from thumbnail_design import hook_layout
@@ -23,6 +24,45 @@ def hook_pattern():
 
 
 HOOK_SCHEMA = {'type': 'string', 'maxLength': 30, 'pattern': hook_pattern()}
+
+
+def title_schema(keyword):
+    """Put subject placement AND length into the decoder's actual pattern."""
+    prefix=keyword+': '
+    if not keyword.strip() or len(prefix)>52:
+        raise ValueError('Curated search subject cannot fit the title prefix')
+    lower=max(1,35-len(prefix))
+    upper=75-len(prefix)
+    return {'type':'string','minLength':35,'maxLength':75,
+            'pattern':'^'+re.escape(prefix).replace(r'\ ',' ')+r'[^\n]{'+str(lower)+','+str(upper)+'}$'}
+
+
+def repair_title_format(payload, topic):
+    """Replace mechanical title failures from curated facts, never unsafe claims."""
+    result=copy.deepcopy(payload)
+    keyword=topic['search_phrase']
+    prefix=keyword+': '
+    title_schema(keyword)
+    angle=_plain(topic.get('title_angle',''))
+    fallback=prefix+angle
+    if not 35<=len(fallback)<=75 or CLICKBAIT.search(fallback):
+        suffix=('Meaning and context of the teaching' if topic.get('kind')=='hadith'
+                else 'Evidence and historical context')
+        fallback=prefix+suffix
+    if not 35<=len(fallback)<=75 or CLICKBAIT.search(fallback):
+        raise ValueError('Curated title cannot fit the metadata constraints')
+    repaired=0
+    for key in ('option_a','option_b','option_c'):
+        option=result.get(key,{})
+        title=_plain(option.get('title',''))
+        if CLICKBAIT.search(title):
+            continue  # Do not hide unsafe metadata behind a formatting repair.
+        if not 35<=len(title)<=75 or keyword.casefold() not in title[:52].casefold():
+            option['title']=fallback
+            repaired+=1
+    if repaired:
+        print(json.dumps({'check':'Curated package title recovery','repaired_options':repaired}),flush=True)
+    return result
 
 
 
@@ -164,7 +204,7 @@ def request_package(story, topic, ask, pause=None):
     pause = pause or time.sleep
     text = {'type': 'string', 'maxLength': 220}
     option = {'type': 'object', 'properties': {
-              'title': {'type': 'string', 'minLength': 35, 'maxLength': 75},
+              'title': title_schema(topic['search_phrase']),
               'thumbnail_text': HOOK_SCHEMA, 'thumbnail_prompt': text},
               'required': ['title', 'thumbnail_text', 'thumbnail_prompt'], 'additionalProperties': False}
     schema = {'type': 'object', 'properties': {
@@ -187,7 +227,7 @@ Existing title: {story['title']}
 Return three DISTINCT title-thumbnail pairs (option_a, option_b, option_c).
 Make the three angles distinct: historical significance, a concrete question, and a clear learning benefit.
 Prefer concise titles of 45-65 characters; avoid branding or repeated keywords.
-Each title: 35-75 characters, put the exact search subject phrase in the first 52 characters,
+Each title: 35-75 characters, start with the exact prefix "{topic['search_phrase']}: ",
 accurately describe the documented subject and its significance, use normal capitalization.
 Avoid generic "mystery revealed" wording, sensational certainty, false true-story claims and misleading clickbait.
 Prefer 2-4 words on the thumbnail. Use one large subject on the right, strong separation
@@ -226,9 +266,12 @@ no unrelated trend tags, hashtags, or keyword stuffing. Return only the requeste
     for attempt in range(3):
         if attempt:
             pause(1)  # Local CPU inference has no hosted-provider rate limit.
-        result = ask(prompt + feedback, 2600, schema)
+        # Distinct prompts prevent a semantically rejected cached response from
+        # being replayed forever when the model returns the same bad metadata.
+        retry_marker=f'\nMetadata repair attempt {attempt+1} of 3.' if attempt else ''
+        result = ask(prompt + feedback + retry_marker, 2600, schema)
         try:
-            return choose_package(story, topic, result)
+            return choose_package(story, topic, repair_title_format(result,topic))
         except ValueError as error:
             print(json.dumps({'check': 'Islamic packaging', 'attempt': attempt+1,
                               'passed': False, 'reason': str(error)}), flush=True)
