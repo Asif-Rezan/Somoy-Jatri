@@ -1,0 +1,25 @@
+name: Inspect Somoy Jatri Drive storage
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: youtube-daily-somoy-jatri
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: Inspect dedicated storage and report quota
+        env:
+          DRIVE_TOKEN_JSON: ${{ secrets.DRIVE_TOKEN_JSON }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+        run: python -u drive_storage.py
