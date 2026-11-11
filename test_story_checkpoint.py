@@ -47,7 +47,7 @@ class StoryCheckpointTests(unittest.TestCase):
             self.assertTrue(store.save.call_args.args[0].endswith('/staged-story.json'))
             self.assertEqual(store.save.call_args.args[1], story)
 
-    def test_packaging_failure_resumes_generated_chapters_from_private_cache(self):
+    def test_source_repair_and_packaging_retry_reuse_private_checkpoints(self):
         import workflow as w
         import islamic_content as c
         from unittest.mock import Mock
@@ -66,10 +66,20 @@ class StoryCheckpointTests(unittest.TestCase):
                     key: scene[key] for key in ('summary', 'image_prompt', 'claim_ids')}
                     for i, scene in enumerate(story['scenes'], 1)}
             elif 'narrations' in properties:
-                text = ' '.join(['Evidence'] * 109) + ' remains.'
+                prompt = payload['messages'][0]['content']
+                word = 'Corrected' if 'Rejected narration to revise' in prompt else 'Evidence'
+                if word == 'Corrected':
+                    self.assertIn('Chapter 1: unsupported detail', prompt)
+                    self.assertEqual(list(properties['narrations']['properties']),
+                                     [f'chapter_{i:02}' for i in range(1, 6)])
+                text = ' '.join([word] * 109) + ' remains.'
                 value = {'narrations': {key: text for key in properties['narrations']['properties']}}
             else:
-                value = {'passed': True, 'issues': []}
+                prompt = payload['messages'][0]['content']
+                if '"chapter": 1,' in prompt and 'Corrected' not in prompt:
+                    value = {'passed': False, 'issues': ['Chapter 1: unsupported detail']}
+                else:
+                    value = {'passed': True, 'issues': []}
             return {'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(value)}}]}
 
         def package(outline, topic, ask):
@@ -81,11 +91,13 @@ class StoryCheckpointTests(unittest.TestCase):
              patch('video_packaging.request_package', side_effect=RuntimeError('packaging failed')):
             with self.assertRaisesRegex(RuntimeError, 'packaging failed'):
                 w.make_story('2026-10-27', [], checkpoint=cache)
-            self.assertEqual(generate.call_count, 6)
+            self.assertEqual(generate.call_count, 11)
         with patch('islamic_content.catalog', return_value=[topic]), \
              patch.object(w, 'request_story', side_effect=AssertionError('Must resume')) as generate, \
              patch('video_packaging.request_package', side_effect=package):
             result = w.make_story('2026-10-27', [], checkpoint=cache)
             self.assertEqual(len(result['scenes']), 20)
+            self.assertTrue(result['scenes'][0]['narration'].startswith('Corrected'))
+            self.assertTrue(result['scenes'][5]['narration'].startswith('Evidence'))
             self.assertTrue(result['grounding_review']['passed'])
             generate.assert_not_called()

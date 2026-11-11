@@ -98,19 +98,25 @@ class SourceGroundingError(ValueError):
                          + json.dumps(issues, ensure_ascii=True))
 
 
-def audit_narration(story, ask):
+def audit_narration(story, ask, *, first_chapter=1):
     story.pop('grounding_review', None)
     schema = {'type':'object','properties':{'passed':{'type':'boolean'},
         'issues':{'type':'array','items':{'type':'string'}}},'required':['passed','issues'],'additionalProperties':False}
-    result = ask('Check every sentence of this English Islamic documentary against ONLY its supplied evidence. '
+    evidence = story['evidence']
+    claims = {claim['id']: claim for claim in evidence['claims']}
+    chapters = [
+        {'chapter': number, 'narration': scene['narration'].removesuffix(CTA),
+         'claims': [claims[claim_id] for claim_id in scene['claim_ids']]}
+        for number, scene in enumerate(story['scenes'], first_chapter)
+    ]
+    result = ask('Check every sentence of this English Islamic documentary against ONLY the claims assigned to its chapter. '
         'Reject invented historical or religious assertions, quotations, narrator chains, authenticity grades, '
         'unlabelled hypothetical examples, certainty beyond the sources, and fatwas. '
         'Reflections are allowed only when explicitly distinguished from a reported teaching. '
         'Identify the chapter number and specific unsupported assertion in each issue. '
-        'The closing viewer question and like/comment/subscribe request are channel engagement, not historical claims. '
         'Return passed=true only when all narration is supported or clearly labelled reflection. '
-        + json.dumps({'evidence':story['evidence'],'chapters':[
-            {'narration':s['narration'],'claim_ids':s['claim_ids']} for s in story['scenes']]}),1600,schema)
+        + json.dumps({'chapters': chapters, 'sources': evidence.get('source_records', []),
+                      'hadith_references': evidence.get('hadith', [])}), 1600, schema)
     if result.get('passed') is not True or result.get('issues'):
         raise SourceGroundingError(result.get('issues') or ['Review did not explicitly pass'])
     story['grounding_review'] = {'passed':True,'method':'same-model-evidence-review',

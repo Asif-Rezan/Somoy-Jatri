@@ -172,7 +172,7 @@ def make_story(day, previous, checkpoint=None):
         if checkpoint is not None:
             checkpoint.save(key, value)
         return value
-    from islamic_content import catalog, CONTENT_POLICY, VISUAL_POLICY, CTA
+    from islamic_content import catalog, CONTENT_POLICY, VISUAL_POLICY, CTA, SourceGroundingError, audit_narration
     topics = catalog()
     from islamic_content import select_topic
     topic = select_topic(topics, previous, day)
@@ -210,26 +210,52 @@ def make_story(day, previous, checkpoint=None):
     chapter_target = int(os.getenv('STORY_CHAPTER_WORD_TARGET', '110'))
     if not 95 <= chapter_target <= 125:
         raise ValueError('STORY_CHAPTER_WORD_TARGET must be between 95 and 125')
+    claims = {claim['id']: claim for claim in topic['claims']}
     prior = ''
     for begin in (0, 5, 10, 15):
         keys = chapter_keys[begin:begin+5]
+        scenes = outline['scenes'][begin:begin+5]
+        assigned = {
+            key: {'outline_direction': scene['summary'],
+                  'claims': [claims[claim_id] for claim_id in scene['claim_ids']]}
+            for key, scene in zip(keys, scenes)
+        }
         prompt = f'''Write chapters {begin+1} through {begin+5} of this English Islamic documentary.
-        Content rules and evidence: {theme}
+        Content rules: {CONTENT_POLICY}
         Title: {outline['title']}.
-        Assigned chapters ONLY: {json.dumps(outline['scenes'][begin:begin+5])}.
-        Previous ending: {prior[-700:]}.
+        Assigned chapters: {json.dumps(assigned)}.
+        Source records: {json.dumps(topic.get('source_records', []))}.
+        Hadith references: {json.dumps(topic.get('hadith', []))}.
+        Previous ending for transitions only: {prior[-500:]}.
+        Use each chapter's assigned claims as its only factual evidence. Outline directions, images and prior
+        narration are not sources. Do not infer motives, architectural details, activities or causation.
+        Attribute the evidence and explain what the record establishes. Label any reflection explicitly.
         Return narrations with exact chapter keys {keys}. Target {chapter_target} words per chapter.
-        Develop clear explanations, context and limits, not invented events or repeated filler.
         Use indirect speech, no quotation marks and no spoken stage directions.
         For hadith identify the supplied collection and report number and clearly say its meaning is paraphrased.
         Do not add a call to action. The application adds it after the last chapter.'''
-        parts = narration_batch(prompt, keys, chapter_target, ask)
-        for scene, narration in zip(outline['scenes'][begin:begin+5], parts):
+        feedback = ''
+        for attempt in range(1, 4):
+            parts = narration_batch(prompt + feedback, keys, chapter_target, ask)
+            review = {'evidence': topic, 'scenes': [
+                dict(scene, narration=narration) for scene, narration in zip(scenes, parts)]}
+            try:
+                audit_narration(review, ask, first_chapter=begin+1)
+            except SourceGroundingError as error:
+                if attempt == 3:
+                    raise
+                print(json.dumps({'check': 'Narration batch source review', 'first_chapter': begin+1,
+                                  'attempt': attempt, 'passed': False}), flush=True)
+                feedback = ('\nRemove or explicitly correct these unsupported statements. '
+                            'The review feedback is not evidence: ' + json.dumps(error.issues)
+                            + '\nRejected narration to revise: ' + json.dumps(dict(zip(keys, parts))))
+            else:
+                break
+        for scene, narration in zip(scenes, parts):
             scene['narration'] = narration
         prior = parts[-1]
     outline['scenes'][-1]['narration'] += CTA
-    from islamic_content import audit_narration
-    audit_narration(outline, ask)
+    outline['grounding_review'] = review['grounding_review']
     from video_packaging import request_package
     request_package(outline, topic, ask)
     from long_video import validate_engagement
