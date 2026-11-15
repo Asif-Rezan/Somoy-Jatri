@@ -1,5 +1,6 @@
 """Render and verify a 30-second animated history preview."""
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -18,13 +19,32 @@ SECONDS = 30
 
 SCENES = (
     ('rome-settlement.jpg',
+     'Unoccupied early Iron Age settlement in central Italy, round thatched huts, wood fences, grassy hills, wide dirt path across the foreground.',
      'Rome began among small settlements in central Italy. Early communities lived in simple huts before Rome grew into a city.'),
     ('rome-plaza.jpg',
+     'Unoccupied imperial Rome plaza, Colosseum on the left, Roman temples and terracotta roofs, wide flat stone pavement across the foreground.',
      'The Roman Republic expanded around the Mediterranean. Under Augustus, Rome entered its imperial age, and monumental buildings reshaped the city.'),
     ('rome-harbor.jpg',
+     'Unoccupied late antique Constantinople harbor, wooden sailing ships, fortified shoreline and rooftops, wide stone quay across the foreground.',
      'Power shifted east to Constantinople. The last emperor in Italy was deposed in four seventy-six, and the Eastern Roman Empire continued.'),
 )
 SCENE_SECONDS = SECONDS // len(SCENES)
+
+
+def generate_backgrounds(scenes, output):
+    from image_cpu import generate
+
+    paths = []
+    for index, (_, setting, narration) in enumerate(scenes, 1):
+        prompt = (f'{setting} Eye-level wide shot, fine ink and warm watercolor. '
+                  'Open ground across the lower third, no people, no lettering.')
+        digest = hashlib.sha256(f'{index}:{setting}:{narration}'.encode()).digest()
+        seed = int.from_bytes(digest[:4], 'big')
+        image = output / f'scene-{index:02}.png'
+        print(f'Generating background {index}/{len(scenes)}: {setting}', flush=True)
+        generate(prompt, image, seed=seed, illustrated=True)
+        paths.append(image)
+    return paths
 
 
 def actor(draw, x, ground, *, scale, facing=0, female=False, phase=None, wave=None,
@@ -76,12 +96,14 @@ def verify(video):
         raise RuntimeError('Preview is missing the narration track')
 
 
-def render(output, narration=ASSETS / 'rome-narration.wav'):
+def render(output, narration=ASSETS / 'rome-narration.wav', *, ai_backgrounds=False):
     output.mkdir(parents=True, exist_ok=True)
     source = ASSETS / 'rome.jpg'
+    backgrounds = (generate_backgrounds(SCENES, output / 'backgrounds') if ai_backgrounds
+                   else [ASSETS / filename for filename, _, _ in SCENES])
     views = []
-    for filename, _ in SCENES:
-        with Image.open(ASSETS / filename) as original:
+    for background in backgrounds:
+        with Image.open(background) as original:
             views.append(ImageOps.fit(original.convert('RGB'), SIZE, Image.Resampling.LANCZOS))
 
     with Image.open(source) as original:
@@ -114,4 +136,7 @@ def render(output, narration=ASSETS / 'rome-narration.wav'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=Path('output/animated-history-preview'))
-    render(parser.parse_args().output)
+    parser.add_argument('--ai-backgrounds', action='store_true',
+                        help='Generate each scene background with the CPU diffusion model')
+    args = parser.parse_args()
+    render(args.output, ai_backgrounds=args.ai_backgrounds)

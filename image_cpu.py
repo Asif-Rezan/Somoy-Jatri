@@ -45,7 +45,7 @@ def recovery_prompt(prompt):
 MODEL = 'segmind/SSD-1B'
 REVISION = '60987f37e94cd59c36b1cba832b9f97b57395a10'
 _pipeline = None
-def generate(prompt, path, *, allow_text=False):
+def generate(prompt, path, *, allow_text=False, seed=None, illustrated=False):
     global _pipeline
     import torch
     from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler
@@ -75,11 +75,13 @@ def generate(prompt, path, *, allow_text=False):
         raise ValueError('CPU generation requires 1–50 steps')
     pipeline = _pipeline
     start = time.monotonic()
-    seed = int(os.getenv('IMAGE_SEED', '42'))
+    if seed is None:
+        seed = int(os.getenv('IMAGE_SEED', '42'))
     image = None
     initial_prompt = safer_prompt(prompt)
     rewritten = recovery_prompt(prompt)
-    negative = ('anime, cartoon, watercolor, flat colors, line art, cel shading, blurry, low detail, poor quality, 3D render, CGI, extra arms, extra legs, deformed hands, duplicate person, watermark, logo, ' +
+    style_negative = '' if illustrated else 'anime, cartoon, watercolor, flat colors, line art, cel shading, '
+    negative = (style_negative + 'blurry, low detail, poor quality, 3D render, CGI, extra arms, extra legs, deformed hands, duplicate person, watermark, logo, ' +
                 ('' if allow_text else 'text, letters, ') + os.getenv('IMAGE_NEGATIVE_PROMPT', ''))
     for attempt in range(10):
         # Five seeds per composition; keep input sanitization and output checks.

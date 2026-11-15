@@ -10,7 +10,7 @@ permissions:
 jobs:
   render:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
@@ -21,9 +21,15 @@ jobs:
       - name: Install preview dependencies
         run: |
           python system_dependencies.py ffmpeg fonts-dejavu-core
-          python -m pip install Pillow==12.3.0
-      - name: Animate characters and render thumbnail
-        run: python character_preview.py
+          python -m pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'Pillow==12.3.0' 'diffusers>=0.35,<0.37' 'transformers>=4.44,<5' 'accelerate>=1.0,<2' 'safetensors>=0.4,<1'
+      - name: Generate a separate AI background for each scene and animate characters
+        env:
+          CPU_IMAGE_WIDTH: '768'
+          CPU_IMAGE_HEIGHT: '432'
+          CPU_IMAGE_STEPS: '12'
+          IMAGE_NEGATIVE_PROMPT: 'people, person, crowd, figures, portraits, foreground obstacles'
+        run: python -u character_preview.py --ai-backgrounds
       - name: Save 30-second video and thumbnail
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
@@ -31,5 +37,6 @@ jobs:
           path: |
             output/animated-history-preview/sample.mp4
             output/animated-history-preview/thumbnail.jpg
+            output/animated-history-preview/backgrounds/*.png
           if-no-files-found: error
           retention-days: 14
