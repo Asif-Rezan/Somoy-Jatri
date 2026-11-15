@@ -1,1 +1,1 @@
-2026-11-15: Start the first full Somoy Jatri history documentary with animated characters.
+2026-11-15: Restart full history generation after isolating the story catalog setting.
