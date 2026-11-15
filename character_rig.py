@@ -3,7 +3,7 @@ import math
 
 INK = '#211d19'
 
-def character(draw, x, y, *, female=False, facing=0, stride=0, wave=None, scale=1, walk_phase=None, blink=False, islamic=True):
+def character(draw, x, y, *, female=False, facing=0, stride=0, wave=None, scale=1, walk_phase=None, blink=False, islamic=True, basket=False, point=False):
     """Draw an original stick figure with articulated elbows and knees."""
     if facing not in (-1, 0, 1) or scale <= 0:
         raise ValueError('Use a positive scale and a front (0), left (-1), or right (1) view.')
@@ -51,18 +51,32 @@ def character(draw, x, y, *, female=False, facing=0, stride=0, wave=None, scale=
         swing = -side * stride
         elbow = (shoulder + side * 15 + swing * .45, -132)
         hand = (shoulder + side * 17 + swing, -105)
-        if wave is not None and side == 1:
+        if basket:
+            elbow = (shoulder + side * 8, -133)
+            hand = (20 + side * 15, -129)
+        elif point and side == 1:
+            elbow = (52, -163)
+            hand = (91, -181)
+        elif wave is not None and side == 1:
             elbow = (49, -150)
             angle = .35 + .48 * math.sin(wave)
             hand = (elbow[0] + 44 * math.sin(angle), elbow[1] - 44 * math.cos(angle))
         line([(shoulder, -158), elbow, hand])
-        if wave is not None and side == 1:
+        if point and side == 1:
+            hx, hy = hand
+            line([(hx-4,hy+1),(hx+9,hy-4)], 3)
+        elif wave is not None and side == 1:
             hx, hy = hand
             shape([(hx-4,hy+3),(hx-7,hy-4),(hx-7,hy-8),(hx-3,hy-5),
                    (hx-4,hy-15),(hx,hy-15),(hx+2,hy-8),(hx+4,hy-13),
                    (hx+7,hy-11),(hx+7,hy-3),(hx+4,hy+3)], 'white')
         else:
             oval([(hand[0]-4,hand[1]-4),(hand[0]+4,hand[1]+4)], 'white', 2)
+
+    if basket:
+        shape([(0,-128),(40,-128),(34,-105),(6,-105)], '#ba874d')
+        line([(3,-116),(37,-116)], 2)
+        line([(9,-129),(10,-139),(20,-143),(30,-139),(31,-129)], 2)
 
     head_x = 9 * facing
     if female and islamic:

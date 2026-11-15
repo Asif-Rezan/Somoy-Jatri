@@ -16,34 +16,50 @@ FPS = 24
 SECONDS = 30
 
 
-def actor(draw, x, ground, *, scale, facing=0, female=False, phase=None, wave=None, blink=False):
+SCENES = (
+    ('rome-settlement.jpg',
+     'Rome began among small settlements in central Italy. Early communities lived in simple huts before Rome grew into a city.'),
+    ('rome-plaza.jpg',
+     'The Roman Republic expanded around the Mediterranean. Under Augustus, Rome entered its imperial age, and monumental buildings reshaped the city.'),
+    ('rome-harbor.jpg',
+     'Power shifted east to Constantinople. The last emperor in Italy was deposed in four seventy-six, and the Eastern Roman Empire continued.'),
+)
+SCENE_SECONDS = SECONDS // len(SCENES)
+
+
+def actor(draw, x, ground, *, scale, facing=0, female=False, phase=None, wave=None,
+          blink=False, basket=False, point=False):
     radius = 35 * scale
     draw.ellipse((x-radius, ground-5*scale, x+radius, ground+7*scale), fill=(29, 19, 13, 105))
     character(draw, x, ground, scale=scale, facing=facing, female=female,
-              walk_phase=phase, wave=wave, blink=blink, islamic=False)
+              walk_phase=phase, wave=wave, blink=blink, basket=basket, point=point,
+              islamic=False)
 
 
 def render_frame(views, seconds):
-    scene = min(int(seconds // 10), len(views) - 1)
-    t = seconds - 10 * scene
+    scene = min(int(seconds // SCENE_SECONDS), len(views) - 1)
+    t = seconds - SCENE_SECONDS * scene
     frame = views[scene].copy()
     draw = ImageDraw.Draw(frame, 'RGBA')
     blink = t % 3.2 > 3.08
+
     if scene == 0:
-        actor(draw, 88 + 75 * min(t, 8.2), 649, scale=1.0,
-              facing=1 if t < 8.2 else 0, phase=8*t if t < 8.2 else None,
-              wave=7*t if t >= 8.2 else None, blink=blink)
+        # At the settlement, a resident carries a basket along the village path.
+        steps = min(t, 8.2)
+        actor(draw, 140 + 81 * steps, 661, scale=1.13, facing=1,
+              phase=8*t if t < 8.2 else None, basket=True, blink=blink)
     elif scene == 1:
-        actor(draw, 330, 666, scale=1.18, facing=1,
-              wave=6*t if 0.8 < t < 5.0 else None, blink=blink)
-        actor(draw, 1130 - 62 * min(t, 6.4), 653, scale=1.12, female=True,
-              facing=-1, phase=8*t if t < 6.4 else None,
-              wave=7*t if t >= 6.4 else None)
+        # The guide turns toward the imperial buildings as the other resident arrives.
+        steps = min(t, 4.5)
+        actor(draw, 656, 665, scale=1.17, facing=-1, point=t >= 4.5, blink=blink)
+        actor(draw, 1160 - 61 * steps, 644, scale=1.1, female=True,
+              facing=-1, phase=8*t if t < 4.5 else None)
     else:
-        actor(draw, 385, 667, scale=1.29, blink=blink,
-              wave=7*t if 1 < t < 4.8 else None)
-        actor(draw, 776 + 13 * min(t, 7), 650, scale=1.23, female=True,
-              facing=0, wave=7*t if 4 <= t < 9 else None, blink=not blink and t % 4 > 3.9)
+        # On the quay, a farewell gesture marks the transition east.
+        steps = min(t, 6.7)
+        actor(draw, 275, 665, scale=1.19, facing=1, wave=6*t if 2 < t < 8 else None, blink=blink)
+        actor(draw, 513 + 62 * steps, 645, scale=1.06, female=True,
+              facing=1, phase=8*t if t < 6.7 else None, point=t >= 6.7)
     return frame
 
 
@@ -63,10 +79,10 @@ def verify(video):
 def render(output, narration=ASSETS / 'rome-narration.wav'):
     output.mkdir(parents=True, exist_ok=True)
     source = ASSETS / 'rome.jpg'
-    with Image.open(ASSETS / 'rome-plaza.jpg') as original:
-        wide = ImageOps.fit(original.convert('RGB'), SIZE, Image.Resampling.LANCZOS)
-    views = (wide, wide.crop((42, 96, 1114, 699)).resize(SIZE, Image.Resampling.LANCZOS),
-             wide.crop((175, 69, 1279, 690)).resize(SIZE, Image.Resampling.LANCZOS))
+    views = []
+    for filename, _ in SCENES:
+        with Image.open(ASSETS / filename) as original:
+            views.append(ImageOps.fit(original.convert('RGB'), SIZE, Image.Resampling.LANCZOS))
 
     with Image.open(source) as original:
         thumbnail_art = ImageOps.fit(original.convert('RGB'), SIZE, Image.Resampling.LANCZOS)
