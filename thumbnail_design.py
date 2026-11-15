@@ -38,10 +38,13 @@ def render_thumbnail(source, text, target, category='Islamic'):
     return _save_jpeg(image, target)
 
 
-def render_history_thumbnail(source, subject, period, target):
+def render_history_thumbnail(source, subject, period, target, *, cast_islamic=None):
     with Image.open(source) as original:
         image = ImageOps.fit(original.convert('RGB'), (1280, 720), Image.Resampling.LANCZOS)
     draw = ImageDraw.Draw(image)
+    if cast_islamic is not None:
+        from history_animation import thumbnail_cast
+        thumbnail_cast(image, islamic=cast_islamic)
     fonts = ('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf',
              '/System/Library/Fonts/Supplemental/Georgia Bold.ttf')
     font_path = next((path for path in fonts if Path(path).is_file()), 'DejaVuSerif-Bold.ttf')

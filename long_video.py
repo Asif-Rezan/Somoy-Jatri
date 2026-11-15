@@ -93,7 +93,7 @@ def storyboard(root=ROOT, ask=None, pause=None):
         schema = {'type': 'object', 'properties': properties,
                   'required': list(properties), 'additionalProperties': False}
         context = {str(shot['chapter']): story['scenes'][shot['chapter']]['narration'] for shot in batch}
-        prompt = f"""Storyboard this sourced English Islamic documentary. Return one image prompt per exact shot key.
+        prompt = f"""Storyboard this sourced English documentary. Return one image prompt per exact shot key.
 Each shot is a measured ten-second narration window. Show a relevant object, empty building or landscape.
 Chapter text resolves context only. Do not invent a historical event or illustrate a later event.
 Visual rules: {VISUAL_POLICY}
@@ -349,6 +349,10 @@ def refine_visual_plan(root=ROOT):
     plan = json.loads((root/'plan.json').read_text())
     story = read_cache(root/'story.json')
     protagonist = story.get('protagonist_name', '').strip()
+    coverage = story.get('evidence', {}).get('history_subject')
+    if coverage:
+        from history_animation import shot_animation
+    style = DOCUMENTARY_STYLE.replace('Islamic history', 'historical') if coverage else DOCUMENTARY_STYLE
     for shot in plan['shots']:
         action = shot['visual_action'].strip().rstrip('.')
         if story.get('format') == 'islamic-documentary':
@@ -361,7 +365,14 @@ def refine_visual_plan(root=ROOT):
         focus = 'group' if group else ('person' if person else 'object')
         framing = ('wide environmental view', 'medium view', 'low angle view',
                    'overhead object study', 'macro material detail')[shot['index'] % 5]
-        shot['prompt'] = f'{action}. {framing}. {DOCUMENTARY_STYLE}'
+        shot['prompt'] = f'{action}. {framing}. {style}'
+        if coverage:
+            animation = shot_animation(shot['narration'], islamic=story['category'] == 'Islamic history',
+                                       index=shot['index'])
+            if animation:
+                shot['animation'] = animation
+                shot['prompt'] = (f'{action}. Eye-level historical panorama with a broad clear level '
+                                  f'foreground for a character to stand. {style}')
         shot['focus'] = focus
         shot['negative_prompt'] = 'people, person, face, portrait, prophet, companion, angel, deity, sacred text, gore, nudity, text, watermark, repeated composition'
         if focus == 'object':
@@ -433,7 +444,12 @@ def generate_shot(shot, root, shard, total):
         check.unlink(missing_ok=True)
         print(json.dumps({'shot': index, 'visual_check_passed': False, 'attempt': attempt+1}), flush=True)
     if not clip.exists():
-        produce_file(clip, lambda candidate: picture_clip(image, shot['duration'], candidate), 'Shot rendering')
+        if shot.get('animation'):
+            from history_animation import animated_clip
+            produce_file(clip, lambda candidate: animated_clip(image, shot['duration'], candidate,
+                                                                  shot['animation']), 'Animated shot rendering')
+        else:
+            produce_file(clip, lambda candidate: picture_clip(image, shot['duration'], candidate), 'Shot rendering')
     print(json.dumps({'shard': shard, 'shot': index+1, 'total': total, 'rendered': True,
         'visual_check_passed': report['passed']}), flush=True)
 
@@ -494,7 +510,7 @@ def validate_scene_reports(plan, scene_reports):
 
 def finish(root=ROOT):
     from music_cpu import generate
-    from thumbnail_design import render_thumbnail
+    from thumbnail_design import render_history_thumbnail, render_thumbnail
     plan = json.loads((root/'plan.json').read_text())
     clips = [root/f"shot-{s['index']:03}.mp4" for s in plan['shots']]
     if not all(p.exists() for p in clips):
@@ -515,9 +531,17 @@ def finish(root=ROOT):
     story = json.loads((root/'story.json').read_text())
     os.environ['IMAGE_NEGATIVE_PROMPT'] = ''
     os.environ['IMAGE_SEED'] = '9931'
-    w.make_image(story.get('evidence', {}).get('thumbnail_visual_story', story['thumbnail_prompt']),
-                 root/'thumbnail-source.png', thumbnail_text=story['thumbnail_text'])
-    render_thumbnail(root/'thumbnail-source.png', story['thumbnail_text'], root/'thumbnail.jpg', story.get('category', 'Islamic'))
+    evidence = story.get('evidence', {})
+    if evidence.get('history_subject'):
+        w.make_image(story['thumbnail_prompt'], root/'thumbnail-source.png')
+        render_history_thumbnail(root/'thumbnail-source.png', evidence['history_label'],
+                                 evidence['history_period'], root/'thumbnail.jpg',
+                                 cast_islamic=story['category'] == 'Islamic history')
+    else:
+        w.make_image(evidence.get('thumbnail_visual_story', story['thumbnail_prompt']),
+                     root/'thumbnail-source.png', thumbnail_text=story['thumbnail_text'])
+        render_thumbnail(root/'thumbnail-source.png', story['thumbnail_text'], root/'thumbnail.jpg',
+                         story.get('category', 'Islamic'))
     scene_reports = [json.loads((root/f"shot-{s['index']:03}.qa.json").read_text()) for s in plan['shots']]
     advisory_shots = validate_scene_reports(plan, scene_reports)
     print(json.dumps({'visual_quality_advisory_count': len(advisory_shots), 'shot_indices': advisory_shots}), flush=True)
@@ -526,7 +550,8 @@ def finish(root=ROOT):
         'style': 'islamic-documentary', 'privacy': 'private', 'voice': 'Kokoro am_michael', 'voice_speed': voice_settings()[0],
         'voice_pitch_semitones': voice_settings()[1],
         'music': 'Magenta MusicRNN documentary atmosphere', 'image_model': os.getenv('CPU_IMAGE_MODEL', 'segmind/SSD-1B'),
-        'audio_validation': audio_report, 'timeline_verified': True, 'storyboard_verified': plan.get('storyboard_verified', False),
+        'audio_validation': audio_report, 'animated_shots': sum(bool(s.get('animation')) for s in plan['shots']),
+        'timeline_verified': True, 'storyboard_verified': plan.get('storyboard_verified', False),
         'alignment': plan.get('alignment'), 'scene_composition_version': plan.get('scene_composition_version'),
         'semantic_checked_images': sum(r.get('required', False) for r in scene_reports),
         'visual_quality_advisory_shots': advisory_shots,
@@ -704,7 +729,7 @@ def upload():
     report = json.loads((ROOT/'validation.json').read_text())
     if not report.get('render_passed') or report.get('image_interval_seconds') != INTERVAL or not report.get('storyboard_verified'):
         raise RuntimeError('New-format render has not passed validation')
-    w.check_video(ROOT/'video.mp4')
+    metadata = w.check_video(ROOT/'video.mp4')
     store, key = w.Store(), f'runs/{run_id()}/state.json'
     if store.load(key, {}).get('phase') in ('upload_started', 'uploaded', 'complete', 'published', 'verified_private', 'verified_public'):
         raise RuntimeError('Existing upload requires reconciliation; refusing duplicate insertion')
@@ -714,6 +739,8 @@ def upload():
     history = store.load('history.json', [])
     if any(h.get('hash') == digest for h in history):
         raise RuntimeError('Story was already uploaded')
+    from history_coverage import finalize_title
+    story = finalize_title(story, float(metadata['format']['duration']))
     state = {'phase': 'rendered', 'story': story, 'hash': digest, 'validation': report}
     if (ROOT/'music.notes.json').exists():
         state['music_arrangement'] = json.loads((ROOT/'music.notes.json').read_text())

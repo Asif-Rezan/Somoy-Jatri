@@ -81,16 +81,20 @@ def story_outline_schema(topic=None):
     text_schema = {'type': 'string'}
     # Final shot prompts are generated from timed narration, so don't generate
     # discarded four-image chapter variants or duplicate YouTube metadata here.
-    def scene_schema():
+    def scene_schema(chapter):
         fields = {'summary': {'type': 'string'}, 'image_prompt': {'type': 'string'}}
         if topic is not None:
+            claim_ids = [claim['id'] for claim in topic['claims']]
+            if topic.get('history_subject'):
+                era = (chapter - 1) // 4 + 1
+                claim_ids = [key for key in claim_ids if key.startswith(f'era-{era}-')]
             fields['claim_ids'] = {'type': 'array', 'minItems': 1, 'maxItems': 4,
-                'items': {'type': 'string', 'enum': [claim['id'] for claim in topic['claims']]}}
+                'items': {'type': 'string', 'enum': claim_ids}}
         return object_schema(fields)
     chapter_keys = [f'chapter_{i:02}' for i in range(1, 21)]
     return object_schema({**{k: text_schema for k in
         ('title', 'character_description', 'protagonist_name')},
-        'scenes': object_schema({k: scene_schema() for k in chapter_keys})})
+        'scenes': object_schema({k: scene_schema(i) for i, k in enumerate(chapter_keys, 1)})})
 
 
 def narration_text_schema(lower, upper):
@@ -173,20 +177,28 @@ def make_story(day, previous, checkpoint=None):
             checkpoint.save(key, value)
         return value
     from islamic_content import catalog, CONTENT_POLICY, VISUAL_POLICY, CTA, SourceGroundingError, audit_narration
-    topics = catalog()
+    from history_coverage import CTA as HISTORY_CTA, catalog as history_catalog, package as history_package
     from islamic_content import select_topic
+    topics = history_catalog() if os.getenv('HISTORY_COVERAGE') == 'true' else catalog()
     topic = select_topic(topics, previous, day)
+    coverage = bool(topic.get('history_subject'))
+    documentary = 'history documentary' if coverage else 'Islamic documentary'
+    structure = (
+        f"Give a chronological survey of {topic['history_subject']} across {topic['history_period']}. "
+        "Open with a specific historical clue, cover the successive eras in order, and end by explaining the legacy."
+        if coverage else
+        "Open with the investigation_question and a surviving clue. Develop the investigation with sourced "
+        "interpretations and resolve the opening question before the closing chapter."
+    )
     theme = CONTENT_POLICY + ' Evidence packet: ' + json.dumps(topic)
     outline_schema = story_outline_schema(topic)
     recent_context = [{'title': str(item.get('title', ''))[:100],
                        'plot': str(item.get('plot', ''))[:400]}
                       for item in previous[-10:] if isinstance(item, dict)]
-    outline = ask(f'''Plan an English Islamic documentary for Somoy Jatri for {day}.
+    outline = ask(f'''Plan an English {documentary} for Somoy Jatri for {day}.
     Direction: {theme}
     Avoid these recent titles and outlines: {json.dumps(recent_context)}.
-    Open with the topic's investigation_question and a concrete surviving clue in the first chapter.
-    Build an investigation: question, competing interpretations only when sourced, evidence, answer and remaining limits.
-    Resolve the opening question before the closing chapter. Hidden means overlooked evidence, never invented conspiracies.
+    {structure}
     Alternate artifacts, material details, terrain, routes, interiors and site overviews relevant to each claim.
     Avoid twenty variations of the same building or generic courtyard.
     Every chapter must contribute a distinct explanation supported by its claim_ids.
@@ -220,7 +232,7 @@ def make_story(day, previous, checkpoint=None):
                   'claims': [claims[claim_id] for claim_id in scene['claim_ids']]}
             for key, scene in zip(keys, scenes)
         }
-        prompt = f'''Write chapters {begin+1} through {begin+5} of this English Islamic documentary.
+        prompt = f'''Write chapters {begin+1} through {begin+5} of this English {documentary}.
         Content rules: {CONTENT_POLICY}
         Title: {outline['title']}.
         Assigned chapters: {json.dumps(assigned)}.
@@ -254,10 +266,13 @@ def make_story(day, previous, checkpoint=None):
         for scene, narration in zip(scenes, parts):
             scene['narration'] = narration
         prior = parts[-1]
-    outline['scenes'][-1]['narration'] += CTA
+    outline['scenes'][-1]['narration'] += HISTORY_CTA if coverage else CTA
     outline['grounding_review'] = review['grounding_review']
     from video_packaging import request_package
-    request_package(outline, topic, ask)
+    if coverage:
+        history_package(outline, topic)
+    else:
+        request_package(outline, topic, ask)
     from long_video import validate_engagement
     validate_engagement(outline)
     return validate_story(outline)
@@ -344,7 +359,7 @@ def _revise_story_duration(story, ratio, direction, indices=None, feedback=None)
         schema = {'type': 'object', 'properties': properties,
                   'required': batch, 'additionalProperties': False}
         from islamic_content import CONTENT_POLICY
-        prompt = f'''Revise only these English Islamic documentary chapters to {direction} their narration.
+        prompt = f'''Revise only these sourced English documentary chapters to {direction} their narration.
 Rules: {CONTENT_POLICY}
 Preserve meaning, chronology, cited claims and explicit uncertainty. Add no new historical or religious assertions.
 Shorten by removing repetition, not by removing source attributions or qualifications.

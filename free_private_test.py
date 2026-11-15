@@ -68,7 +68,7 @@ def upload():
     report = json.loads((ROOT/'validation.json').read_text())
     if not report.get('render_passed'):
         raise RuntimeError('No validated rendered video')
-    w.check_video(ROOT/'video.mp4')
+    metadata = w.check_video(ROOT/'video.mp4')
     store = w.Store()
     run_id = saved_run_id()
     key = f'runs/{run_id}/state.json'
@@ -76,6 +76,8 @@ def upload():
         raise RuntimeError('Upload exists or needs reconciliation; refusing duplicate insertion')
     story = json.loads((ROOT/'story.json').read_text())
     digest = hashlib.sha256(' '.join(s['narration'] for s in story['scenes']).encode()).hexdigest()
+    from history_coverage import finalize_title
+    story = finalize_title(story, float(metadata['format']['duration']))
     state = {'phase': 'rendered', 'story': story, 'hash': digest, 'validation': report}
     for name in ('video.mp4', 'thumbnail.jpg', 'captions.srt', 'story.json', 'music.audio', 'validation.json'):
         store.upload(ROOT/name, f'runs/{run_id}/{name}')
@@ -83,7 +85,7 @@ def upload():
     w.upload_video(ROOT/'video.mp4', ROOT/'thumbnail.jpg', story, state, store, key,
         '')
     history = store.load('history.json', [])
-    history.append({'title': story['title'], 'hash': digest, 'run': run_id})
+    history.append({'title': story['title'], 'hash': digest, 'run': run_id, 'topic_id': story.get('topic_id')})
     store.save('history.json', history)
     store.save('last-private-test.json', {'passed': True, 'run': run_id,
         'video_id': state['video_id'], 'processing_status': state['processing_status'], 'validation': report})

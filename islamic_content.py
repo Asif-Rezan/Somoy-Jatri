@@ -104,12 +104,13 @@ def audit_narration(story, ask, *, first_chapter=1):
         'issues':{'type':'array','items':{'type':'string'}}},'required':['passed','issues'],'additionalProperties':False}
     evidence = story['evidence']
     claims = {claim['id']: claim for claim in evidence['claims']}
+    from history_coverage import CTA as HISTORY_CTA
     chapters = [
-        {'chapter': number, 'narration': scene['narration'].removesuffix(CTA),
+        {'chapter': number, 'narration': scene['narration'].removesuffix(CTA).removesuffix(HISTORY_CTA),
          'claims': [claims[claim_id] for claim_id in scene['claim_ids']]}
         for number, scene in enumerate(story['scenes'], first_chapter)
     ]
-    result = ask('Check every sentence of this English Islamic documentary against ONLY the claims assigned to its chapter. '
+    result = ask('Check every sentence of this English documentary against ONLY the claims assigned to its chapter. '
         'Reject invented historical or religious assertions, quotations, narrator chains, authenticity grades, '
         'unlabelled hypothetical examples, certainty beyond the sources, and fatwas. '
         'Reflections are allowed only when explicitly distinguished from a reported teaching. '
