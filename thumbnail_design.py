@@ -1,6 +1,6 @@
 """Thumbnail hook validation and export of complete generated artwork."""
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from itertools import combinations
 
 
@@ -35,6 +35,31 @@ def render_thumbnail(source, text, target, category='Islamic'):
     # Only resize/encode for YouTube; never paint text over the artwork.
     with Image.open(source) as original:
         image = original.convert('RGB').resize((1280, 720), Image.Resampling.LANCZOS)
+    return _save_jpeg(image, target)
+
+
+def render_history_thumbnail(source, subject, period, target):
+    with Image.open(source) as original:
+        image = ImageOps.fit(original.convert('RGB'), (1280, 720), Image.Resampling.LANCZOS)
+    draw = ImageDraw.Draw(image)
+    fonts = ('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf',
+             '/System/Library/Fonts/Supplemental/Georgia Bold.ttf')
+    font_path = next((path for path in fonts if Path(path).is_file()), 'DejaVuSerif-Bold.ttf')
+    title = subject.upper()
+    for size in range(156, 43, -2):
+        font = ImageFont.truetype(font_path, size)
+        if draw.textlength(title, font=font) <= 590:
+            break
+    else:
+        raise ValueError('History thumbnail subject is too long')
+    period_font = ImageFont.truetype(font_path, 52)
+    for label, y, face in ((title, 112, font), (period, 112 + size + 13, period_font)):
+        draw.text((949, y), label, anchor='mt', font=face, fill='#151210',
+                  stroke_width=1, stroke_fill='#efe0c1')
+    return _save_jpeg(image, target)
+
+
+def _save_jpeg(image, target):
     output = Path(target)
     output.parent.mkdir(parents=True, exist_ok=True)
     image.convert('RGB').save(output, quality=89, optimize=True)

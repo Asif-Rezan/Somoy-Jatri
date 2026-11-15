@@ -1,0 +1,35 @@
+name: Animated history preview
+on:
+  push:
+    branches: [codex/animated-history-preview]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Install preview dependencies
+        run: |
+          python system_dependencies.py ffmpeg fonts-dejavu-core
+          python -m pip install Pillow==12.3.0
+      - name: Animate characters and render thumbnail
+        run: python character_preview.py
+      - name: Save 30-second video and thumbnail
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: animated-history-preview
+          path: |
+            output/animated-history-preview/sample.mp4
+            output/animated-history-preview/thumbnail.jpg
+          if-no-files-found: error
+          retention-days: 14
