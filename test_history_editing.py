@@ -19,6 +19,19 @@ class HistoryEditingTests(unittest.TestCase):
             fills.append(fill)
         self.assertEqual(len(set(fills)),3)
 
+    def test_busy_artwork_gets_a_local_feathered_layer(self):
+        from thumbnail_design import calm_lettering_background
+
+        smooth = Image.new('RGB',(180,100),'#d2bd9e')
+        box = (70,30,145,65)
+        self.assertFalse(calm_lettering_background(smooth,box,(33,35,58),(248,244,224)))
+        for y in range(25,70):
+            for x in range(70,110):
+                smooth.putpixel((x,y),(34,39,49))
+        self.assertTrue(calm_lettering_background(smooth,box,(33,35,58),(248,244,224)))
+        self.assertGreater(smooth.getpixel((85,45))[0],34)
+        self.assertEqual(smooth.getpixel((0,0)),(210,189,158))
+
     def test_packaging_preserves_title_format_and_uses_measured_chapter_offsets(self):
         topic = catalog()[0]
         story = {'evidence':topic,'scenes':[{}]*20}

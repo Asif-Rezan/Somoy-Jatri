@@ -1,7 +1,7 @@
 """Thumbnail hook validation and export of complete generated artwork."""
 from colorsys import hls_to_rgb, rgb_to_hls
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 from itertools import combinations
 
 
@@ -77,6 +77,23 @@ def lettering_colors(image,box):
 
 
 
+def calm_lettering_background(image,box,fill,outline):
+    """Feather a local contrast layer over busy artwork behind the lettering."""
+    patch = image.crop(box).resize((24,12),Image.Resampling.BOX)
+    levels = sorted(luminance(color) for color in patch.getdata())
+    span = levels[len(levels)*9//10]-levels[len(levels)//10]
+    if span < .28:
+        return False
+    mask = Image.new('L',image.size)
+    strength = min(185,round(108+span*100))
+    ImageDraw.Draw(mask).rounded_rectangle(
+        (box[0]-12,box[1]-7,box[2]+12,box[3]+9),radius=17,fill=strength)
+    color = outline if contrast(luminance(fill),luminance(outline))>=4.5 else (
+        (251,245,228) if luminance(fill)<.35 else (20,24,31))
+    image.paste(color,(0,0,image.width,image.height),mask.filter(ImageFilter.GaussianBlur(13)))
+    return True
+
+
 def render_history_thumbnail(source, subject, period, target, *, cast_islamic=None, hook=None):
     with Image.open(source) as original:
         image = ImageOps.fit(original.convert('RGB'), (1280, 720), Image.Resampling.LANCZOS)
@@ -98,6 +115,7 @@ def render_history_thumbnail(source, subject, period, target, *, cast_islamic=No
     for label, y, face in ((title, 112, font), (period, 112 + size + 13, period_font)):
         area = draw.textbbox((949,y),label,anchor='mt',font=face)
         fill,outline = lettering_colors(image,area)
+        calm_lettering_background(image,area,fill,outline)
         draw.text((949,y),label,anchor='mt',font=face,fill=fill,
                   stroke_width=4 if label==title else 3,stroke_fill=outline)
     if hook:
