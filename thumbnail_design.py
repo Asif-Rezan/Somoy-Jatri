@@ -38,7 +38,7 @@ def render_thumbnail(source, text, target, category='Islamic'):
     return _save_jpeg(image, target)
 
 
-def render_history_thumbnail(source, subject, period, target, *, cast_islamic=None):
+def render_history_thumbnail(source, subject, period, target, *, cast_islamic=None, hook=None):
     with Image.open(source) as original:
         image = ImageOps.fit(original.convert('RGB'), (1280, 720), Image.Resampling.LANCZOS)
     draw = ImageDraw.Draw(image)
@@ -59,6 +59,15 @@ def render_history_thumbnail(source, subject, period, target, *, cast_islamic=No
     for label, y, face in ((title, 112, font), (period, 112 + size + 13, period_font)):
         draw.text((949, y), label, anchor='mt', font=face, fill='#151210',
                   stroke_width=1, stroke_fill='#efe0c1')
+    if hook:
+        hook = hook.upper()
+        for hook_size in range(60,25,-2):
+            face = _font(hook_size)
+            if draw.textlength(hook,font=face) <= 520:
+                break
+        draw.rounded_rectangle((660,365,1238,460),radius=19,fill='#32231b',outline='#f0cb75',width=4)
+        draw.text((949,411),hook,anchor='mm',font=face,fill='#fff1c3')
+        image = image.resize((1920,1080), Image.Resampling.LANCZOS)
     return _save_jpeg(image, target)
 
 

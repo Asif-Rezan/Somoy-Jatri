@@ -20,6 +20,18 @@ def validate_remote(video, state, channel):
         or set(snippet.get('tags', [])) != set(story['tags'])
         or snippet['description'] != state.get('upload_description', story['description'])):
         raise RuntimeError('Channel or metadata mismatch')
+    for part, settings in state.get('upload_metadata', {}).items():
+        remote = video.get(part, {})
+        for field, expected in settings.items():
+            if field == 'containsSyntheticMedia' and field not in remote:
+                if state.get('synthetic_media_receipt') == video['id'] and expected is True:
+                    continue
+            if field == 'defaultAudioLanguage' and field not in remote:
+                # Some readbacks omit this field; the rendered daily MP4 declares eng.
+                continue
+            actual = remote.get(field, False if field == 'hasPaidProductPlacement' else None)
+            if actual != expected:
+                raise RuntimeError(f'Uploaded {field} differs from the requested metadata')
     if (status.get('uploadStatus') in ('failed', 'rejected', 'deleted')
         or video.get('processingDetails', {}).get('processingStatus') in ('failed', 'terminated')):
         raise RuntimeError('YouTube upload failed')
@@ -109,7 +121,7 @@ def main():
         json.loads(required('YOUTUBE_TOKEN_JSON'))), cache_discovery=False)
     deadline = time.monotonic() + 1800
     while True:
-        items = client.videos().list(part='snippet,status,processingDetails,contentDetails',
+        items = client.videos().list(part='snippet,status,processingDetails,contentDetails,paidProductPlacementDetails',
             id=state['video_id']).execute().get('items', [])
         if not items:
             raise RuntimeError('Uploaded video unavailable')

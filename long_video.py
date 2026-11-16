@@ -538,7 +538,8 @@ def finish(root=ROOT):
     audio_report = mix_audio(root/'narration.wav', root/'music.audio', root/'mixed.wav', plan['duration_seconds'], plan['shots'])
     w.shell('ffmpeg', '-y', '-i', str(root/'joined.mp4'), '-i', str(root/'mixed.wav'),
         '-vf', f"subtitles={root/'captions.srt'}:force_style='FontName=DejaVu Sans,FontSize=22,Outline=2,MarginV=35'",
-        '-map', '0:v', '-map', '1:a', '-t', str(plan['duration_seconds']), '-ar', '48000',
+        '-map', '0:v', '-map', '1:a', '-metadata:s:a:0', 'language=eng',
+        '-t', str(plan['duration_seconds']), '-ar', '48000',
         '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-c:a', 'aac', '-movflags', '+faststart', str(root/'video.mp4'))
     metadata = w.check_video(root/'video.mp4')
     story = json.loads((root/'story.json').read_text())
@@ -549,7 +550,7 @@ def finish(root=ROOT):
         w.make_image(story['thumbnail_prompt'], root/'thumbnail-source.png')
         render_history_thumbnail(root/'thumbnail-source.png', evidence['history_label'],
                                  evidence['history_period'], root/'thumbnail.jpg',
-                                 cast_islamic=story['category'] == 'Islamic history')
+                                 hook=story.get('thumbnail_text') if story.get('thumbnail_text','').endswith('?') else None)
     else:
         w.make_image(evidence.get('thumbnail_visual_story', story['thumbnail_prompt']),
                      root/'thumbnail-source.png', thumbnail_text=story['thumbnail_text'])
@@ -752,8 +753,12 @@ def upload():
     history = store.load('history.json', [])
     if any(h.get('hash') == digest for h in history):
         raise RuntimeError('Story was already uploaded')
-    from history_coverage import finalize_title
-    story = finalize_title(story, float(metadata['format']['duration']))
+    from history_coverage import finalize_title, with_chapters
+    duration = float(metadata['format']['duration'])
+    story = finalize_title(story,duration)
+    chapter_lengths = read_cache(ROOT/'duration.json').get('chapters')
+    if chapter_lengths:
+        story = with_chapters(story,chapter_lengths,duration)
     state = {'phase': 'rendered', 'story': story, 'hash': digest, 'validation': report}
     if (ROOT/'music.notes.json').exists():
         state['music_arrangement'] = json.loads((ROOT/'music.notes.json').read_text())

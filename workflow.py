@@ -747,16 +747,29 @@ def upload_video(video, thumbnail, story, state, store, key, music_credit=''):
     state['upload_description'] = story['description'] + ('\n\n' + music_credit if music_credit.strip() else '')
     state['target_privacy'] = 'public'
     state['thumbnail_uploaded'] = False
+    state['upload_metadata'] = {
+        'snippet': {'categoryId': '27', 'defaultLanguage': 'en', 'defaultAudioLanguage': 'en'},
+        'status': {'selfDeclaredMadeForKids': False, 'containsSyntheticMedia': True,
+                   'license': 'youtube', 'embeddable': True, 'publicStatsViewable': True},
+        'paidProductPlacementDetails': {'hasPaidProductPlacement': False},
+    }
     state['phase'] = 'upload_started'
     store.save(key, state)
-    request = client.videos().insert(part='snippet,status', notifySubscribers=False,
-        body={'snippet': {'title': story['title'], 'description': state['upload_description'], 'tags': story['tags'], 'categoryId': '27',
-             'defaultLanguage': 'en'}, 'status': {'privacyStatus': state['target_privacy'], 'selfDeclaredMadeForKids': False}},
-        media_body=MediaFileUpload(str(video), chunksize=8*1024*1024, resumable=True))
+    settings = state['upload_metadata']
+    body = {
+        'snippet': {**settings['snippet'], 'title': story['title'],
+                    'description': state['upload_description'], 'tags': story['tags']},
+        'status': {**settings['status'], 'privacyStatus': state['target_privacy']},
+        'paidProductPlacementDetails': settings['paidProductPlacementDetails'],
+    }
+    request = client.videos().insert(part='snippet,status,paidProductPlacementDetails', notifySubscribers=False,
+        body=body, media_body=MediaFileUpload(str(video), chunksize=8*1024*1024, resumable=True))
     result = None
     while result is None:
         _, result = request.next_chunk(num_retries=5)
-    state.update(phase='uploaded', video_id=result['id'])
+    state.update(phase='uploaded', video_id=result['id'],
+                 synthetic_media_receipt=result['id'] if result.get('status', {}).get('containsSyntheticMedia', True)
+                 else None)
     store.save(key, state)
     client.thumbnails().set(videoId=result['id'], media_body=MediaFileUpload(str(thumbnail))).execute()
     state['thumbnail_uploaded'] = True

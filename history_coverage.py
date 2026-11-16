@@ -1,5 +1,6 @@
 """Chronological documentary catalog and deterministic YouTube metadata."""
 import math
+import re
 
 from islamic_content import validate_topic
 
@@ -144,18 +145,86 @@ def catalog():
     ]
 
 
+PACKAGING = {
+    'Ancient Rome': {
+        'hook': 'WHAT SURVIVED?',
+        'opening': 'Rome grew from central Italy into an empire. When imperial rule ended in the West, what continued in the East?',
+        'tags': ('Roman Republic', 'Roman Empire', 'Punic Wars', 'Augustus', 'Constantinople',
+                 'fall of the Western Roman Empire'),
+        'chapters': ('Early Rome and the Republic', 'Carthage and the Crisis of the Republic',
+                     'Augustus and the Imperial Age', 'Constantine and a New Capital',
+                     'The Western Empire Ends'),
+    },
+    'the Ottoman Empire': {
+        'hook': 'WHAT ENDED IT?',
+        'opening': 'A frontier principality grew into an empire with its capital at Constantinople. How did Ottoman rule give way to a republic?',
+        'tags': ('Ottoman history', 'Constantinople 1453', 'Mehmed II', 'Suleiman the Magnificent',
+                 'Ottoman sultanate', 'rise and fall of the Ottoman Empire'),
+        'chapters': ('Before the Ottomans', 'Expansion and Constantinople', 'The Age of Suleiman',
+                     'Ottoman Culture after 1600', 'The End of the Sultanate'),
+    },
+    'Feudal Japan': {
+        'hook': 'WHO HELD POWER?',
+        'opening': 'Japan still had an emperor while shoguns governed from Kamakura, Kyoto and Edo. How did that balance of power end?',
+        'tags': ('Japanese history', 'samurai history', 'Kamakura shogunate', 'Tokugawa shogunate',
+                 'Edo period', 'Meiji Restoration'),
+        'chapters': ('The Rise of Kamakura', 'The Ashikaga Shogunate', 'Unification and Castles',
+                     'The Tokugawa Era', 'The Meiji Restoration'),
+    },
+}
+
+
+def with_chapters(story, lengths, duration):
+    """Use measured chapter audio offsets from the validated render."""
+    if not lengths or len(lengths) != len(story['scenes']):
+        raise ValueError('Chapter audio timings must match the rendered narration')
+    if any(not math.isfinite(value) or value <= 0 for value in lengths):
+        raise ValueError('Chapter audio timings must be positive')
+    subject = story.get('evidence', {}).get('history_subject')
+    info = PACKAGING.get(subject, {})
+    if len(lengths) == 20 and info:
+        chapters = dict(zip(range(0,20,4),info['chapters']))
+    else:
+        chapters = {i: ' '.join(scene.get('summary','').split()[:8]).rstrip('.,;:')
+                    or f'Chapter {i+1}' for i,scene in enumerate(story['scenes'])}
+    lines = []
+    elapsed = 0
+    for i,length in enumerate(lengths):
+        start = int(elapsed)
+        if i in chapters and (not lines or start-lines[-1][0] >= 10) and duration-start >= 10:
+            lines.append((start,chapters[i]))
+        elapsed += length
+    if len(lines) < 3:
+        raise ValueError('At least three chapter timestamps ten seconds apart are required')
+    chapter_text = 'Chapters\n' + '\n'.join(f'{start//60:02}:{start%60:02} {label}' for start,label in lines)
+    description = story['description']
+    if '\n\nSources\n' in description:
+        description = description.replace('\n\nSources\n',f'\n\n{chapter_text}\n\nSources\n',1)
+    else:
+        description += '\n\n' + chapter_text
+    return dict(story,description=description)
+
+
 def package(story, topic):
     subject = topic['history_subject']
     sources = '\n'.join(f"{record['title']} — {record['url']}" for record in topic['source_records'])
+    info = PACKAGING.get(subject, {})
+    opening = info.get('opening',f'How did {subject} change over {topic["history_period"]}?')
+    hashtag = re.sub(r'[^A-Za-z0-9]','',topic['history_label'])
+    tags = list(dict.fromkeys([subject, *info.get('tags',()), topic['category'],
+                               f'{topic["history_label"]} documentary','history documentary','Somoy Jatri']))
     story.update(
         title=f'The ENTIRE History of {subject}',
-        description=(f"A chronological overview of {subject} ({topic['history_period']}). "
-                     f"Illustrations depict historical settings.\n\nSources\n{sources}"),
-        tags=[topic['history_label'], topic['category'], 'history documentary', 'Somoy Jatri'],
+        description=(f"{opening}\n\n"
+                     f"Explore {subject} ({topic['history_period']}) through successive eras. "
+                     "Maps are schematic and historical scenes are illustrated reconstructions.\n\n"
+                     f"Sources\n{sources}\n\n#History #HistoryDocumentary #{hashtag}"),
+        tags=tags,
         search_phrase=subject,
-        thumbnail_text=topic['history_label'],
+        thumbnail_text=info.get('hook','WHAT CHANGED?'),
         thumbnail_prompt=(f"{topic['thumbnail_visual_story']}. Ink and color illustrated historical panorama. "
-                          'Put the landmark on the left and keep the upper-right sky pale and clear.'),
+                          'Put the main landmark large on the left, with a clear silhouette and warm light. '
+                          'Leave the upper and middle right pale and clear for lettering. No text.'),
     )
 
 

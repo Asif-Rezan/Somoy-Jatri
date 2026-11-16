@@ -29,6 +29,12 @@ class PublicUploadTests(unittest.TestCase):
         self.assertEqual(client.videos().insert.call_args.kwargs['body']['status']['privacyStatus'], 'public')
         self.assertEqual(state['target_privacy'], 'public')
         self.assertEqual(state['upload_description'], 'Subject and sources.')
+        body = client.videos().insert.call_args.kwargs['body']
+        self.assertEqual(body['snippet']['categoryId'], '27')
+        self.assertEqual(body['snippet']['defaultAudioLanguage'], 'en')
+        self.assertIs(body['status']['selfDeclaredMadeForKids'], False)
+        self.assertIs(body['status']['containsSyntheticMedia'], True)
+        self.assertIs(body['paidProductPlacementDetails']['hasPaidProductPlacement'], False)
         client.thumbnails().set.assert_called_once()
         return state
 
