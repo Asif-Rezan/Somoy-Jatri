@@ -66,8 +66,8 @@ def draw_frame(background, spec, t):
     frame = background.copy()
     draw = ImageDraw.Draw(frame, 'RGBA')
     move = spec['action'] in {'walk', 'carry'}
-    x = 228 + 110*t if move else 348
-    _actor(draw, x, 661, scale=1.1, facing=1, islamic=spec['islamic'],
+    x = 221 + min(330, 90*t) if move else 338
+    _actor(draw, x, 654, scale=1.32, facing=1, islamic=spec['islamic'],
            female=spec['female'], blink=t % 3.4 > 3.29,
            walk_phase=t*7.8 if move else None,
            basket=spec['action'] == 'carry',
@@ -84,7 +84,7 @@ def draw_frame(background, spec, t):
         draw.rounded_rectangle((x+68,brick_y,x+94,brick_y+13),radius=3,
                                fill='#cf9f71',outline='#6b4a32',width=2)
     if spec['paired']:
-        _actor(draw, x-121, 641, scale=.94, facing=1, islamic=spec['islamic'],
+        _actor(draw, x-135, 634, scale=1.06, facing=1, islamic=spec['islamic'],
                female=not spec['female'], walk_phase=t*7.8+1 if move else None)
     return frame
 
@@ -94,7 +94,8 @@ def compose_frame(background, spec, edit, t, seconds):
     from history_sequence import draw_sequence
 
     frame = background.copy()
-    if spec and spec.get('start',0) <= t < spec.get('end',seconds):
+    cast_visible = bool(spec and spec.get('start',0) <= t < spec.get('end',seconds))
+    if cast_visible:
         start, end = spec.get('start',0), spec.get('end',seconds)
         cast = draw_frame(background,spec,t-start)
         opacity = min(1,(t-start)/.18,(end-t)/.18)
@@ -103,7 +104,7 @@ def compose_frame(background, spec, edit, t, seconds):
         inset = 36 if spec else 51
         frame = frame.resize(SIZE,Image.Resampling.BILINEAR,
                              box=(inset,inset//2,SIZE[0]-inset,SIZE[1]-inset//2))
-    return draw_sequence(draw_edit(frame,edit,t,seconds),edit,t,seconds)
+    return draw_sequence(draw_edit(frame,edit,t,seconds),edit,t,seconds,cast_visible=cast_visible)
 
 
 def animated_clip(image, seconds, target, spec, edit=None):

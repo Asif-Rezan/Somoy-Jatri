@@ -36,6 +36,14 @@ class HistorySequenceTests(unittest.TestCase):
         draw_sequence(frame,{'artifact': ('augustus.jpg','Gold aureus of Augustus','20–19 BCE','246866')},3,10)
         self.assertNotEqual(frame.getpixel((700,60)),(0,0,0))
 
+    def test_timeline_does_not_draw_over_the_cast(self):
+        frame = Image.new('RGB',(1280,720),'black')
+        edit = {'era': (('Early Rome','Republic'),0)}
+        result = draw_sequence(frame.copy(),edit,2,10,cast_visible=True)
+        self.assertEqual(result.tobytes(),frame.tobytes())
+        result = draw_sequence(frame.copy(),edit,2,10)
+        self.assertNotEqual(result.tobytes(),frame.tobytes())
+
     def test_building_action_requires_a_spoken_task(self):
         self.assertEqual(shot_animation('Workers lay bricks.',islamic=False,index=0)['action'],'build')
         self.assertIsNone(shot_animation('The building program grew.',islamic=False,index=0))

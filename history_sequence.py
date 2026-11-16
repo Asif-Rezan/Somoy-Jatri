@@ -116,19 +116,19 @@ def artifact_image(filename):
         return ImageOps.contain(source.convert('RGB'),(510,350),Image.Resampling.LANCZOS)
 
 
-def draw_sequence(frame, spec, t, seconds):
+def draw_sequence(frame, spec, t, seconds, *, cast_visible=False):
     draw = ImageDraw.Draw(frame,'RGBA')
-    if spec.get('era') and .4 <= t < min(3.6,seconds):
+    if spec.get('era') and not cast_visible and .4 <= t < min(3.6,seconds):
         eras, active = spec['era']
         for i,label in enumerate(eras):
             x = 45+i*240
-            badge(draw,(x,475,x+226,534),('• ' if i == active else '')+label,size=21)
+            badge(draw,(x,330,x+226,383),('• ' if i == active else '')+label,size=21)
             if i == active:
-                draw.line((x+22,527,x+204,527),fill='#f3c97b',width=4)
+                draw.line((x+22,376,x+204,376),fill='#f3c97b',width=4)
     if spec.get('decision') and 1.1 <= t < min(8.5,seconds):
         for i,label in enumerate(spec['decision'][:min(3,int((t-1.1)/2.05)+1)]):
-            x = 48+i*398
-            badge(draw,(x,372,x+386,455),('BEFORE · ','DECISION · ','AFTER · ')[i]+label,size=23)
+            y = 105+i*62
+            badge(draw,(42,y,645,y+51),('BEFORE · ','DECISION · ','AFTER · ')[i]+label,size=24)
     if spec.get('artifact') and 2.2 <= t < min(7.2,seconds):
         filename,title,period,object_id = spec['artifact']
         photo = artifact_image(filename)
@@ -140,7 +140,7 @@ def draw_sequence(frame, spec, t, seconds):
         badge(draw,(42,124,618,196),f'{header.upper()} · {line}',size=22)
     if spec.get('recap') and .45 <= t < min(8.7,seconds):
         index,label = spec['recap']
-        badge(draw,(46,565,788,625),f'RECAP {index}/3  ·  {label}',size=27)
+        badge(draw,(653,476,1248,536),f'RECAP {index}/3  ·  {label}',size=25)
     return frame
 
 

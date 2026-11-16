@@ -131,7 +131,7 @@ def draw_edit(frame, spec, t, seconds):
         draw.text((60,66),text,font=font(34),anchor='lm',fill='#fff2ca')
     if spec.get('label') or spec.get('map'):
         if .4 < t < min(4,seconds):
-            draw.text((40,527),'ILLUSTRATIVE RECONSTRUCTION',font=font(16),fill='#fff2ca',
+            draw.text((1240,567),'ILLUSTRATIVE RECONSTRUCTION',anchor='ra',font=font(16),fill='#fff2ca',
                       stroke_width=2,stroke_fill='#192a28')
     return frame
 
