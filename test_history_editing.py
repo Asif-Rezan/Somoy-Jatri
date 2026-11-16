@@ -19,6 +19,20 @@ class HistoryEditingTests(unittest.TestCase):
             fills.append(fill)
         self.assertEqual(len(set(fills)),3)
 
+    def test_thumbnail_finds_open_space_on_either_side(self):
+        from PIL import ImageDraw
+        from thumbnail_design import quiet_lettering_position
+
+        artwork = Image.new('RGB',(1280,720),'#d4cbb4')
+        draw = ImageDraw.Draw(artwork)
+        for x in range(630,1280,12):
+            draw.rectangle((x,0,x+5,600),fill='#1b202a')
+        left, top = quiet_lettering_position(artwork,470,230)
+        self.assertLess(left,600)
+        self.assertLess(top,150)
+        right, _ = quiet_lettering_position(artwork.transpose(Image.Transpose.FLIP_LEFT_RIGHT),470,230)
+        self.assertGreater(right,680)
+
     def test_busy_artwork_gets_a_local_feathered_layer(self):
         from thumbnail_design import calm_lettering_background
 

@@ -1,7 +1,7 @@
 """Thumbnail hook validation and export of complete generated artwork."""
 from colorsys import hls_to_rgb, rgb_to_hls
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps, ImageStat
 from itertools import combinations
 
 
@@ -94,6 +94,28 @@ def calm_lettering_background(image,box,fill,outline):
     return True
 
 
+def quiet_lettering_position(image,width,height):
+    """Prefer the least detailed upper region large enough for the complete headline."""
+    gray = image.convert('L')
+    horizontal = ImageChops.difference(gray,ImageChops.offset(gray,3,0))
+    vertical = ImageChops.difference(gray,ImageChops.offset(gray,0,3))
+    edges = ImageChops.lighter(horizontal,vertical)
+    half = width//2
+    last_top = min(225,image.height-height-48)
+    candidates = []
+    for center in range(half+34,image.width-half-24,56):
+        for top in range(39,last_top+1,32):
+            area = (center-half,top,center+half,top+height)
+            detail = ImageStat.Stat(edges.crop(area)).mean[0]
+            # Keep a slight preference for the upper-right when two areas are equally quiet.
+            preference = abs(center-image.width*.74)/950 + top/950
+            candidates.append((detail+preference,center,top))
+    if not candidates:
+        return image.width//2,39
+    _,center,top = min(candidates)
+    return center,top
+
+
 def render_history_thumbnail(source, subject, period, target, *, cast_islamic=None, hook=None):
     with Image.open(source) as original:
         image = ImageOps.fit(original.convert('RGB'), (1280, 720), Image.Resampling.LANCZOS)
@@ -111,23 +133,29 @@ def render_history_thumbnail(source, subject, period, target, *, cast_islamic=No
             break
     else:
         raise ValueError('History thumbnail subject is too long')
-    period_font = ImageFont.truetype(font_path, 52)
-    for label, y, face in ((title, 112, font), (period, 112 + size + 13, period_font)):
-        area = draw.textbbox((949,y),label,anchor='mt',font=face)
-        fill,outline = lettering_colors(image,area)
-        calm_lettering_background(image,area,fill,outline)
-        draw.text((949,y),label,anchor='mt',font=face,fill=fill,
-                  stroke_width=4 if label==title else 3,stroke_fill=outline)
+    period_font = ImageFont.truetype(font_path,52)
+    width = round(max(draw.textlength(title,font=font),draw.textlength(period,font=period_font)))+26
     if hook:
         hook = hook.upper()
         for hook_size in range(60,25,-2):
-            face = _font(hook_size)
-            if draw.textlength(hook,font=face) <= 520:
+            hook_font = _font(hook_size)
+            hook_width = round(draw.textlength(hook,font=hook_font))+48
+            if hook_width <= 568:
                 break
-        badge = (660,365,1238,460)
+        width = max(width,hook_width)
+    center,top = quiet_lettering_position(image,width,size+(172 if hook else 80))
+    for label,y,face in ((title,top,font),(period,top+size+13,period_font)):
+        area = draw.textbbox((center,y),label,anchor='mt',font=face)
+        fill,outline = lettering_colors(image,area)
+        calm_lettering_background(image,area,fill,outline)
+        draw.text((center,y),label,anchor='mt',font=face,fill=fill,
+                  stroke_width=4 if label==title else 3,stroke_fill=outline)
+    if hook:
+        badge_top = top+size+87
+        badge = (center-hook_width//2,badge_top,center+hook_width//2,badge_top+78)
         pill,letter = lettering_colors(image,badge)
         draw.rounded_rectangle(badge,radius=19,fill=pill,outline=letter,width=3)
-        draw.text((949,411),hook,anchor='mm',font=face,fill=letter)
+        draw.text((center,badge_top+39),hook,anchor='mm',font=hook_font,fill=letter)
         image = image.resize((1920,1080), Image.Resampling.LANCZOS)
     return _save_jpeg(image, target)
 
