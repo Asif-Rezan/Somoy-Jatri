@@ -1,7 +1,7 @@
 """Thumbnail hook validation and export of complete generated artwork."""
 from colorsys import hls_to_rgb, rgb_to_hls
 from pathlib import Path
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps, ImageStat
+from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps, ImageStat
 from itertools import combinations
 
 
@@ -78,19 +78,15 @@ def lettering_colors(image,box):
 
 
 def calm_lettering_background(image,box,fill,outline):
-    """Feather a local contrast layer over busy artwork behind the lettering."""
+    """Place a solid panel when a title would cross busy or low-contrast artwork."""
     patch = image.crop(box).resize((24,12),Image.Resampling.BOX)
     levels = sorted(luminance(color) for color in patch.getdata())
     span = levels[len(levels)*9//10]-levels[len(levels)//10]
-    if span < .28:
+    visible = sum(contrast(luminance(fill),level)>=4.5 for level in levels)
+    if span<.20 and visible>=len(levels)*.90:
         return False
-    mask = Image.new('L',image.size)
-    strength = min(185,round(108+span*100))
-    ImageDraw.Draw(mask).rounded_rectangle(
-        (box[0]-12,box[1]-7,box[2]+12,box[3]+9),radius=17,fill=strength)
-    color = outline if contrast(luminance(fill),luminance(outline))>=4.5 else (
-        (251,245,228) if luminance(fill)<.35 else (20,24,31))
-    image.paste(color,(0,0,image.width,image.height),mask.filter(ImageFilter.GaussianBlur(13)))
+    panel = (box[0]-15,box[1]-12,box[2]+15,box[3]+12)
+    ImageDraw.Draw(image).rounded_rectangle(panel,radius=15,fill=outline)
     return True
 
 
@@ -144,12 +140,18 @@ def render_history_thumbnail(source, subject, period, target, *, cast_islamic=No
                 break
         width = max(width,hook_width)
     center,top = quiet_lettering_position(image,width,size+(172 if hook else 80))
-    for label,y,face in ((title,top,font),(period,top+size+13,period_font)):
-        area = draw.textbbox((center,y),label,anchor='mt',font=face)
-        fill,outline = lettering_colors(image,area)
-        calm_lettering_background(image,area,fill,outline)
-        draw.text((center,y),label,anchor='mt',font=face,fill=fill,
-                  stroke_width=4 if label==title else 3,stroke_fill=outline)
+    lines = ((title,top,font),(period,top+size+13,period_font))
+    areas = [draw.textbbox((center,y),label,anchor='mt',font=face) for label,y,face in lines]
+    title_area = (min(area[0] for area in areas),areas[0][1],
+                  max(area[2] for area in areas),areas[-1][3])
+    fill,panel = lettering_colors(image,title_area)
+    if contrast(luminance(fill),luminance(panel))<7:
+        panel = (255,249,231) if luminance(fill)<.30 else (21,23,27)
+    panel_used = calm_lettering_background(image,title_area,fill,panel)
+    for (label,y,face),area in zip(lines,areas):
+        color,outline = (fill,None) if panel_used else lettering_colors(image,area)
+        draw.text((center,y),label,anchor='mt',font=face,fill=color,
+                  stroke_width=0 if panel_used else 4 if label==title else 3,stroke_fill=outline)
     if hook:
         badge_top = top+size+87
         badge = (center-hook_width//2,badge_top,center+hook_width//2,badge_top+78)
