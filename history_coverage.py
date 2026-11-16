@@ -208,6 +208,10 @@ def with_chapters(story, lengths, duration):
 def package(story, topic):
     subject = topic['history_subject']
     sources = '\n'.join(f"{record['title']} — {record['url']}" for record in topic['source_records'])
+    from history_sequence import artifact_sources
+    artifact = artifact_sources(subject)
+    if artifact:
+        sources += '\n' + artifact
     info = PACKAGING.get(subject, {})
     opening = info.get('opening',f'How did {subject} change over {topic["history_period"]}?')
     hashtag = re.sub(r'[^A-Za-z0-9]','',topic['history_label'])

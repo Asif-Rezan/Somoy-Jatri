@@ -1,4 +1,5 @@
 """Compose anonymous animated characters onto narration-aligned history shots."""
+import math
 import re
 import subprocess
 
@@ -18,6 +19,9 @@ ACTION_PATTERNS = {
     'walk': re.compile(
         r'\b(?:workers?|merchants?|traders?|sailors?|travelers?|travellers?|soldiers?|families|people|residents?) '
         r'(?:(?:who|were|are|then) )*(?:walk\w*|march\w*|travel\w*|cross\w*|move[ds]?)\b', re.I),
+    'build': re.compile(
+        r'\b(?:builders?|workers?|craftspeople|masons?) '
+        r'(?:(?:who|were|are|then) )*(?:stack\w*|lay\w*|cut\w*) (?:stone|brick|stones|bricks)\b', re.I),
     'point': re.compile(
         r'\b(?:guides?|workers?|sailors?|traders?|residents?) '
         r'(?:(?:who|were|are|then) )*(?:point\w*|gesture\w*) (?:at|to|toward|towards)\b', re.I),
@@ -66,7 +70,19 @@ def draw_frame(background, spec, t):
     _actor(draw, x, 661, scale=1.1, facing=1, islamic=spec['islamic'],
            female=spec['female'], blink=t % 3.4 > 3.29,
            walk_phase=t*7.8 if move else None,
-           basket=spec['action'] == 'carry', point=spec['action'] == 'point' and t >= .2)
+           basket=spec['action'] == 'carry',
+           point=spec['action'] in {'point','build'} and t >= .2,
+           wave=(math.sin(t*6)*.6 if spec['action'] == 'build' else None))
+    if spec['action'] == 'build':
+        for row in range(2):
+            for brick in range(3-row):
+                left = x+83+brick*30+row*14
+                top = 642-row*15
+                draw.rounded_rectangle((left,top,left+27,top+13),radius=2,
+                                       fill='#b68b62',outline='#6b4a32',width=2)
+        brick_y = 607+round(7*math.sin(t*6))
+        draw.rounded_rectangle((x+68,brick_y,x+94,brick_y+13),radius=3,
+                               fill='#cf9f71',outline='#6b4a32',width=2)
     if spec['paired']:
         _actor(draw, x-121, 641, scale=.94, facing=1, islamic=spec['islamic'],
                female=not spec['female'], walk_phase=t*7.8+1 if move else None)
@@ -75,6 +91,7 @@ def draw_frame(background, spec, t):
 
 def compose_frame(background, spec, edit, t, seconds):
     from history_editing import draw_edit
+    from history_sequence import draw_sequence
 
     frame = background.copy()
     if spec and spec.get('start',0) <= t < spec.get('end',seconds):
@@ -86,7 +103,7 @@ def compose_frame(background, spec, edit, t, seconds):
         inset = 36 if spec else 51
         frame = frame.resize(SIZE,Image.Resampling.BILINEAR,
                              box=(inset,inset//2,SIZE[0]-inset,SIZE[1]-inset//2))
-    return draw_edit(frame,edit,t,seconds)
+    return draw_sequence(draw_edit(frame,edit,t,seconds),edit,t,seconds)
 
 
 def animated_clip(image, seconds, target, spec, edit=None):

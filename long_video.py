@@ -354,7 +354,14 @@ def refine_visual_plan(root=ROOT):
     if coverage:
         from history_animation import shot_animation
         from history_editing import plan_edits
+        from history_sequence import comparison, plan_sequence
         plan_edits(plan['shots'],story['evidence'])
+        plan_sequence(plan['shots'],coverage)
+        visual_comparison = comparison(plan['shots'],coverage)
+        if visual_comparison:
+            plan['editorial_comparison'] = visual_comparison
+        else:
+            plan.pop('editorial_comparison',None)
     style = DOCUMENTARY_STYLE.replace('Islamic history', 'historical') if coverage else DOCUMENTARY_STYLE
     for shot in plan['shots']:
         action = shot['visual_action'].strip().rstrip('.')
@@ -378,6 +385,9 @@ def refine_visual_plan(root=ROOT):
                 shot['animation'] = animation
                 shot['prompt'] = (f'{action}. Eye-level historical panorama with a broad clear level '
                                   f'foreground for a character to stand. {style}')
+        if coverage and visual_comparison and shot['index'] in visual_comparison['shots']:
+            shot['prompt'] += (" Match an eye-level city panorama with the main built-up area centered, "
+                               "keeping the depicted architecture appropriate for this era.")
         shot['focus'] = focus
         shot['negative_prompt'] = 'people, person, face, portrait, prophet, companion, angel, deity, sacred text, gore, nudity, text, watermark, repeated composition'
         if focus == 'object':
@@ -536,9 +546,33 @@ def finish(root=ROOT):
     if not (root/'music.audio').exists():
         generate(root/'music.audio')
     audio_report = mix_audio(root/'narration.wav', root/'music.audio', root/'mixed.wav', plan['duration_seconds'], plan['shots'])
+    captions = f"subtitles={root/'captions.srt'}:force_style='FontName=DejaVu Sans,FontSize=22,Outline=2,MarginV=35'"
+    cards = []
+    edit = plan.get('editorial_comparison')
+    if edit:
+        from history_sequence import comparison_card
+        card = root/'editorial-comparison.png'
+        comparison_card([root/f'shot-{index:03}.png' for index in edit['shots']],edit,card)
+        cards.append((card,1920,1080,0,0,edit['start'],edit['end']))
+    for shot in plan['shots']:
+        source = shot.get('edit',{}).get('recap_image')
+        if source is not None:
+            cards.append((root/f'shot-{source:03}.png',672,378,64,48,
+                          shot['start']+.45,shot['start']+min(8.7,shot['duration'])))
+    if cards:
+        inputs, filters, previous = [], [], '0:v'
+        for index,(path,width,height,x,y,start,end) in enumerate(cards,2):
+            inputs.extend(('-i',str(path)))
+            filters.extend((f'[{index}:v]scale={width}:{height}:force_original_aspect_ratio=increase,'
+                            f'crop={width}:{height}[card{index}]',
+                            f"[{previous}][card{index}]overlay={x}:{y}:enable='between(t,{start},{end})'[shot{index}]"))
+            previous = f'shot{index}'
+        overlays = [*inputs,'-filter_complex',';'.join([*filters,f'[{previous}]{captions}[picture]']),
+                    '-map','[picture]']
+    else:
+        overlays = ['-vf',captions,'-map','0:v']
     w.shell('ffmpeg', '-y', '-i', str(root/'joined.mp4'), '-i', str(root/'mixed.wav'),
-        '-vf', f"subtitles={root/'captions.srt'}:force_style='FontName=DejaVu Sans,FontSize=22,Outline=2,MarginV=35'",
-        '-map', '0:v', '-map', '1:a', '-metadata:s:a:0', 'language=eng',
+        *overlays, '-map', '1:a', '-metadata:s:a:0', 'language=eng',
         '-t', str(plan['duration_seconds']), '-ar', '48000',
         '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-c:a', 'aac', '-movflags', '+faststart', str(root/'video.mp4'))
     metadata = w.check_video(root/'video.mp4')
@@ -726,7 +760,17 @@ def recover_shard(shard):
 def restore_clips():
     restore_preparation()
     store = w.Store()
-    for shot in json.loads((ROOT/'plan.json').read_text())['shots']:
+    plan = json.loads((ROOT/'plan.json').read_text())
+    images = set(plan.get('editorial_comparison',{}).get('shots',[]))
+    images.update(shot['edit']['recap_image'] for shot in plan['shots']
+                  if 'recap_image' in shot.get('edit',{}))
+    for index in sorted(images):
+        image = f'shot-{index:03}.png'
+        file_id = store.find(f'runs/{run_id()}/{image}')
+        if not file_id:
+            raise RuntimeError('Saved historical editorial image missing')
+        store.download(file_id,ROOT/image)
+    for shot in plan['shots']:
         name = f"shot-{shot['index']:03}.mp4"
         file_id = store.find(f'runs/{run_id()}/{name}')
         if not file_id:

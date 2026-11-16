@@ -148,7 +148,8 @@ def audio_cues(shots, target, seconds):
         spec = shot.get('edit') or {}
         if not spec:
             continue
-        start = round((shot['start']+1.15)*rate)
+        reveal = spec.get('reveal')
+        start = round((shot['start']+(reveal-.85 if reveal else 1.15))*rate)
         count = min(rate*2, len(signal)-start)
         if count <= 0:
             continue
@@ -160,7 +161,7 @@ def audio_cues(shots, target, seconds):
             sound += np.convolve(noise,np.ones(30)/30,mode='same') * .10
         elif spec.get('ambience') == 'steps':
             sound += .023*np.sin(2*np.pi*63*t)*np.exp(-15*(t%0.47))
-        if spec.get('label') or spec.get('shift'):
+        if spec.get('label') or spec.get('shift') or reveal:
             sound += .017*np.sin(2*np.pi*(210*t-35*t*t))
             dips.append(f'between(t,{start/rate:.3f},{(start+count)/rate:.3f})')
         signal[start:start+count] = np.rint(sound*envelope*32767).astype(np.int16)

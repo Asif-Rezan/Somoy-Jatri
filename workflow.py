@@ -200,8 +200,11 @@ def make_story(day, previous, checkpoint=None):
     Avoid these recent titles and outlines: {json.dumps(recent_context)}.
     {structure}
     Build the chronological survey around one opening question. At era transitions, identify a
-    concrete change that raises the next question. Return to the same sourced place, artifact,
-    or geographic clue at the end and explain what changed across the period.
+    concrete change that raises the next question. For one major decision, describe its starting
+    conditions, the act itself, and the sourced outcome in distinct beats. Revisit the same named
+    place in a later era where the sources permit. Include ordinary people doing documented work
+    where assigned claims support it. Mark uncertainty and distinguish tradition from evidence.
+    Return to the opening place or clue and recap three turning points at the end.
     Alternate artifacts, material details, terrain, routes, interiors and site overviews relevant to each claim.
     Avoid twenty variations of the same building or generic courtyard.
     Every chapter must contribute a distinct explanation supported by its claim_ids.
@@ -247,7 +250,8 @@ def make_story(day, previous, checkpoint=None):
             first = ' '.join(outline['scenes'][0]['narration'].split()[:34])
             engagement = (f'Opening question, for continuity only: {first} '
                           'In the final chapter, revisit that opening motif and answer the question '
-                          'using the assigned evidence. Distinguish surviving evidence from reconstruction.')
+                          'using the assigned evidence. Distinguish surviving evidence from reconstruction. '
+                          'End with three short turning-point statements suitable for a twenty-to-thirty-second recap.')
         prompt = f'''Write chapters {begin+1} through {begin+5} of this English {documentary}.
         Content rules: {CONTENT_POLICY}
         Title: {outline['title']}.
@@ -259,6 +263,8 @@ def make_story(day, previous, checkpoint=None):
         narration are not sources. Do not infer motives, architectural details, activities or causation.
         Attribute the evidence and explain what the record establishes. Label any reflection explicitly.
         {engagement}
+        Where relevant, connect ordinary people to a documented activity. A short standalone
+        sentence before a major payoff may create a natural spoken pause.
         Return narrations with exact chapter keys {keys}. Target {chapter_target} words per chapter.
         Use indirect speech, no quotation marks and no spoken stage directions.
         For hadith identify the supplied collection and report number and clearly say its meaning is paraphrased.
