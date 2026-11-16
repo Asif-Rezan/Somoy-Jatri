@@ -1,6 +1,7 @@
 import unittest
 
-from history_animation import shot_animation
+from history_animation import SIZE, compose_frame, shot_animation
+from PIL import Image
 from history_coverage import catalog
 from history_editing import plan_edits
 
@@ -25,6 +26,21 @@ class HistoryEditingTests(unittest.TestCase):
             shots = [{'start': 0, 'narration': f'Rome in {date}.'}]
             plan_edits(shots,catalog()[0])
             self.assertNotIn('label',shots[0]['edit'])
+
+    def test_cast_appears_only_during_the_aligned_action(self):
+        words = [('The',0),('capital',.3),('changed.',.7),('Workers',4),
+                 ('loaded',4.3),('cargo.',4.8)]
+        spec = shot_animation('The capital changed. Workers loaded cargo.', islamic=False,
+                              index=0, word_offsets=words, seconds=10)
+        self.assertEqual(spec['start'],4.3)
+        background = Image.new('RGB',SIZE,'#d5c7aa')
+        self.assertEqual(compose_frame(background,spec,{},3,10).tobytes(),background.tobytes())
+        self.assertNotEqual(compose_frame(background,spec,{},5,10).tobytes(),background.tobytes())
+        self.assertEqual(compose_frame(background,spec,{},8,10).tobytes(),background.tobytes())
+
+    def test_static_places_and_silent_windows_do_not_trigger_animation(self):
+        self.assertIsNone(shot_animation('The city had a harbor and a road.',islamic=False,index=0))
+        self.assertIsNone(shot_animation('Workers load cargo.',islamic=False,index=0,word_offsets=[]))
 
     def test_loading_cargo_animates_carrying_without_sensitive_depictions(self):
         self.assertEqual(shot_animation('Workers load cargo.',islamic=False,index=0)['action'],'carry')

@@ -53,7 +53,7 @@ def shot_plan(story, lengths, word_lists):
                                         for word in anchor if word['chapter'] == c))
         shots.append({'index': index, 'start': start, 'duration': end-start,
             'chapter': chapter, 'narration': ' '.join(word['word'] for word in anchor),
-            'word_offsets': [[word['word'],round(max(0,word['start']-start),3)] for word in anchor],
+            'word_offsets': [[word['word'],round(max(0,word['start']-start),3)] for word in spoken],
             'seed': 1700+index})
     return {'duration_seconds': total, 'image_interval_seconds': INTERVAL,
         'style': 'islamic-documentary', 'alignment': 'measured-word-timestamps', 'shots': shots}
@@ -369,10 +369,12 @@ def refine_visual_plan(root=ROOT):
         framing = ('wide environmental view', 'medium view', 'low angle view',
                    'overhead object study', 'macro material detail')[shot['index'] % 5]
         shot['prompt'] = f'{action}. {framing}. {style}'
-        if coverage:
+        shot.pop('animation',None)
+        if coverage and story.get('format') != 'islamic-documentary':
             animation = shot_animation(shot['narration'], islamic=story['category'] == 'Islamic history',
-                                       index=shot['index'])
-            if animation and story.get('format') != 'islamic-documentary':
+                                       index=shot['index'], word_offsets=shot.get('word_offsets'),
+                                       seconds=shot['duration'])
+            if animation:
                 shot['animation'] = animation
                 shot['prompt'] = (f'{action}. Eye-level historical panorama with a broad clear level '
                                   f'foreground for a character to stand. {style}')
