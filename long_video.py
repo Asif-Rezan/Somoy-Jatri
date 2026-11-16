@@ -352,7 +352,7 @@ def refine_visual_plan(root=ROOT):
     protagonist = story.get('protagonist_name', '').strip()
     coverage = story.get('evidence', {}).get('history_subject')
     if coverage:
-        from history_animation import scene_cast
+        from history_animation import shot_animation
         from history_editing import plan_edits
         plan_edits(plan['shots'],story['evidence'])
     style = DOCUMENTARY_STYLE.replace('Islamic history', 'historical') if coverage else DOCUMENTARY_STYLE
@@ -371,12 +371,11 @@ def refine_visual_plan(root=ROOT):
         shot['prompt'] = f'{action}. {framing}. {style}'
         shot.pop('animation',None)
         if coverage and story.get('format') != 'islamic-documentary':
-            animation = scene_cast(shot['narration'], islamic=story['category'] == 'Islamic history',
+            animation = shot_animation(shot['narration'], islamic=story['category'] == 'Islamic history',
                                        index=shot['index'], word_offsets=shot.get('word_offsets'),
                                        seconds=shot['duration'])
             if animation:
                 shot['animation'] = animation
-            if animation and animation.get('action'):
                 shot['prompt'] = (f'{action}. Eye-level historical panorama with a broad clear level '
                                   f'foreground for a character to stand. {style}')
         shot['focus'] = focus

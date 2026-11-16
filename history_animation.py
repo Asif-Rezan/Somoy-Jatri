@@ -24,21 +24,9 @@ ACTION_PATTERNS = {
 }
 
 
-SENSITIVE = re.compile(r'\b(?:prophets?|angels?|divine|allah|companions?|muhammad)\b', re.I)
-
-
-def scene_cast(narration, *, islamic, index, word_offsets=None, seconds=10):
-    """Keep a recurring observer in allowed shots and cue only narrated actions."""
-    if SENSITIVE.search(narration):
-        return None
-    action = shot_animation(narration,islamic=islamic,index=index,
-                            word_offsets=word_offsets,seconds=seconds)
-    return {**(action or {}), 'observer': True, 'islamic': islamic, 'female': True}
-
-
 def shot_animation(narration, *, islamic, index, word_offsets=None, seconds=10):
     """Schedule only a depicted action described by the spoken words."""
-    if SENSITIVE.search(narration):
+    if re.search(r'\b(?:prophets?|angels?|divine|allah|companions?|muhammad)\b', narration, re.I):
         return None
     if word_offsets is not None and not word_offsets:
         return None
@@ -70,23 +58,18 @@ def _actor(draw, x, ground, **pose):
     character(draw, x, ground, **pose)
 
 
-def draw_frame(background, spec, t, seconds):
+def draw_frame(background, spec, t):
     frame = background.copy()
     draw = ImageDraw.Draw(frame, 'RGBA')
-    action = spec.get('action')
-    start, end = spec.get('start',0), spec.get('end',seconds)
-    active = action is not None and start <= t < end
-    elapsed = max(0,min(t,end)-start)
-    moving = action in {'walk', 'carry'}
-    x = 185 + 110*elapsed if moving else 185
-    _actor(draw, x, 654, scale=.88, facing=1, islamic=spec['islamic'],
+    move = spec['action'] in {'walk', 'carry'}
+    x = 228 + 110*t if move else 348
+    _actor(draw, x, 661, scale=1.1, facing=1, islamic=spec['islamic'],
            female=spec['female'], blink=t % 3.4 > 3.29,
-           walk_phase=elapsed*7.8 if moving and active else None,
-           basket=action == 'carry' and active,
-           point=action == 'point' and active and elapsed >= .2)
-    if spec.get('paired') and active:
-        _actor(draw, x-100, 638, scale=.76, facing=1, islamic=spec['islamic'],
-               female=not spec['female'], walk_phase=elapsed*7.8+1 if moving else None)
+           walk_phase=t*7.8 if move else None,
+           basket=spec['action'] == 'carry', point=spec['action'] == 'point' and t >= .2)
+    if spec['paired']:
+        _actor(draw, x-121, 641, scale=.94, facing=1, islamic=spec['islamic'],
+               female=not spec['female'], walk_phase=t*7.8+1 if move else None)
     return frame
 
 
@@ -94,14 +77,11 @@ def compose_frame(background, spec, edit, t, seconds):
     from history_editing import draw_edit
 
     frame = background.copy()
-    if spec:
+    if spec and spec.get('start',0) <= t < spec.get('end',seconds):
         start, end = spec.get('start',0), spec.get('end',seconds)
-        if spec.get('observer'):
-            frame = draw_frame(background,spec,t,seconds)
-        elif start <= t < end:
-            cast = draw_frame(background,spec,t,seconds)
-            opacity = min(1,(t-start)/.18,(end-t)/.18)
-            frame = Image.blend(frame,cast,opacity) if opacity < 1 else cast
+        cast = draw_frame(background,spec,t-start)
+        opacity = min(1,(t-start)/.18,(end-t)/.18)
+        frame = Image.blend(frame,cast,opacity) if opacity < 1 else cast
     if t >= seconds * .57 and not edit.get('closing'):
         inset = 36 if spec else 51
         frame = frame.resize(SIZE,Image.Resampling.BILINEAR,
