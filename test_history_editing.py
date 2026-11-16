@@ -1,6 +1,6 @@
 import unittest
 
-from history_animation import SIZE, compose_frame, shot_animation
+from history_animation import SIZE, compose_frame, scene_cast, shot_animation
 from PIL import Image
 from history_coverage import catalog
 from history_editing import plan_edits
@@ -26,6 +26,15 @@ class HistoryEditingTests(unittest.TestCase):
             shots = [{'start': 0, 'narration': f'Rome in {date}.'}]
             plan_edits(shots,catalog()[0])
             self.assertNotIn('label',shots[0]['edit'])
+
+    def test_observer_stays_visible_before_and_after_narrated_action(self):
+        words = [('Workers',4),('loaded',4.3),('cargo.',4.8)]
+        spec = scene_cast('Workers loaded cargo.',islamic=False,index=0,word_offsets=words)
+        background = Image.new('RGB',SIZE,'#d5c7aa')
+        for time in (0,3,5,9.9):
+            self.assertNotEqual(compose_frame(background,spec,{},time,10).tobytes(),
+                                background.tobytes())
+        self.assertIsNone(scene_cast('A prophet traveled.',islamic=True,index=0))
 
     def test_cast_appears_only_during_the_aligned_action(self):
         words = [('The',0),('capital',.3),('changed.',.7),('Workers',4),
