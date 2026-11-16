@@ -271,6 +271,7 @@ class Checks(unittest.TestCase):
             result = mix_audio(root/'voice.wav', root/'music.wav', root/'mix.wav', 5)
             self.assertTrue(result['music_audibility_passed'])
             self.assertTrue(5 < result['music_gap_db'] < 22)
+            self.assertAlmostEqual(result['master_gain_db'],6.02,places=2)
             self.assertAlmostEqual(w.duration(root/'mix.wav'), 5, places=1)
             w.shell('ffmpeg', '-y', '-f', 'lavfi', '-i',
                 'anullsrc=r=24000:cl=stereo', '-t', '2', str(root/'silent.wav'))

@@ -15,6 +15,7 @@ from resilience import produce_file
 ROOT = Path(os.getenv('OUTPUT_DIR', 'output/documentary-long-video'))
 INTERVAL = 10
 SHARDS = 20
+FINAL_MIX_GAIN = 2.0
 ASSETS = ('story.json', 'plan.json', 'narration.wav', 'captions.srt', 'duration.json')
 from islamic_content import VISUAL_POLICY
 DOCUMENTARY_STYLE = ('Respectful Islamic history documentary illustration, realistic materials, '
@@ -500,7 +501,8 @@ def mix_audio(voice, music, target, seconds, shots=()):
         '[0:a]loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,asplit=2[voice][side];'
         f'[1:a]loudnorm=I=-25:TP=-5:LRA=7,aresample=48000,{gain}anull[music];'
         '[music][side]sidechaincompress=threshold=0.08:ratio=2:attack=100:release=700:mix=0.28,asplit=2[bed][check];'
-        f'{effects}{tracks}amix=inputs={3 if effects else 2}:duration=first:normalize=0,alimiter=limit=0.95:level=0[a]',
+        f'{effects}{tracks}amix=inputs={3 if effects else 2}:duration=first:normalize=0,'
+        f'volume={FINAL_MIX_GAIN},alimiter=limit=0.89:level=0:latency=1[a]',
         '-map', '[a]', '-t', str(seconds), '-ac', '2', '-c:a', 'pcm_s16le', str(target),
         '-map', '[check]', '-t', str(seconds), '-ac', '2', '-c:a', 'pcm_s16le', str(bed))
     def rms_db(path):
@@ -512,11 +514,13 @@ def mix_audio(voice, music, target, seconds, shots=()):
         rms = float(np.sqrt(np.mean(audio**2)))
         return 20*math.log10(max(rms, 1e-12))
     bed_db, mix_db = rms_db(bed), rms_db(target)
-    gap = mix_db-bed_db
+    gain_db = 20*math.log10(FINAL_MIX_GAIN)
+    gap = mix_db-(bed_db+gain_db)
     if not -35 < bed_db < -18 or not 5 < gap < 19:
         raise RuntimeError(f'Music mix is inaudible or too loud: bed={bed_db:.1f}dB, gap={gap:.1f}dB')
     return {'music_bed_rms_db': round(bed_db, 2), 'mix_rms_db': round(mix_db, 2),
-        'music_gap_db': round(gap, 2), 'music_audibility_passed': True}
+        'music_gap_db': round(gap, 2), 'master_gain_db': round(gain_db, 2),
+        'music_audibility_passed': True}
 
 
 def validate_scene_reports(plan, scene_reports):
