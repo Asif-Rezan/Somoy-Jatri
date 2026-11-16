@@ -1,4 +1,5 @@
 """Thumbnail hook validation and export of complete generated artwork."""
+from colorsys import hls_to_rgb, rgb_to_hls
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from itertools import combinations
@@ -38,6 +39,44 @@ def render_thumbnail(source, text, target, category='Islamic'):
     return _save_jpeg(image, target)
 
 
+def luminance(color):
+    rgb = [channel/255 for channel in color]
+    linear = [value/12.92 if value<=.04045 else ((value+.055)/1.055)**2.4 for value in rgb]
+    return sum(channel*weight for channel,weight in zip(linear,(.2126,.7152,.0722)))
+
+
+def contrast(a,b):
+    dark,light = sorted((a,b))
+    return (light+.05)/(dark+.05)
+
+
+def lettering_colors(image,box):
+    """Use the opposite hue and pick readable tones against the actual letter area."""
+    patch = image.crop(box).resize((12,6),Image.Resampling.BOX)
+    samples = [patch.getpixel((x,y)) for y in range(patch.height) for x in range(patch.width)]
+    average = [sum(channel)/len(samples)/255 for channel in zip(*samples)]
+    hue,_,saturation = rgb_to_hls(*average)
+    hue = (hue+.5)%1 if saturation>=.10 else .08
+
+    def tone(lightness,saturation):
+        return tuple(round(255*value) for value in hls_to_rgb(hue,lightness,saturation))
+
+    shadows,highlights = tone(.09,.45),tone(.96,.64)
+    backgrounds = [luminance(color) for color in samples]
+    bright_background = sum(backgrounds)/len(backgrounds) >= .30
+    lightness_order = (.23,.15,.83,.91) if bright_background else (.83,.91,.23,.15)
+    fills = [tone(lightness,.75) for lightness in lightness_order]
+    for fill in fills:
+        visible = sum(contrast(luminance(fill),background)>=4.5 for background in backgrounds)
+        if visible>=len(backgrounds)*.80:
+            break
+    else:
+        fill = max(fills,key=lambda value: sum(contrast(luminance(value),bg) for bg in backgrounds))
+    outline = max((shadows,highlights),key=lambda value:contrast(luminance(value),luminance(fill)))
+    return fill,outline
+
+
+
 def render_history_thumbnail(source, subject, period, target, *, cast_islamic=None, hook=None):
     with Image.open(source) as original:
         image = ImageOps.fit(original.convert('RGB'), (1280, 720), Image.Resampling.LANCZOS)
@@ -57,16 +96,20 @@ def render_history_thumbnail(source, subject, period, target, *, cast_islamic=No
         raise ValueError('History thumbnail subject is too long')
     period_font = ImageFont.truetype(font_path, 52)
     for label, y, face in ((title, 112, font), (period, 112 + size + 13, period_font)):
-        draw.text((949, y), label, anchor='mt', font=face, fill='#151210',
-                  stroke_width=1, stroke_fill='#efe0c1')
+        area = draw.textbbox((949,y),label,anchor='mt',font=face)
+        fill,outline = lettering_colors(image,area)
+        draw.text((949,y),label,anchor='mt',font=face,fill=fill,
+                  stroke_width=4 if label==title else 3,stroke_fill=outline)
     if hook:
         hook = hook.upper()
         for hook_size in range(60,25,-2):
             face = _font(hook_size)
             if draw.textlength(hook,font=face) <= 520:
                 break
-        draw.rounded_rectangle((660,365,1238,460),radius=19,fill='#32231b',outline='#f0cb75',width=4)
-        draw.text((949,411),hook,anchor='mm',font=face,fill='#fff1c3')
+        badge = (660,365,1238,460)
+        pill,letter = lettering_colors(image,badge)
+        draw.rounded_rectangle(badge,radius=19,fill=pill,outline=letter,width=3)
+        draw.text((949,411),hook,anchor='mm',font=face,fill=letter)
         image = image.resize((1920,1080), Image.Resampling.LANCZOS)
     return _save_jpeg(image, target)
 

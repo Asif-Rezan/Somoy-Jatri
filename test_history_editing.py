@@ -7,6 +7,18 @@ from history_editing import plan_edits
 
 
 class HistoryEditingTests(unittest.TestCase):
+    def test_thumbnail_lettering_changes_with_background_and_stays_readable(self):
+        from thumbnail_design import contrast, lettering_colors, luminance
+
+        fills = []
+        for background in ((144,198,242),(228,162,112),(39,43,75)):
+            image = Image.new('RGB',(120,60),background)
+            fill,outline = lettering_colors(image,(0,0,120,60))
+            self.assertGreaterEqual(contrast(luminance(fill),luminance(background)),4.5)
+            self.assertGreaterEqual(contrast(luminance(fill),luminance(outline)),4.5)
+            fills.append(fill)
+        self.assertEqual(len(set(fills)),3)
+
     def test_packaging_preserves_title_format_and_uses_measured_chapter_offsets(self):
         topic = catalog()[0]
         story = {'evidence':topic,'scenes':[{}]*20}
