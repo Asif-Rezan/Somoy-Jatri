@@ -53,6 +53,7 @@ def shot_plan(story, lengths, word_lists):
                                         for word in anchor if word['chapter'] == c))
         shots.append({'index': index, 'start': start, 'duration': end-start,
             'chapter': chapter, 'narration': ' '.join(word['word'] for word in anchor),
+            'word_offsets': [[word['word'],round(max(0,word['start']-start),3)] for word in anchor],
             'seed': 1700+index})
     return {'duration_seconds': total, 'image_interval_seconds': INTERVAL,
         'style': 'islamic-documentary', 'alignment': 'measured-word-timestamps', 'shots': shots}
@@ -352,6 +353,8 @@ def refine_visual_plan(root=ROOT):
     coverage = story.get('evidence', {}).get('history_subject')
     if coverage:
         from history_animation import shot_animation
+        from history_editing import plan_edits
+        plan_edits(plan['shots'],story['evidence'])
     style = DOCUMENTARY_STYLE.replace('Islamic history', 'historical') if coverage else DOCUMENTARY_STYLE
     for shot in plan['shots']:
         action = shot['visual_action'].strip().rstrip('.')
@@ -369,7 +372,7 @@ def refine_visual_plan(root=ROOT):
         if coverage:
             animation = shot_animation(shot['narration'], islamic=story['category'] == 'Islamic history',
                                        index=shot['index'])
-            if animation:
+            if animation and story.get('format') != 'islamic-documentary':
                 shot['animation'] = animation
                 shot['prompt'] = (f'{action}. Eye-level historical panorama with a broad clear level '
                                   f'foreground for a character to stand. {style}')
@@ -444,10 +447,10 @@ def generate_shot(shot, root, shard, total):
         check.unlink(missing_ok=True)
         print(json.dumps({'shot': index, 'visual_check_passed': False, 'attempt': attempt+1}), flush=True)
     if not clip.exists():
-        if shot.get('animation'):
+        if shot.get('animation') or shot.get('edit'):
             from history_animation import animated_clip
             produce_file(clip, lambda candidate: animated_clip(image, shot['duration'], candidate,
-                                                                  shot['animation']), 'Animated shot rendering')
+                                                                  shot.get('animation'),shot.get('edit')), 'Animated shot rendering')
         else:
             produce_file(clip, lambda candidate: picture_clip(image, shot['duration'], candidate), 'Shot rendering')
     print(json.dumps({'shard': shard, 'shot': index+1, 'total': total, 'rendered': True,
@@ -467,17 +470,25 @@ def validate_engagement(story):
         validate_content(story)
 
 
-def mix_audio(voice, music, target, seconds):
+def mix_audio(voice, music, target, seconds, shots=()):
     """Normalize music first and use mild ducking; verify its actual contribution."""
     import numpy as np
     import subprocess
     bed = target.with_name('music-bed.wav')
+    inputs, gain, effects = [], '', ''
+    if any(shot.get('edit') for shot in shots):
+        from history_editing import audio_cues
+        cue = target.with_name('history-cues.wav')
+        gain = audio_cues(shots,cue,seconds)
+        inputs = ['-i',str(cue)]
+        effects = '[2:a]aresample=48000[fx];'
+    tracks = '[voice][bed][fx]' if effects else '[voice][bed]'
     w.shell('ffmpeg', '-y', '-i', str(voice), '-stream_loop', '-1', '-i', str(music),
-        '-filter_complex',
+        *inputs, '-filter_complex',
         '[0:a]loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,asplit=2[voice][side];'
-        '[1:a]loudnorm=I=-30:TP=-6:LRA=5,aresample=48000[music];'
+        f'[1:a]loudnorm=I=-30:TP=-6:LRA=5,aresample=48000,{gain}anull[music];'
         '[music][side]sidechaincompress=threshold=0.08:ratio=2:attack=100:release=700:mix=0.35,asplit=2[bed][check];'
-        '[voice][bed]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95:level=0[a]',
+        f'{effects}{tracks}amix=inputs={3 if effects else 2}:duration=first:normalize=0,alimiter=limit=0.95:level=0[a]',
         '-map', '[a]', '-t', str(seconds), '-ac', '2', '-c:a', 'pcm_s16le', str(target),
         '-map', '[check]', '-t', str(seconds), '-ac', '2', '-c:a', 'pcm_s16le', str(bed))
     def rms_db(path):
@@ -522,7 +533,7 @@ def finish(root=ROOT):
     w.shell('ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', str(root/'clips.txt'), '-c', 'copy', str(root/'joined.mp4'))
     if not (root/'music.audio').exists():
         generate(root/'music.audio')
-    audio_report = mix_audio(root/'narration.wav', root/'music.audio', root/'mixed.wav', plan['duration_seconds'])
+    audio_report = mix_audio(root/'narration.wav', root/'music.audio', root/'mixed.wav', plan['duration_seconds'], plan['shots'])
     w.shell('ffmpeg', '-y', '-i', str(root/'joined.mp4'), '-i', str(root/'mixed.wav'),
         '-vf', f"subtitles={root/'captions.srt'}:force_style='FontName=DejaVu Sans,FontSize=22,Outline=2,MarginV=35'",
         '-map', '0:v', '-map', '1:a', '-t', str(plan['duration_seconds']), '-ar', '48000',

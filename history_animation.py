@@ -15,7 +15,9 @@ def shot_animation(narration, *, islamic, index):
     """Only select actions supported by the spoken window."""
     if re.search(r'\b(?:prophets?|angels?|divine|allah|companions?|muhammad)\b', narration, re.I):
         return None
-    if re.search(r'\b(?:sail\w*|fleet|ships?|navy|harbou?r|ports?)\b', narration, re.I):
+    if re.search(r'\b(?:cargo|unload\w*|load(?:ed|ing)|dockworkers)\b', narration, re.I):
+        action = 'carry'
+    elif re.search(r'\b(?:sail\w*|fleet|ships?|navy|harbou?r|ports?)\b', narration, re.I):
         action = 'point'
     elif re.search(r'\b(?:merchant\w*|trade|market\w*|goods|crafts\w*|pottery)\b', narration, re.I):
         action = 'carry'
@@ -50,9 +52,21 @@ def draw_frame(background, spec, t):
     return frame
 
 
-def animated_clip(image, seconds, target, spec):
+def compose_frame(background, spec, edit, t, seconds):
+    from history_editing import draw_edit
+
+    frame = draw_frame(background,spec,t) if spec else background.copy()
+    if t >= seconds * .57 and not edit.get('closing'):
+        inset = 36 if spec else 51
+        frame = frame.resize(SIZE,Image.Resampling.BILINEAR,
+                             box=(inset,inset//2,SIZE[0]-inset,SIZE[1]-inset//2))
+    return draw_edit(frame,edit,t,seconds)
+
+
+def animated_clip(image, seconds, target, spec, edit=None):
     with Image.open(image) as source:
         background = ImageOps.fit(source.convert('RGB'), SIZE, Image.Resampling.LANCZOS)
+    edit = edit or {}
     frames = max(1, round(seconds * FPS))
     filters = (f'scale=1920:1080,fade=t=in:st=0:d=0.2,'
                f'fade=t=out:st={max(0,seconds-.2)}:d=0.2,format=yuv420p')
@@ -63,7 +77,7 @@ def animated_clip(image, seconds, target, spec):
     with subprocess.Popen(command, stdin=subprocess.PIPE) as encoder:
         try:
             for frame in range(frames):
-                encoder.stdin.write(draw_frame(background, spec, frame / FPS).tobytes())
+                encoder.stdin.write(compose_frame(background,spec,edit,frame/FPS,seconds).tobytes())
         finally:
             encoder.stdin.close()
         if encoder.wait():

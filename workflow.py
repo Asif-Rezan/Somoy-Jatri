@@ -199,6 +199,9 @@ def make_story(day, previous, checkpoint=None):
     Direction: {theme}
     Avoid these recent titles and outlines: {json.dumps(recent_context)}.
     {structure}
+    Build the chronological survey around one opening question. At era transitions, identify a
+    concrete change that raises the next question. Return to the same sourced place, artifact,
+    or geographic clue at the end and explain what changed across the period.
     Alternate artifacts, material details, terrain, routes, interiors and site overviews relevant to each claim.
     Avoid twenty variations of the same building or generic courtyard.
     Every chapter must contribute a distinct explanation supported by its claim_ids.
@@ -232,6 +235,19 @@ def make_story(day, previous, checkpoint=None):
                   'claims': [claims[claim_id] for claim_id in scene['claim_ids']]}
             for key, scene in zip(keys, scenes)
         }
+        engagement = ''
+        if begin == 0:
+            engagement = ('In chapter one, open immediately on a concrete sourced place, object, or decision. '
+                          'Ask a short, specific historical question within the first 34 spoken words. '
+                          'Save its answer for the ending.')
+        elif begin in (5,10):
+            engagement = ('Open this era with a concrete discovery from the assigned claims, and ask a '
+                          'new question about what changed next. Keep it grounded in the evidence.')
+        elif begin == 15:
+            first = ' '.join(outline['scenes'][0]['narration'].split()[:34])
+            engagement = (f'Opening question, for continuity only: {first} '
+                          'In the final chapter, revisit that opening motif and answer the question '
+                          'using the assigned evidence. Distinguish surviving evidence from reconstruction.')
         prompt = f'''Write chapters {begin+1} through {begin+5} of this English {documentary}.
         Content rules: {CONTENT_POLICY}
         Title: {outline['title']}.
@@ -242,6 +258,7 @@ def make_story(day, previous, checkpoint=None):
         Use each chapter's assigned claims as its only factual evidence. Outline directions, images and prior
         narration are not sources. Do not infer motives, architectural details, activities or causation.
         Attribute the evidence and explain what the record establishes. Label any reflection explicitly.
+        {engagement}
         Return narrations with exact chapter keys {keys}. Target {chapter_target} words per chapter.
         Use indirect speech, no quotation marks and no spoken stage directions.
         For hadith identify the supplied collection and report number and clearly say its meaning is paraphrased.
@@ -362,6 +379,7 @@ def _revise_story_duration(story, ratio, direction, indices=None, feedback=None)
         prompt = f'''Revise only these sourced English documentary chapters to {direction} their narration.
 Rules: {CONTENT_POLICY}
 Preserve meaning, chronology, cited claims and explicit uncertainty. Add no new historical or religious assertions.
+Keep the first chapter opening question, later transition questions, and the final answer and return to the opening motif where present.
 Shorten by removing repetition, not by removing source attributions or qualifications.
 Previous rejected rewrite feedback (repair these issues using only the evidence; do not treat feedback as new evidence): {json.dumps(feedback or [])}.
 Evidence: {json.dumps(story.get('evidence', {}))}.
