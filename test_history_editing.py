@@ -33,18 +33,19 @@ class HistoryEditingTests(unittest.TestCase):
         right, _ = quiet_lettering_position(artwork.transpose(Image.Transpose.FLIP_LEFT_RIGHT),470,230)
         self.assertGreater(right,680)
 
-    def test_busy_artwork_gets_a_solid_local_contrast_panel(self):
-        from thumbnail_design import calm_lettering_background
+    def test_busy_artwork_uses_letter_shaped_shadow_without_a_card(self):
+        from PIL import ImageDraw
+        from thumbnail_design import _font, draw_history_lettering
 
-        smooth = Image.new('RGB',(180,100),'#d2bd9e')
-        box = (70,30,145,65)
-        self.assertFalse(calm_lettering_background(smooth,box,(33,35,58),(248,244,224)))
-        for y in range(25,70):
-            for x in range(70,110):
-                smooth.putpixel((x,y),(34,39,49))
-        self.assertTrue(calm_lettering_background(smooth,box,(33,35,58),(248,244,224)))
-        self.assertEqual(smooth.getpixel((85,45)),(248,244,224))
-        self.assertEqual(smooth.getpixel((0,0)),(210,189,158))
+        artwork = Image.new('RGB',(440,200),'#d2bd9e')
+        draw = ImageDraw.Draw(artwork)
+        for x in range(0,440,12):
+            draw.rectangle((x,0,x+5,199),fill='#1b202a')
+        original = artwork.copy()
+        draw_history_lettering(artwork,'ROME',(220,45),_font(72),headline=True)
+        self.assertNotEqual(artwork.tobytes(),original.tobytes())
+        self.assertEqual(artwork.crop((0,0,32,200)).tobytes(),original.crop((0,0,32,200)).tobytes())
+        self.assertNotEqual(artwork.getpixel((220,76)),(255,249,231))
 
     def test_packaging_preserves_title_format_and_uses_measured_chapter_offsets(self):
         topic = catalog()[0]

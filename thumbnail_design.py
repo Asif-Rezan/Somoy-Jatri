@@ -1,7 +1,7 @@
 """Thumbnail hook validation and export of complete generated artwork."""
 from colorsys import hls_to_rgb, rgb_to_hls
 from pathlib import Path
-from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps, ImageStat
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps, ImageStat
 from itertools import combinations
 
 
@@ -77,17 +77,28 @@ def lettering_colors(image,box):
 
 
 
-def calm_lettering_background(image,box,fill,outline):
-    """Place a solid panel when a title would cross busy or low-contrast artwork."""
+def draw_history_lettering(image,text,position,face,*,headline=False):
+    """Give letters their own contrast while leaving the artwork visible between them."""
+    draw = ImageDraw.Draw(image)
+    box = draw.textbbox(position,text,anchor='mt',font=face)
+    fill,outline = lettering_colors(image,box)
     patch = image.crop(box).resize((24,12),Image.Resampling.BOX)
     levels = sorted(luminance(color) for color in patch.getdata())
     span = levels[len(levels)*9//10]-levels[len(levels)//10]
     visible = sum(contrast(luminance(fill),level)>=4.5 for level in levels)
-    if span<.20 and visible>=len(levels)*.90:
-        return False
-    panel = (box[0]-15,box[1]-12,box[2]+15,box[3]+12)
-    ImageDraw.Draw(image).rounded_rectangle(panel,radius=15,fill=outline)
-    return True
+    busy = span>=.20 or visible<len(levels)*.90
+    if busy and luminance(fill)<.35:
+        fill = outline
+        outline = (25,21,20)
+    width = (7 if headline else 5) if busy else (3 if headline else 2)
+    if busy:
+        mask = Image.new('L',image.size)
+        x,y = position
+        ImageDraw.Draw(mask).text((x+2,y+4),text,anchor='mt',font=face,fill=195,
+                                  stroke_width=width+2,stroke_fill=195)
+        image.paste((20,17,22),(0,0,image.width,image.height),mask.filter(ImageFilter.GaussianBlur(5)))
+    ImageDraw.Draw(image).text(position,text,anchor='mt',font=face,fill=fill,
+                               stroke_width=width,stroke_fill=outline)
 
 
 def quiet_lettering_position(image,width,height):
@@ -140,22 +151,14 @@ def render_history_thumbnail(source, subject, period, target, *, cast_islamic=No
                 break
         width = max(width,hook_width)
     center,top = quiet_lettering_position(image,width,size+(172 if hook else 80))
-    lines = ((title,top,font),(period,top+size+13,period_font))
-    areas = [draw.textbbox((center,y),label,anchor='mt',font=face) for label,y,face in lines]
-    title_area = (min(area[0] for area in areas),areas[0][1],
-                  max(area[2] for area in areas),areas[-1][3])
-    fill,panel = lettering_colors(image,title_area)
-    if contrast(luminance(fill),luminance(panel))<7:
-        panel = (255,249,231) if luminance(fill)<.30 else (21,23,27)
-    panel_used = calm_lettering_background(image,title_area,fill,panel)
-    for (label,y,face),area in zip(lines,areas):
-        color,outline = (fill,None) if panel_used else lettering_colors(image,area)
-        draw.text((center,y),label,anchor='mt',font=face,fill=color,
-                  stroke_width=0 if panel_used else 4 if label==title else 3,stroke_fill=outline)
+    draw_history_lettering(image,title,(center,top),font,headline=True)
+    draw_history_lettering(image,period,(center,top+size+13),period_font)
     if hook:
         badge_top = top+size+87
         badge = (center-hook_width//2,badge_top,center+hook_width//2,badge_top+78)
         pill,letter = lettering_colors(image,badge)
+        if luminance(pill)>luminance(letter):
+            pill,letter = letter,pill
         draw.rounded_rectangle(badge,radius=19,fill=pill,outline=letter,width=3)
         draw.text((center,badge_top+39),hook,anchor='mm',font=hook_font,fill=letter)
         image = image.resize((1920,1080), Image.Resampling.LANCZOS)
